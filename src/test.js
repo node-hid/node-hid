@@ -1,5 +1,7 @@
 var HID = require('HID');
 
+// buzzer protocol info: http://www.developerfusion.com/article/84338/making-usb-c-friendly/
+
 var buzzers = new HID.HID(0x54c,0x1000);
 buzzers.oldBits = 0;
 buzzers.leds = [0, 0, 0, 0, 0, 0];
