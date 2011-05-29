@@ -1,0 +1,322 @@
+// -*- C++ -*-
+
+// Copyright Hans Huebner and contributors. All rights reserved.
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <vector>
+#include <queue>
+
+#include <stdlib.h>
+
+#include <v8.h>
+#include <node.h>
+#include <node_events.h>
+
+#include <hidapi.h>
+
+using namespace std;
+using namespace v8;
+using namespace node;
+
+// //////////////////////////////////////////////////////////////////
+// Throwable error class that can be converted to a JavaScript
+// exception
+// //////////////////////////////////////////////////////////////////
+class JSException
+{
+public:
+  JSException(const string& text) : _message(text) {};
+  virtual const string message() const { return _message; }
+  virtual Handle<Value> asV8Exception() const { return ThrowException(String::New(message().c_str())); }
+
+protected:
+  string _message;
+};
+
+class HID
+  : public EventEmitter
+{
+public:
+  static void Initialize(Handle<Object> target);
+  static Handle<Value> devices(const Arguments& args);
+
+  typedef vector<unsigned char> databuf_t;
+
+  void write(const databuf_t& message)
+    throw(JSException);
+  void close();
+
+private:
+  HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber = 0);
+  ~HID() { close(); }
+
+  static Handle<Value> New(const Arguments& args);
+  static Handle<Value> read(const Arguments& args);
+  static Handle<Value> write(const Arguments& args);
+  static Handle<Value> close(const Arguments& args);
+
+  static int EIO_recv(eio_req* req);
+  static int EIO_recvDone(eio_req* req);
+
+  struct ReceiveIOCB {
+    ReceiveIOCB(HID* hid, Persistent<Object> this_, Persistent<Function> callback)
+      : _hid(hid),
+        _this(this_),
+        _callback(callback),
+        _error(0)
+    {}
+
+    ~ReceiveIOCB()
+    {
+      if (_error) {
+        delete _error;
+      }
+    }
+
+    HID* _hid;
+    Persistent<Object> _this;
+    Persistent<Function> _callback;
+    JSException* _error;
+    vector<unsigned char> _data;
+  };
+
+  void readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[]);
+
+  hid_device* _hidHandle;
+};
+
+HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
+{
+  _hidHandle = hid_open(vendorId, productId, serialNumber);
+
+  if (!_hidHandle) {
+    ostringstream os;
+    os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
+    throw JSException(os.str());
+  }
+}
+
+void
+HID::close()
+{
+  if (_hidHandle) {
+    hid_close(_hidHandle);
+    _hidHandle = 0;
+  }
+}
+
+void
+HID::write(const databuf_t& message)
+  throw(JSException)
+{
+  unsigned char buf[message.size()];
+  unsigned char* p = buf;
+  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
+    *p++ = *i;
+  }
+  if (hid_write(_hidHandle, buf, message.size()) < 0) {
+    throw JSException("Cannot write to HID device");
+  }
+}
+
+int
+HID::EIO_recv(eio_req* req)
+{
+  ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
+  HID* hid = iocb->_hid;
+
+  unsigned char buf[256];
+  int len = hid_read(hid->_hidHandle, buf, sizeof buf);
+  if (len < 0) {
+    iocb->_error = new JSException("could not read from HID device");
+  } else {
+    iocb->_data = vector<unsigned char>(buf, buf + len);
+  }
+
+  return 0;
+}
+
+void
+HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
+{
+  if (iocb->_error) {
+    argv[2] = Exception::Error(String::New(iocb->_error->message().c_str()));
+  } else {
+    const vector<unsigned char>& message = iocb->_data;
+    Local<Array> jsMessage = Array::New(message.size());
+    int j = 0;
+    for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++) {
+      jsMessage->Set(j++, v8::Integer::New(*k));
+    }
+    argv[1] = jsMessage;
+  }
+}
+
+int
+HID::EIO_recvDone(eio_req* req)
+{
+  HandleScope scope;
+  ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
+  ev_unref(EV_DEFAULT_UC);
+
+  Local<Value> argv[3];
+  argv[0] = *iocb->_this;
+  argv[1] = *Undefined();
+  argv[2] = *Undefined();
+
+  iocb->_hid->readResultsToJSCallbackArguments(iocb, argv);
+  iocb->_hid->Unref();
+
+  TryCatch tryCatch;
+  iocb->_callback->Call(Context::GetCurrent()->Global(), 2, argv);
+
+  if (tryCatch.HasCaught()) {
+    FatalException(tryCatch);
+  }
+
+  iocb->_this.Dispose();
+  iocb->_callback.Dispose();
+
+  delete iocb;
+
+  return 0;
+}
+
+Handle<Value>
+HID::read(const Arguments& args)
+{
+  HandleScope scope;
+
+  if (args.Length() != 1
+      || !args[0]->IsFunction()) {
+    return ThrowException(String::New("need one callback function argument in recv"));
+  }
+
+  HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+  hid->Ref();
+
+  eio_custom(EIO_recv,
+             EIO_PRI_DEFAULT,
+             EIO_recvDone,
+             new ReceiveIOCB(hid,
+                             Persistent<Object>::New(Local<Object>::Cast(args.This())),
+                             Persistent<Function>::New(Local<Function>::Cast(args[0]))));
+  ev_ref(EV_DEFAULT_UC);
+
+  return Undefined();
+}
+
+Handle<Value>
+HID::New(const Arguments& args)
+{
+  if (!args.IsConstructCall()) {
+    return ThrowException(String::New("HID function can only be used as a constructor"));
+  }
+
+  if (args.Length() < 2) {
+    return ThrowException(String::New("HID constructor requires at least two arguments"));
+  }
+
+  HandleScope scope;
+
+  try {
+    int32_t vendorId = args[0]->Int32Value();
+    int32_t productId = args[1]->Int32Value();
+    HID* hid = new HID(vendorId, productId); // serial can't be provided yet
+    hid->Wrap(args.This());
+    return args.This();
+  }    
+  catch (const JSException& e) {
+    return e.asV8Exception();
+  }
+}
+
+Handle<Value>
+HID::close(const Arguments& args)
+{
+  try {
+    HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+    hid->close();
+    return Undefined();
+  }
+  catch (const JSException& e) {
+    return e.asV8Exception();
+  }
+}
+
+Handle<Value>
+HID::write(const Arguments& args)
+{
+  if (args.Length() != 1) {
+    return ThrowException(String::New("HID write requires one argument"));
+  }
+
+  try {
+    HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+
+    vector<unsigned char> message;
+    Local<Array> messageArray = Local<Array>::Cast(args[0]);
+    for (unsigned i = 0; i < messageArray->Length(); i++) {
+      if (!messageArray->Get(i)->IsNumber()) {
+        throw JSException("unexpected array element in array to send, expecting only integers");
+      }
+      message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
+    }
+    hid->write(message);
+
+    return Undefined();
+  }
+  catch (const JSException& e) {
+    return e.asV8Exception();
+  }
+}
+
+void
+HID::Initialize(Handle<Object> target)
+{
+  HandleScope scope;
+
+  Handle<FunctionTemplate> hidTemplate = FunctionTemplate::New(New);
+  hidTemplate->Inherit(EventEmitter::constructor_template);
+  hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
+
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "close", close);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
+
+  target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
+}
+
+
+extern "C" {
+  
+  static void init (Handle<Object> target)
+  {
+    HandleScope handleScope;
+    
+    HID::Initialize(target);
+  }
+
+  NODE_MODULE(HID, init);
+}
+
