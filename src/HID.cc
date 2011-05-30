@@ -68,6 +68,7 @@ public:
 
 private:
   HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber = 0);
+  HID(const char* path);
   ~HID() { close(); }
 
   static Handle<Value> New(const Arguments& args);
@@ -115,6 +116,17 @@ HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumbe
     throw JSException(os.str());
   }
 }
+
+HID::HID(const char* path)
+{
+  _hidHandle = hid_open_path(path);
+
+  if (!_hidHandle) {
+    ostringstream os;
+    os << "cannot open device with path " << path;
+    throw JSException(os.str());
+  }
+}  
 
 void
 HID::close()
@@ -233,16 +245,27 @@ HID::New(const Arguments& args)
     return ThrowException(String::New("HID function can only be used as a constructor"));
   }
 
-  if (args.Length() < 2) {
-    return ThrowException(String::New("HID constructor requires at least two arguments"));
+  if (args.Length() < 1) {
+    return ThrowException(String::New("HID constructor requires at least one argument"));
   }
 
   HandleScope scope;
 
   try {
-    int32_t vendorId = args[0]->Int32Value();
-    int32_t productId = args[1]->Int32Value();
-    HID* hid = new HID(vendorId, productId); // serial can't be provided yet
+    HID* hid;
+    if (args.Length() == 1) {
+      // open by path
+      hid = new HID(*String::Utf8Value(args[0]));
+    } else {
+      int32_t vendorId = args[0]->Int32Value();
+      int32_t productId = args[1]->Int32Value();
+      Handle<Value> serial;
+      wchar_t* serialPointer = 0;
+      if (args.Length() > 2) {
+        serialPointer = (wchar_t*) *String::Value(args[2]);
+      }
+      hid = new HID(vendorId, productId, serialPointer);
+    }
     hid->Wrap(args.This());
     return args.This();
   }    
@@ -291,10 +314,45 @@ HID::write(const Arguments& args)
   }
 }
 
+static string
+narrow(wchar_t* wide)
+{
+  wstring ws(wide);
+  ostringstream os;
+  for (size_t i = 0; i < ws.size(); i++) {
+    os << os.narrow(ws[i], '?');
+  }
+  return os.str();
+}
+
+Handle<Value>
+HID::devices(const Arguments& args)
+{
+  hid_device_info* devs = hid_enumerate(0, 0);
+  Local<Array> retval = Array::New();
+  int count = 0;
+  for (hid_device_info* dev = devs; dev; dev = dev->next) {
+    Local<Object> deviceInfo = Object::New();
+    deviceInfo->Set(String::NewSymbol("vendorId"), Integer::New(dev->vendor_id));
+    deviceInfo->Set(String::NewSymbol("productId"), Integer::New(dev->product_id));
+    deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
+    deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
+    deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
+    deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+    deviceInfo->Set(String::NewSymbol("release"), Integer::New(dev->release_number));
+    deviceInfo->Set(String::NewSymbol("interface"), Integer::New(dev->interface_number));
+    retval->Set(count++, deviceInfo);
+  }
+  hid_free_enumeration(devs);
+  return retval;
+}
+
 void
 HID::Initialize(Handle<Object> target)
 {
   HandleScope scope;
+
+  target->Set(String::NewSymbol("devices"), FunctionTemplate::New(devices)->GetFunction());
 
   Handle<FunctionTemplate> hidTemplate = FunctionTemplate::New(New);
   hidTemplate->Inherit(EventEmitter::constructor_template);
