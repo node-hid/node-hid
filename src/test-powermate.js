@@ -1,5 +1,7 @@
 
-powerMate = require('./powermate').powerMate;
+var PowerMate = require('./powermate');
+
+var powerMate = new PowerMate.PowerMate();
 
 powerMate.on('buttonDown', function () {
     console.log('button down');

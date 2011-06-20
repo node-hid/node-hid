@@ -7,33 +7,49 @@
 // of the LED in the second byte.
 
 var HID = require('HID');
+var util = require('util');
+var events = require('events');
 
-var powerMate = new HID.HID(1917, 1040);
+function PowerMate(index)
+{
+    if (!arguments.length) {
+        index = 0;
+    }
 
-powerMate.setLed = function(brightness) {
-    powerMate.write([0, brightness]);
+    var powerMates = HID.devices(1917, 1040);
+    if (!powerMates.length) {
+        throw new Error("No PowerMates could be found");
+    }
+    if (index > powerMates.length || index < 0) {
+        throw new Error("Index " + index + " out of range, only " + powerMates.length + " PowerMates found");
+    }
+    this.hid = new HID.HID(powerMates[index].path);
+    this.position = 0;
+    this.button = 0;
+    this.hid.read(this.interpretData.bind(this));
 }
 
-powerMate.position = 0;
-powerMate.button = 0;
+util.inherits(PowerMate, events.EventEmitter);
 
-function interpretData(error, data) {
+PowerMate.prototype.setLed = function(brightness) {
+    this.hid.write([0, brightness]);
+}
+
+PowerMate.prototype.interpretData = function(error, data) {
     var button = data[0];
-    if (button ^ powerMate.button) {
-        powerMate.emit(button ? 'buttonDown' : 'buttonUp');
-        powerMate.button = button;
+    if (button ^ this.button) {
+        this.emit(button ? 'buttonDown' : 'buttonUp');
+        this.button = button;
     }
     var delta = data[1];
     if (delta) {
         if (delta & 0x80) {
             delta = -256 + delta;
         }
-        powerMate.position += delta;
-        powerMate.emit('turn', delta, powerMate.position);
+        this.position += delta;
+        this.emit('turn', delta, this.position);
     }
-    powerMate.read(interpretData);
+    this.hid.read(this.interpretData.bind(this));
 }
 
-powerMate.read(interpretData);
-
-exports.powerMate = powerMate;
+exports.PowerMate = PowerMate;
