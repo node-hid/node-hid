@@ -328,7 +328,26 @@ narrow(wchar_t* wide)
 Handle<Value>
 HID::devices(const Arguments& args)
 {
-  hid_device_info* devs = hid_enumerate(0, 0);
+  int vendorId = 0;
+  int productId = 0;
+
+  try {
+    switch (args.Length()) {
+    case 0:
+      break;
+    case 2:
+      vendorId = args[0]->Int32Value();
+      productId = args[1]->Int32Value();
+      break;
+    default:
+      throw JSException("unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID");
+    }
+  }
+  catch (JSException& e) {
+    return e.asV8Exception();
+  }
+  
+  hid_device_info* devs = hid_enumerate(vendorId, productId);
   Local<Array> retval = Array::New();
   int count = 0;
   for (hid_device_info* dev = devs; dev; dev = dev->next) {
