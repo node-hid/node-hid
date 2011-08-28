@@ -16,7 +16,7 @@ def configure(conf):
   conf.check_tool("node_addon")
   conf.check_tool("compiler_cc")
 #  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
-  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-lusb' ])
+  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-lusb-1.0' ])
   
 def build(bld):
     bld.add_group("hidapi")
