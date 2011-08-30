@@ -354,10 +354,18 @@ HID::devices(const Arguments& args)
     Local<Object> deviceInfo = Object::New();
     deviceInfo->Set(String::NewSymbol("vendorId"), Integer::New(dev->vendor_id));
     deviceInfo->Set(String::NewSymbol("productId"), Integer::New(dev->product_id));
-    deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
-    deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
-    deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
-    deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+    if (dev->path) {
+      deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
+    }
+    if (dev->serial_number) {
+      deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
+    }
+    if (dev->manufacturer_string) {
+      deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
+    }
+    if (dev->product_string) {
+      deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+    }
     deviceInfo->Set(String::NewSymbol("release"), Integer::New(dev->release_number));
     deviceInfo->Set(String::NewSymbol("interface"), Integer::New(dev->interface_number));
     retval->Set(count++, deviceInfo);
