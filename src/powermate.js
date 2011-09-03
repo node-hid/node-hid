@@ -10,13 +10,22 @@ var HID = require('HID');
 var util = require('util');
 var events = require('events');
 
+var allDevices;
+function getAllDevices()
+{
+    if (!allDevices) {
+	allDevices = HID.devices(1917, 1040);
+    }
+    return allDevices;
+}
+
 function PowerMate(index)
 {
     if (!arguments.length) {
         index = 0;
     }
 
-    var powerMates = HID.devices(1917, 1040);
+    var powerMates = getAllDevices();
     if (!powerMates.length) {
         throw new Error("No PowerMates could be found");
     }
@@ -53,3 +62,4 @@ PowerMate.prototype.interpretData = function(error, data) {
 }
 
 exports.PowerMate = PowerMate;
+exports.deviceCount = function () { return getAllDevices().length; }
