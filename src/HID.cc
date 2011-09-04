@@ -74,6 +74,7 @@ private:
   static Handle<Value> read(const Arguments& args);
   static Handle<Value> write(const Arguments& args);
   static Handle<Value> close(const Arguments& args);
+  static Handle<Value> getFeatureReport(const Arguments& args);
 
   static int EIO_recv(eio_req* req);
   static int EIO_recvDone(eio_req* req);
@@ -220,7 +221,7 @@ HID::read(const Arguments& args)
 
   if (args.Length() != 1
       || !args[0]->IsFunction()) {
-    return ThrowException(String::New("need one callback function argument in recv"));
+    return ThrowException(String::New("need one callback function argument in read"));
   }
 
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
@@ -235,6 +236,37 @@ HID::read(const Arguments& args)
   ev_ref(EV_DEFAULT_UC);
 
   return Undefined();
+}
+
+Handle<Value>
+HID::getFeatureReport(const Arguments& args)
+{
+  HandleScope scope;
+
+  if (args.Length() != 2
+      || args[1]->ToUint32()->Value() == 0) {
+    return ThrowException(String::New("need report ID and non-zero length parameter in getFeatureReport"));
+  }
+
+  const uint8_t reportId = args[0]->ToUint32()->Value();
+  HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+  const int bufSize = args[1]->ToUint32()->Value();
+  unsigned char buf[bufSize];
+  buf[0] = reportId;
+
+  int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
+
+  if (returnedLength == -1) {
+    return ThrowException(String::New("could not get feature report from device"));
+  }
+
+  Local<Array> retval = Array::New();
+
+  for (int i = 0; i < returnedLength; i++) {
+    retval->Set(i, Integer::New(buf[i]));
+  }
+
+  return retval;
 }
 
 Handle<Value>
@@ -353,10 +385,18 @@ HID::devices(const Arguments& args)
     Local<Object> deviceInfo = Object::New();
     deviceInfo->Set(String::NewSymbol("vendorId"), Integer::New(dev->vendor_id));
     deviceInfo->Set(String::NewSymbol("productId"), Integer::New(dev->product_id));
-    deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
-    deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
-    deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
-    deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+    if (dev->path) {
+      deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
+    }
+    if (dev->serial_number) {
+      deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
+    }
+    if (dev->manufacturer_string) {
+      deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
+    }
+    if (dev->product_string) {
+      deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+    }
     deviceInfo->Set(String::NewSymbol("release"), Integer::New(dev->release_number));
     deviceInfo->Set(String::NewSymbol("interface"), Integer::New(dev->interface_number));
     retval->Set(count++, deviceInfo);
@@ -379,6 +419,7 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "close", close);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
 }

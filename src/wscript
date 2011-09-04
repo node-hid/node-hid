@@ -5,7 +5,7 @@ import os;
 hidapi_home='../hidapi'
 
 cflags=["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall" ]
-includes=hidapi_home + "/hidapi"
+includes=[ hidapi_home + "/hidapi", '/usr/include/libusb-1.0/' ]
 
 def set_options(opt):
   opt.tool_options("compiler_cxx")
@@ -15,7 +15,8 @@ def configure(conf):
   conf.check_tool("compiler_cxx")
   conf.check_tool("node_addon")
   conf.check_tool("compiler_cc")
-  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
+#  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
+  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-lusb-1.0' ])
   
 def build(bld):
     bld.add_group("hidapi")
@@ -23,6 +24,7 @@ def build(bld):
     hidapi.includes = includes
     hidapi.cflags = cflags
     hidapi.source = "../hidapi/mac/hid.c"
+    hidapi.source = "../hidapi/linux/hid-libusb.c"
     hidapi.target = "hidapi"
 
     bld.add_group("adapter")
