@@ -172,7 +172,7 @@ void
 HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
 {
   if (iocb->_error) {
-    argv[2] = Exception::Error(String::New(iocb->_error->message().c_str()));
+    argv[0] = Exception::Error(String::New(iocb->_error->message().c_str()));
   } else {
     const vector<unsigned char>& message = iocb->_data;
     Local<Array> jsMessage = Array::New(message.size());
@@ -191,16 +191,15 @@ HID::EIO_recvDone(eio_req* req)
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
   ev_unref(EV_DEFAULT_UC);
 
-  Local<Value> argv[3];
-  argv[0] = *iocb->_this;
+  Local<Value> argv[2];
+  argv[0] = *Undefined();
   argv[1] = *Undefined();
-  argv[2] = *Undefined();
 
   iocb->_hid->readResultsToJSCallbackArguments(iocb, argv);
   iocb->_hid->Unref();
 
   TryCatch tryCatch;
-  iocb->_callback->Call(Context::GetCurrent()->Global(), 2, argv);
+  iocb->_callback->Call(iocb->_this, 2, argv);
 
   if (tryCatch.HasCaught()) {
     FatalException(tryCatch);
