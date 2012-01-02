@@ -76,7 +76,7 @@ private:
   static Handle<Value> close(const Arguments& args);
   static Handle<Value> getFeatureReport(const Arguments& args);
 
-  static int EIO_recv(eio_req* req);
+  static void EIO_recv(eio_req* req);
   static int EIO_recvDone(eio_req* req);
 
   struct ReceiveIOCB {
@@ -151,7 +151,7 @@ HID::write(const databuf_t& message)
   }
 }
 
-int
+void
 HID::EIO_recv(eio_req* req)
 {
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
@@ -164,8 +164,6 @@ HID::EIO_recv(eio_req* req)
   } else {
     iocb->_data = vector<unsigned char>(buf, buf + len);
   }
-
-  return 0;
 }
 
 void

@@ -15,8 +15,8 @@ def configure(conf):
   conf.check_tool("compiler_cxx")
   conf.check_tool("node_addon")
   conf.check_tool("compiler_cc")
-#  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
-  conf.env.append_value('LINKFLAGS', ['default/libhidapi.a', '-lusb-1.0' ])
+  conf.env.append_value('LINKFLAGS', ['Release/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
+#  conf.env.append_value('LINKFLAGS', ['Release/libhidapi.a', '-lusb-1.0' ])
   
 def build(bld):
     bld.add_group("hidapi")
@@ -24,7 +24,7 @@ def build(bld):
     hidapi.includes = includes
     hidapi.cflags = cflags
     hidapi.source = "../hidapi/mac/hid.c"
-    hidapi.source = "../hidapi/linux/hid-libusb.c"
+#    hidapi.source = "../hidapi/linux/hid-libusb.c"
     hidapi.target = "hidapi"
 
     bld.add_group("adapter")
