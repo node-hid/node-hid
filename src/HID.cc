@@ -29,7 +29,6 @@
 
 #include <v8.h>
 #include <node.h>
-#include <node_events.h>
 
 #include <hidapi.h>
 
@@ -53,7 +52,7 @@ protected:
 };
 
 class HID
-  : public EventEmitter
+  : public ObjectWrap
 {
 public:
   static void Initialize(Handle<Object> target);
@@ -407,11 +406,9 @@ HID::Initialize(Handle<Object> target)
 {
   HandleScope scope;
 
-  target->Set(String::NewSymbol("devices"), FunctionTemplate::New(devices)->GetFunction());
-
-  Handle<FunctionTemplate> hidTemplate = FunctionTemplate::New(New);
-  hidTemplate->Inherit(EventEmitter::constructor_template);
+  Local<FunctionTemplate> hidTemplate = FunctionTemplate::New(HID::New);
   hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
+  hidTemplate->SetClassName(String::New("HID"));
 
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "close", close);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
@@ -419,6 +416,8 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
+
+  target->Set(String::NewSymbol("devices"), FunctionTemplate::New(HID::devices)->GetFunction());
 }
 
 
