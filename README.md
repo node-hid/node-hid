@@ -2,6 +2,7 @@
 
 Prerequisites:
 
+Mac OS (I use 10.6.8) or Linux (I use Ubuntu 11.10 with Linux 3.0 on x86_64)
 node.js v0.6, built from source.
 
 Build the extension:
