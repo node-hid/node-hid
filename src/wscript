@@ -5,7 +5,7 @@ import os;
 
 hidapi_home='../hidapi'
 
-cflags=["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall" ]
+cflags=["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall", "-fPIC" ]
 includes=[ hidapi_home + "/hidapi", '/usr/include/libusb-1.0/' ]
 
 def set_options(opt):
