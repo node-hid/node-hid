@@ -4,9 +4,6 @@ Prerequisites:
 
 node.js v0.6, built from source.
 
-You'll have to edit the wscript to compile on Linux, the repository
-version is for Mac OS.
-
 Build the extension:
 
 ```
