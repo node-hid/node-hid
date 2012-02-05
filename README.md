@@ -5,6 +5,11 @@ Prerequisites:
 Mac OS (I use 10.6.8) or Linux (I use Ubuntu 11.10 with Linux 3.0 on x86_64)
 node.js v0.6, built from source.
 
+Pull the required submodule:
+
+git submodule init
+git submodule update
+
 Build the extension:
 
 ```
@@ -15,7 +20,7 @@ $ node-waf configure build
 Try it:
 
 ```
-$ node-waf show-devices.js
+$ node show-devices.js
 devices: [ { vendorId: 1452,
     productId: 595,
     path: 'USB_05ac_0253_0x100a148e0',
