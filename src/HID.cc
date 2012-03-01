@@ -75,7 +75,7 @@ private:
   static Handle<Value> close(const Arguments& args);
   static Handle<Value> getFeatureReport(const Arguments& args);
 
-  static Handle<Value> setFeatureReport(const Arguments& args);
+  static Handle<Value> sendFeatureReport(const Arguments& args);
 
 
   static void EIO_recv(eio_req* req);
@@ -270,13 +270,13 @@ HID::getFeatureReport(const Arguments& args)
 
 
 Handle<Value>
-HID::setFeatureReport(const Arguments& args)
+HID::sendFeatureReport(const Arguments& args)
 {
   HandleScope scope;
 
   if (args.Length() != 2
       || args[1]->ToUint32()->Value() == 0) {
-    return ThrowException(String::New("need report ID and non-zero length parameter in setFeatureReport"));
+    return ThrowException(String::New("need report ID and non-zero length parameter in sendFeatureReport"));
   }
 
   const uint8_t reportId = args[0]->ToUint32()->Value();
@@ -452,6 +452,7 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "sendFeatureReport", sendFeatureReport);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
 
