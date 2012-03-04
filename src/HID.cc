@@ -75,6 +75,9 @@ private:
   static Handle<Value> close(const Arguments& args);
   static Handle<Value> getFeatureReport(const Arguments& args);
 
+  static Handle<Value> sendFeatureReport(const Arguments& args);
+
+
   static void EIO_recv(eio_req* req);
   static int EIO_recvDone(eio_req* req);
 
@@ -156,7 +159,7 @@ HID::EIO_recv(eio_req* req)
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
   HID* hid = iocb->_hid;
 
-  unsigned char buf[256];
+  unsigned char buf[1024];
   int len = hid_read(hid->_hidHandle, buf, sizeof buf);
   if (len < 0) {
     iocb->_error = new JSException("could not read from HID device");
@@ -264,6 +267,41 @@ HID::getFeatureReport(const Arguments& args)
 
   return retval;
 }
+
+
+Handle<Value>
+HID::sendFeatureReport(const Arguments& args)
+{
+  HandleScope scope;
+
+  if (args.Length() != 2
+      || args[1]->ToUint32()->Value() == 0) {
+    return ThrowException(String::New("need report ID and non-zero length parameter in sendFeatureReport"));
+  }
+
+  const uint8_t reportId = args[0]->ToUint32()->Value();
+  HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+  const int bufSize = args[1]->ToUint32()->Value();
+  unsigned char buf[bufSize];
+  buf[0] = reportId;
+
+  int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, bufSize);
+
+  if (returnedLength == -1) {
+    return ThrowException(String::New("could not set feature report on device"));
+  }
+
+  Local<Array> retval = Array::New();
+
+  for (int i = 0; i < returnedLength; i++) {
+    retval->Set(i, Integer::New(buf[i]));
+  }
+
+  return retval;
+}
+
+
+
 
 Handle<Value>
 HID::New(const Arguments& args)
@@ -414,6 +452,7 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "sendFeatureReport", sendFeatureReport);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
 
