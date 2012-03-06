@@ -274,30 +274,36 @@ HID::sendFeatureReport(const Arguments& args)
 {
   HandleScope scope;
 
-  if (args.Length() != 2
-      || args[1]->ToUint32()->Value() == 0) {
-    return ThrowException(String::New("need report ID and non-zero length parameter in sendFeatureReport"));
+  if (args.Length() != 1){
+    return ThrowException(String::New("need report (including id in first byte) only in sendFeatureReport"));
   }
 
-  const uint8_t reportId = args[0]->ToUint32()->Value();
+
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
-  const int bufSize = args[1]->ToUint32()->Value();
-  unsigned char buf[bufSize];
-  buf[0] = reportId;
 
-  int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, bufSize);
-
-  if (returnedLength == -1) {
-    return ThrowException(String::New("could not set feature report on device"));
+  vector<unsigned char> message;
+  Local<Array> messageArray = Local<Array>::Cast(args[0]);
+  for (unsigned i = 0; i < messageArray->Length(); i++) {
+    if (!messageArray->Get(i)->IsNumber()) {
+      throw JSException("unexpected array element in array to send, expecting only integers");
+    }
+    message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
   }
 
-  Local<Array> retval = Array::New();
-
-  for (int i = 0; i < returnedLength; i++) {
-    retval->Set(i, Integer::New(buf[i]));
+  // Convert vector to char array
+  unsigned char buf[message.size()];
+  unsigned char* p = buf;
+  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
+    *p++ = *i;
   }
 
-  return retval;
+  int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
+
+  if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0. 
+    return ThrowException(String::New("could not send feature report to device"));
+  }
+
+  return Integer::New(returnedLength);
 }
 
 
