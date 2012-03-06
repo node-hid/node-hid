@@ -290,7 +290,7 @@ HID::sendFeatureReport(const Arguments& args)
     message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
   }
 
-  // Convert vector to char *
+  // Convert vector to char array
   unsigned char buf[message.size()];
   unsigned char* p = buf;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
@@ -299,13 +299,10 @@ HID::sendFeatureReport(const Arguments& args)
 
   int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
 
-  if (returnedLength == -1) {
-    return ThrowException(String::New("could not set feature report on device"));
+  if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0. 
+    return ThrowException(String::New("could not send feature report to device"));
   }
 
-  //Local<Array> retval = Array::New();
-  //retval->Set(0, Integer::New(returnedLength));
-  //return retval;
   return Integer::New(returnedLength);
 }
 
