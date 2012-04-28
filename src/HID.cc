@@ -78,8 +78,8 @@ private:
   static Handle<Value> sendFeatureReport(const Arguments& args);
 
 
-  static void EIO_recv(eio_req* req);
-  static int EIO_recvDone(eio_req* req);
+  static void recvAsync(uv_work_t* req);
+  static void recvAsyncDone(uv_work_t* req);
 
   struct ReceiveIOCB {
     ReceiveIOCB(HID* hid, Persistent<Object> this_, Persistent<Function> callback)
@@ -154,7 +154,7 @@ HID::write(const databuf_t& message)
 }
 
 void
-HID::EIO_recv(eio_req* req)
+HID::recvAsync(uv_work_t* req)
 {
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
   HID* hid = iocb->_hid;
@@ -184,12 +184,11 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
   }
 }
 
-int
-HID::EIO_recvDone(eio_req* req)
+void
+HID::recvAsyncDone(uv_work_t* req)
 {
   HandleScope scope;
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
-  ev_unref(EV_DEFAULT_UC);
 
   Local<Value> argv[2];
   argv[0] = *Undefined();
@@ -209,8 +208,6 @@ HID::EIO_recvDone(eio_req* req)
   iocb->_callback.Dispose();
 
   delete iocb;
-
-  return 0;
 }
 
 Handle<Value>
@@ -226,13 +223,11 @@ HID::read(const Arguments& args)
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
   hid->Ref();
 
-  eio_custom(EIO_recv,
-             EIO_PRI_DEFAULT,
-             EIO_recvDone,
-             new ReceiveIOCB(hid,
+  uv_work_t* req = new uv_work_t;
+  req->data = new ReceiveIOCB(hid,
                              Persistent<Object>::New(Local<Object>::Cast(args.This())),
-                             Persistent<Function>::New(Local<Function>::Cast(args[0]))));
-  ev_ref(EV_DEFAULT_UC);
+                             Persistent<Function>::New(Local<Function>::Cast(args[0])));
+  uv_queue_work(uv_default_loop(), req, recvAsync, recvAsyncDone);
 
   return Undefined();
 }
