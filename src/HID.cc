@@ -143,7 +143,8 @@ void
 HID::write(const databuf_t& message)
   throw(JSException)
 {
-  unsigned char buf[message.size()];
+  //unsigned char buf[message.size()];
+  unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
     *p++ = *i;
@@ -245,7 +246,8 @@ HID::getFeatureReport(const Arguments& args)
   const uint8_t reportId = args[0]->ToUint32()->Value();
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
   const int bufSize = args[1]->ToUint32()->Value();
-  unsigned char buf[bufSize];
+  //unsigned char buf[bufSize];
+  unsigned char* buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
   int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
@@ -286,7 +288,8 @@ HID::sendFeatureReport(const Arguments& args)
   }
 
   // Convert vector to char array
-  unsigned char buf[message.size()];
+  //unsigned char buf[message.size()];
+  unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
     *p++ = *i;
