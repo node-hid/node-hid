@@ -146,10 +146,13 @@ HID::write(const databuf_t& message)
   //unsigned char buf[message.size()];
   unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
+  int res;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
     *p++ = *i;
   }
-  if (hid_write(_hidHandle, buf, message.size()) < 0) {
+  res = hid_write(_hidHandle, buf, message.size());
+  delete[] buf;
+  if (res < 0) {
     throw JSException("Cannot write to HID device");
   }
 }
@@ -253,15 +256,15 @@ HID::getFeatureReport(const Arguments& args)
   int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
 
   if (returnedLength == -1) {
+    delete[] buf;
     return ThrowException(String::New("could not get feature report from device"));
   }
-
   Local<Array> retval = Array::New();
 
   for (int i = 0; i < returnedLength; i++) {
     retval->Set(i, Integer::New(buf[i]));
   }
-
+  delete[] buf;
   return retval;
 }
 
@@ -296,7 +299,7 @@ HID::sendFeatureReport(const Arguments& args)
   }
 
   int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
-
+  delete[] buf;
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0. 
     return ThrowException(String::New("could not send feature report to device"));
   }
