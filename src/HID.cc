@@ -78,8 +78,8 @@ private:
   static Handle<Value> sendFeatureReport(const Arguments& args);
 
 
-  static void EIO_recv(eio_req* req);
-  static int EIO_recvDone(eio_req* req);
+  static void recvAsync(uv_work_t* req);
+  static void recvAsyncDone(uv_work_t* req);
 
   struct ReceiveIOCB {
     ReceiveIOCB(HID* hid, Persistent<Object> this_, Persistent<Function> callback)
@@ -143,18 +143,22 @@ void
 HID::write(const databuf_t& message)
   throw(JSException)
 {
-  unsigned char buf[message.size()];
+  //unsigned char buf[message.size()];
+  unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
+  int res;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
     *p++ = *i;
   }
-  if (hid_write(_hidHandle, buf, message.size()) < 0) {
+  res = hid_write(_hidHandle, buf, message.size());
+  delete[] buf;
+  if (res < 0) {
     throw JSException("Cannot write to HID device");
   }
 }
 
 void
-HID::EIO_recv(eio_req* req)
+HID::recvAsync(uv_work_t* req)
 {
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
   HID* hid = iocb->_hid;
@@ -184,12 +188,11 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
   }
 }
 
-int
-HID::EIO_recvDone(eio_req* req)
+void
+HID::recvAsyncDone(uv_work_t* req)
 {
   HandleScope scope;
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
-  ev_unref(EV_DEFAULT_UC);
 
   Local<Value> argv[2];
   argv[0] = *Undefined();
@@ -209,8 +212,6 @@ HID::EIO_recvDone(eio_req* req)
   iocb->_callback.Dispose();
 
   delete iocb;
-
-  return 0;
 }
 
 Handle<Value>
@@ -226,13 +227,11 @@ HID::read(const Arguments& args)
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
   hid->Ref();
 
-  eio_custom(EIO_recv,
-             EIO_PRI_DEFAULT,
-             EIO_recvDone,
-             new ReceiveIOCB(hid,
+  uv_work_t* req = new uv_work_t;
+  req->data = new ReceiveIOCB(hid,
                              Persistent<Object>::New(Local<Object>::Cast(args.This())),
-                             Persistent<Function>::New(Local<Function>::Cast(args[0]))));
-  ev_ref(EV_DEFAULT_UC);
+                             Persistent<Function>::New(Local<Function>::Cast(args[0])));
+  uv_queue_work(uv_default_loop(), req, recvAsync, recvAsyncDone);
 
   return Undefined();
 }
@@ -250,21 +249,22 @@ HID::getFeatureReport(const Arguments& args)
   const uint8_t reportId = args[0]->ToUint32()->Value();
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
   const int bufSize = args[1]->ToUint32()->Value();
-  unsigned char buf[bufSize];
+  //unsigned char buf[bufSize];
+  unsigned char* buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
   int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
 
   if (returnedLength == -1) {
+    delete[] buf;
     return ThrowException(String::New("could not get feature report from device"));
   }
-
   Local<Array> retval = Array::New();
 
   for (int i = 0; i < returnedLength; i++) {
     retval->Set(i, Integer::New(buf[i]));
   }
-
+  delete[] buf;
   return retval;
 }
 
@@ -291,14 +291,15 @@ HID::sendFeatureReport(const Arguments& args)
   }
 
   // Convert vector to char array
-  unsigned char buf[message.size()];
+  //unsigned char buf[message.size()];
+  unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
     *p++ = *i;
   }
 
   int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
-
+  delete[] buf;
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0. 
     return ThrowException(String::New("could not send feature report to device"));
   }
