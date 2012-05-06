@@ -1,21 +1,30 @@
 {
+   'variables': {
+      'driver%': 'libusb'
+  },
   'targets': [
     {
       'target_name': 'hidapi',
       'type': 'static_library',
-      'target_arch': 'ia32',
       'conditions': [
         [ 'OS=="mac"', {
           'sources': [ 'hidapi/mac/hid.c' ],
           'include_dirs+': [
             '/usr/include/libusb-1.0/'
-          ],
+          ]
         }],
         [ 'OS=="linux"', {
-          'sources': [ 'hidapi/linux/hid-libusb.c' ],
-          'include_dirs+': [
-            '/usr/include/libusb-1.0/'
-          ],
+          'conditions': [
+            [ 'driver=="libusb"', {
+              'sources': [ 'hidapi/linux/hid-libusb.c' ],
+              'include_dirs+': [
+                '/usr/include/libusb-1.0/'
+              ]
+            }],
+            [ 'driver=="hidraw"', {
+              'sources': [ 'hidapi/linux/hid.c' ]
+            }]
+          ]
         }],
         [ 'OS=="win"', {
           'sources': [ 'hidapi/windows/hid.c' ],
@@ -40,11 +49,13 @@
         '_LARGEFILE_SOURCE',
         '_FILE_OFFSET_BITS=64',
       ],
-      'cflags': ['-g', '-Wall', '-fPIC']
+      'cflags': ['-g'],
+      'cflags!': [
+        '-ansi'
+      ]
     },
     {
       'target_name': 'HID',
-      'target_arch': 'ia32',
       'sources': [ 'src/HID.cc' ],
       'dependencies': ['hidapi'],
       'defines': [
@@ -52,17 +63,44 @@
         '_FILE_OFFSET_BITS=64',
       ],
       'conditions': [
+        [ 'OS=="mac"', {
+          'ldflags': [
+            '-framework',
+            'IOKit',
+            '-framework',
+            'CoreFoundation'
+          ]
+        }],
+        [ 'OS=="linux"', {
+          'conditions': [
+            [ 'driver=="libusb"', {
+              'ldflags': [
+                '-lusb-1.0'
+              ]
+            }],
+            [ 'driver=="hidraw"', {
+              'ldflags': [
+                '-ludev',
+                '-lusb-1.0'
+              ]
+            }]
+          ],
+        }],
         [ 'OS=="win"', {
           'msvs_settings': {
             'VCLinkerTool': {
               'AdditionalDependencies': [
-                'setupapi.lib',
+                'setupapi.lib'
               ]
             }
           }
         }]
       ],
-      'cflags': ['-g', '-Wall', '-fPIC']
+      'cflags': ['-g'],
+      'cflags!': [
+        '-ansi'
+      ],
+      'cflags_cc!': [ '-fno-exceptions' ]
     }
   ]
 }
