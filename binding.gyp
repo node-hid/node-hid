@@ -69,7 +69,10 @@
             'IOKit',
             '-framework',
             'CoreFoundation'
-          ]
+          ],
+          'xcode_settings': {
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+          }
         }],
         [ 'OS=="linux"', {
           'conditions': [
@@ -96,11 +99,10 @@
           }
         }]
       ],
-      'cflags': ['-g'],
-      'cflags!': [
-        '-ansi'
-      ],
-      'cflags_cc!': [ '-fno-exceptions' ]
+      'cflags!': ['-ansi', '-fno-exceptions' ],
+      'cflags_cc!': [ '-fno-exceptions' ],
+      'cflags': ['-g', '-exceptions'],
+      'cflags_cc': ['-g', '-exceptions']
     }
   ]
 }
