@@ -16,7 +16,7 @@
         [ 'OS=="linux"', {
           'conditions': [
             [ 'driver=="libusb"', {
-              'sources': [ 'hidapi/linux/hid-libusb.c' ],
+              'sources': [ 'hidapi/libusb/hid.c' ],
               'include_dirs+': [
                 '/usr/include/libusb-1.0/'
               ]
