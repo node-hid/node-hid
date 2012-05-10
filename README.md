@@ -1,27 +1,49 @@
 # node-hid - Access USB HID devices from node.js #
 
-Prerequisites:
+Installation
+------------
 
-Mac OS (I use 10.6.8) or Linux (I use Ubuntu 11.10 with Linux 3.0 on x86_64)
-node.js v0.6, built from source.
+### Prerequisites:
+
+* Mac OS (I use 10.6.8) or Linux (kernel 2.6+ that support libusb-1.0) or Windows XP+
+* node.js v0.6
+* libusb-1.0 (Linux-only)
+
+### Windows-only
+
+Copy the HID.node file from build/win into your node_modules folder.
+
+### Compile from Source
 
 Pull the required submodule:
 
-git submodule init
-git submodule update
+```
+$ git submodule init
+$ git submodule update
+```
+ Build the extension using node-gyp:
 
-Build the extension:
+```
+$ node-gyp rebuild
+```
+
+Or build the extension using node-waf:
 
 ```
 $ cd src/
 $ node-waf configure build
 ```
 
-Try it:
+
+How to Use
+----------
+
+List devices:
+(see show-devices.js)
 
 ```
-$ node show-devices.js
-devices: [ { vendorId: 1452,
+HID.devices();
+[ { vendorId: 1452,
     productId: 595,
     path: 'USB_05ac_0253_0x100a148e0',
     serialNumber: '',
@@ -40,41 +62,11 @@ devices: [ { vendorId: 1452,
 <and more>
 ```
 
+Use device:
+```
+var device = new HID.HID(path);
+device.read(function(error, data){}); //async read
+device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
+```
+
 If you need help, send me an email (hans.huebner@gmail.com)
-
-# Windows Setup #
-This source works on Win7 as of (5/7/12). Here are the steps to build on Windows.
-Use node-gyp... the instruction in the README worked for me https://github.com/TooTallNate/node-gyp/blob/master/README.md
-
-After you have node-gyp installed on your windows node.js install.
-
-```
-...> cd _path\to\nodejs\modules\node-hid_
-...> node-gyp configure
-...> node-gyp build
-```
-you should now have a HID.node file in the node-hid\build\(Release or Debug) folder.
-Copy HID.node to your nodejs\node_modules folder and run node..
-```
-> var HID = require('HID.node');
-undefined
-> HID.devices()
-[ { vendorId: 1133,
-    productId: 50479,
-    path: '\\\\?\\hid#vid_046d&pid_c52f&mi_00#8&7764ed8&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}',
-    serialNumber: '\t',
-    manufacturer: 'Logitech',
-    product: 'USB Receiver',
-    release: 5632,
-    interface: 0 },
-  { vendorId: 1226,
-    productId: 34,
-    path: '\\\\?\\hid#vid_04ca&pid_0022#7&3974be35&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}',
-    serialNumber: '\t',
-    manufacturer: 'LITEON Technology',
-    product: 'USB Keyboard',
-    release: 265,
-    interface: -1 } ]
->
-```
-You should be good to go...
