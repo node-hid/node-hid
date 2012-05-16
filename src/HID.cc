@@ -63,6 +63,8 @@ public:
   void write(const databuf_t& message)
     throw(JSException);
   void close();
+  void setNoBlock(int message)
+    throw(JSException);
 
 private:
   HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber = 0);
@@ -73,6 +75,7 @@ private:
   static Handle<Value> read(const Arguments& args);
   static Handle<Value> write(const Arguments& args);
   static Handle<Value> close(const Arguments& args);
+  static Handle<Value> setNoBlock(const Arguments& args);
   static Handle<Value> getFeatureReport(const Arguments& args);
 
   static Handle<Value> sendFeatureReport(const Arguments& args);
@@ -136,6 +139,17 @@ HID::close()
   if (_hidHandle) {
     hid_close(_hidHandle);
     _hidHandle = 0;
+  }
+}
+
+void
+HID::setNoBlock(int message)
+  throw(JSException)
+{
+  int res;
+  res = hid_set_nonblocking(_hidHandle, message);
+  if (res < 0) {
+    throw JSException("Error setting non-blocking mode.");
   }
 }
 
@@ -360,6 +374,24 @@ HID::close(const Arguments& args)
 }
 
 Handle<Value>
+HID::setNoBlock(const Arguments& args)
+{
+  if (args.Length() != 1) {
+    return ThrowException(String::New("Expecting a 1 to enable, 0 to disable as the first argument."));
+  }
+  int setBlocking = 0;
+  setBlocking = args[0]->Int32Value();
+  try {
+    HID* hid = ObjectWrap::Unwrap<HID>(args.This());
+    hid->setNoBlock(setBlocking);
+    return Undefined();
+  }
+  catch (const JSException& e) {
+    return e.asV8Exception();
+  }
+}
+
+Handle<Value>
 HID::write(const Arguments& args)
 {
   if (args.Length() != 1) {
@@ -460,6 +492,7 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "sendFeatureReport", sendFeatureReport);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "setNoBlock", setNoBlock);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
 
