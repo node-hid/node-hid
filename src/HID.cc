@@ -63,7 +63,7 @@ public:
   void write(const databuf_t& message)
     throw(JSException);
   void close();
-  void setNoBlock(int message)
+  void setNonBlocking(int message)
     throw(JSException);
 
 private:
@@ -75,7 +75,7 @@ private:
   static Handle<Value> read(const Arguments& args);
   static Handle<Value> write(const Arguments& args);
   static Handle<Value> close(const Arguments& args);
-  static Handle<Value> setNoBlock(const Arguments& args);
+  static Handle<Value> setNonBlocking(const Arguments& args);
   static Handle<Value> getFeatureReport(const Arguments& args);
 
   static Handle<Value> sendFeatureReport(const Arguments& args);
@@ -143,7 +143,7 @@ HID::close()
 }
 
 void
-HID::setNoBlock(int message)
+HID::setNonBlocking(int message)
   throw(JSException)
 {
   int res;
@@ -374,16 +374,16 @@ HID::close(const Arguments& args)
 }
 
 Handle<Value>
-HID::setNoBlock(const Arguments& args)
+HID::setNonBlocking(const Arguments& args)
 {
   if (args.Length() != 1) {
     return ThrowException(String::New("Expecting a 1 to enable, 0 to disable as the first argument."));
   }
-  int setBlocking = 0;
-  setBlocking = args[0]->Int32Value();
+  int blockStatus = 0;
+  blockStatus = args[0]->Int32Value();
   try {
     HID* hid = ObjectWrap::Unwrap<HID>(args.This());
-    hid->setNoBlock(setBlocking);
+    hid->setNonBlocking(blockStatus);
     return Undefined();
   }
   catch (const JSException& e) {
@@ -492,7 +492,7 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "write", write);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "getFeatureReport", getFeatureReport);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "sendFeatureReport", sendFeatureReport);
-  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "setNoBlock", setNoBlock);
+  NODE_SET_PROTOTYPE_METHOD(hidTemplate, "setNonBlocking", setNonBlocking);
 
   target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
 
