@@ -5,9 +5,9 @@ Installation
 
 ### Prerequisites:
 
-* Mac OS (I use 10.6.8) or Linux (kernel 2.6+ that support libusb-1.0) or Windows XP+
-* node.js v0.6
-* libusb-1.0 (Linux-only)
+* Mac OS (I use 10.6.8) or Linux (kernel 2.6+) or Windows XP+
+* node.js v0.8
+* libudev (Linux only)
 
 ### Windows-only
 
@@ -15,25 +15,13 @@ Copy the HID.node file from build/win into your node_modules folder.
 
 ### Compile from Source
 
-Pull the required submodule:
+Use npm to execute all installation steps:
 
 ```
-$ git submodule init
-$ git submodule update
-```
- Build the extension using node-gyp:
-
-```
-$ node-gyp rebuild
+npm install
 ```
 
-Or build the extension using node-waf:
-
-```
-$ cd src/
-$ node-waf configure build
-```
-
+The extension can be built with node-gyp on Windows.
 
 How to Use
 ----------
@@ -65,7 +53,7 @@ HID.devices();
 Use device:
 ```
 var device = new HID.HID(path);
-device.read(function(error, data){}); //async read
+device.read(function(error, data) {}); //async read
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 ```
 
