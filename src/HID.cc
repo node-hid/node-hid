@@ -478,9 +478,25 @@ HID::devices(const Arguments& args)
   return retval;
 }
 
+static void
+deinitialize(void*)
+{
+  if (hid_exit()) {
+    cerr << "cannot initialize hidapi (hid_init failed)" << endl;
+    abort();
+  }
+}
+
 void
 HID::Initialize(Handle<Object> target)
 {
+  if (hid_init()) {
+    cerr << "cannot initialize hidapi (hid_init failed)" << endl;
+    abort();
+  }
+
+  node::AtExit(deinitialize, 0);
+
   HandleScope scope;
 
   Local<FunctionTemplate> hidTemplate = FunctionTemplate::New(HID::New);
