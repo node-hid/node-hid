@@ -1,0 +1,18 @@
+{
+  "author": "Hans Hübner",
+  "name": "node-hid",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hanshuebner/node-hid.git"
+  },
+  "scripts": {
+    "install": "cd ./src/ && node-waf configure build install"
+  },
+  "main": "./src/HID",
+  "engines": {
+    "node": "~0.8.6"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
