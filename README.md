@@ -20,6 +20,12 @@ npm install
 
 Use node-gyp to compile the extension.
 
+## Test it
+
+In the ```src/``` directory, various JavaScript programs can be found
+that talk to specific devices in some way.  The ```show-devices.js```
+program can be used to display all HID devices in the system.
+
 ## How to Use
 
 ### Load the extension
@@ -61,7 +67,7 @@ HID.devices();
 <and more>
 ```
 
-## Opening a device
+### Opening a device
 
 Before a device can be read from or written to, it must be opened:
 
@@ -73,7 +79,7 @@ var device = new HID.HID(path);
 be determined by a prior HID.devices() call.  If an error occurs
 opening the device, an exception will be thrown.
 
-## Reading from a device
+### Reading from a device
 
 Reading from a device is performed using the read call on a device
 handle:
@@ -84,7 +90,7 @@ device.read(function(error, data) {});
 
 All reading is asynchronous.
 
-## Writing to a device
+### Writing to a device
 
 Writing to a device is performed using the write call in a device
 handle.  All writing is synchronous.
@@ -93,6 +99,6 @@ handle.  All writing is synchronous.
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 ```
 
-## Support
+### Support
 
 If you need help, send me an email (hans.huebner@gmail.com)
