@@ -6,7 +6,7 @@ import os;
 hidapi_home='../hidapi'
 
 cflags=["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall", "-fPIC" ]
-includes=[ hidapi_home + "/hidapi", '/usr/include/libusb-1.0/' ]
+includes=[ hidapi_home + "/hidapi" ]
 
 def set_options(opt):
   opt.tool_options("compiler_cxx")
@@ -19,7 +19,7 @@ def configure(conf):
   if sys.platform == 'darwin':
     conf.env.append_value('LINKFLAGS', ['Release/libhidapi.a', '-framework', 'IOKit', '-framework', 'CoreFoundation'])
   else:
-    conf.env.append_value('LINKFLAGS', ['Release/libhidapi.a', '-lusb-1.0' ])
+    conf.env.append_value('LINKFLAGS', ['Release/libhidapi.a', '-ludev' ])
   
 def build(bld):
     bld.add_group("hidapi")
@@ -29,7 +29,7 @@ def build(bld):
     if sys.platform == 'darwin':
       hidapi.source = "../hidapi/mac/hid.c"
     else:
-      hidapi.source = "../hidapi/linux/hid-libusb.c"
+      hidapi.source = "../hidapi/linux/hid.c"
     hidapi.target = "hidapi"
 
     bld.add_group("adapter")
