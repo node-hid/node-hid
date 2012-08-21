@@ -3,4 +3,5 @@
 set -e
 
 cd src
-node-waf clean configure build install
+[ -d build ] && node-waf clean
+node-waf configure build install
