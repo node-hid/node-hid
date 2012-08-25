@@ -21,6 +21,11 @@ npm install
 
 Use node-gyp to compile the extension.
 
+Please note that Windows support is incomplete and needs some work
+to pull it to the same level as on Linux and OSX.  See issues #10
+and #15 in github for discussion.  Pull requests to improve Windows
+support would be welcome.
+
 ## Test it
 
 In the ```src/``` directory, various JavaScript programs can be found
