@@ -6,7 +6,7 @@
 
 * Mac OS (I use 10.6.8) or Linux (kernel 2.6+) or Windows XP+
 * node.js v0.8
-* libudev (Linux only)
+* libudev-dev (Linux only)
 * git
 
 ### Compile from source on Linux or OSX
