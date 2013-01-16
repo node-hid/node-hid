@@ -37,7 +37,7 @@ program can be used to display all HID devices in the system.
 ### Load the extension
 
 ```
-var HID = require('HID');
+var HID = require('node-hid');
 ```
 
 ### Get a list of all HID devices in the system:

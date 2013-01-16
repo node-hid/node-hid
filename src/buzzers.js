@@ -2,7 +2,7 @@
 
 var util = require('util');
 var events = require('events');
-var HID = require('HID');
+var HID = require('node-hid');
 
 // buzzer protocol info: http://www.developerfusion.com/article/84338/making-usb-c-friendly/
 
