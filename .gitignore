@@ -1,2 +1,4 @@
 .DS_Store
 hidapi
+build
+node_modules
