@@ -6,7 +6,7 @@
 // to the PowerMate contains zero in the first byte and the brightness
 // of the LED in the second byte.
 
-var HID = require('HID');
+var HID = require('node-hid');
 var util = require('util');
 var events = require('events');
 

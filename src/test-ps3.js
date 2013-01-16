@@ -1,4 +1,4 @@
-var HID = require('HID');
+var HID = require('node-hid');
 var REPL = require('repl');
 
 var repl = REPL.start('node-hid> ');
