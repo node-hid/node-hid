@@ -64,7 +64,7 @@
       ],
       'conditions': [
         [ 'OS=="mac"', {
-          'ldflags': [
+          'libraries': [
             '-framework',
             'IOKit',
             '-framework',
@@ -77,12 +77,12 @@
         [ 'OS=="linux"', {
           'conditions': [
             [ 'driver=="libusb"', {
-              'ldflags': [
+              'libraries': [
                 '-lusb-1.0'
               ]
             }],
             [ 'driver=="hidraw"', {
-              'ldflags': [
+              'libraries': [
                 '-ludev',
                 '-lusb-1.0'
               ]
