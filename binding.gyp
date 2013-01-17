@@ -64,7 +64,7 @@
       ],
       'conditions': [
         [ 'OS=="mac"', {
-          'libraries': [
+          'ldflags': [
             '-framework',
             'IOKit',
             '-framework',
