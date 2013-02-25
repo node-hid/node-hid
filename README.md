@@ -110,4 +110,4 @@ device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 I can only provide limited support, in particular for operating
 systems and devices that I don't know.  Please use the
 [node-hid Google Group](https://groups.google.com/d/forum/node-hid) 
-for general support inquiries.
+for general support inquiries (node-hid@googlegroups.com).
