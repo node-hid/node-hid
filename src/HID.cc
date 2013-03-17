@@ -245,7 +245,7 @@ HID::read(const Arguments& args)
   req->data = new ReceiveIOCB(hid,
                              Persistent<Object>::New(Local<Object>::Cast(args.This())),
                              Persistent<Function>::New(Local<Function>::Cast(args[0])));
-  uv_queue_work(uv_default_loop(), req, recvAsync, recvAsyncDone);
+  uv_queue_work(uv_default_loop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
 
   return Undefined();
 }
