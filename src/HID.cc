@@ -43,7 +43,8 @@ using namespace node;
 class JSException
 {
 public:
-  JSException(const string& text) : _message(text) {};
+  JSException(const string& text) : _message(text) {}
+  virtual ~JSException() {}
   virtual const string message() const { return _message; }
   virtual Handle<Value> asV8Exception() const { return ThrowException(String::New(message().c_str())); }
 
