@@ -1,12 +1,15 @@
 {
     "name": "node-hid",
     "description": "USB HID device access library",
-    "version": "0.2.2",
+    "version": "0.3.0",
     "author": {
         "name": "Hans Hübner",
         "email": "hans.huebner@gmail.com",
         "url": "https://github.com/hanshuebner"
     },
+    "contributors": [
+        "Blake Miner <miner.blake@gmail.com>"
+    ],
     "repository": {
         "type": "git",
         "url": "git://github.com/hanshuebner/node-hid.git"
