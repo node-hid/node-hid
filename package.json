@@ -17,7 +17,7 @@
         "preinstall": "sh get-hidapi.sh",
         "install": "sh install.sh"
     },
-    "main": "./build/Release/HID.node",
+    "main": "./index.js",
     "engines": {
         "node": ">=0.8.0"
     },

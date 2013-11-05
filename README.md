@@ -88,11 +88,17 @@ opening the device, an exception will be thrown.
 
 ### Reading from a device
 
-Reading from a device is performed using the read call on a device
-handle:
+Reading from a device is performed by registering a "data" event
+handler:
 
 ```
-device.read(function(error, data) {});
+device.on("data", function(data) {});
+```
+
+You can also listen for errors like this:
+
+```
+device.on("error", function(err) {});
 ```
 
 All reading is asynchronous.
@@ -112,3 +118,42 @@ I can only provide limited support, in particular for operating
 systems and devices that I don't know.  Please use the
 [node-hid Google Group](https://groups.google.com/d/forum/node-hid) 
 for general support inquiries (node-hid@googlegroups.com).
+
+## Complete API
+
+```
+var device = new HID.HID(path);
+```
+
+### Event: "data"
+
+- `chunk` - Buffer - the data read from the device
+
+### Event: "error"
+
+- `error` - The error Object emitted
+
+### device.write(data)
+
+- `data` - the data to be synchronously written to the device
+
+### device.close()
+
+Closes the device. Subsequent reads will raise an error.
+
+### device.pause()
+
+Pauses reading and the emission of `data` events.
+
+### device.resume()
+
+This method will cause the HID device to resume emmitting `data` events.
+If no listeners are registered for the `data` event, data will be lost.
+
+When a `data` event is registered for this HID device, this method will
+be automatically called.
+
+### device.read(callback)
+
+Low-level function call to initiate an asynchronous read from the device.
+`callback` is of the form `callback(err, data)`
