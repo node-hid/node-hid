@@ -30,7 +30,8 @@ function HID() {
 		`this._raw`
 	*/
 	for(var i in binding.HID.prototype)
-		this[i] = binding.HID.prototype[i].bind(this._raw);
+		if(i != "close")
+			this[i] = binding.HID.prototype[i].bind(this._raw);
 
 	/* We are now done inheriting from `binding.HID` and EventEmitter.
 
@@ -48,6 +49,10 @@ function HID() {
 util.inherits(HID, EventEmitter);
 //Don't inherit from `binding.HID`; that's done above already!
 
+HID.prototype.close = function close() {
+	this._closing = true;
+	this._raw.close();
+};
 //Pauses the reader, which stops "data" events from being emitted
 HID.prototype.pause = function pause() {
 	this._paused = true;
@@ -63,7 +68,9 @@ HID.prototype.resume = function pause() {
 			{
 				//Emit error and pause reading
 				self._paused = true;
-				self.emit("error", err);
+				if(!self._closing)
+					self.emit("error", err);
+				//else ignore any errors if I'm closing the device
 			}
 			else
 			{
