@@ -48,7 +48,7 @@ public:
   JSException(const string& text) : _message(text) {}
   virtual ~JSException() {}
   virtual const string message() const { return _message; }
-  virtual Handle<Value> asV8Exception() const { return ThrowException(String::New(message().c_str())); }
+  virtual void asV8Exception() const { NanThrowError(message().c_str()); }
 
 protected:
   string _message;
@@ -192,15 +192,15 @@ void
 HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
 {
   if (iocb->_error) {
-    argv[0] = Exception::Error(String::New(iocb->_error->message().c_str()));
+    argv[0] = Exception::Error(NanNew<String>(iocb->_error->message().c_str()));
   } else {
     const vector<unsigned char>& message = iocb->_data;
     //Get "fast" node Buffer constructor
     Local<Function> nodeBufConstructor = Local<Function>::Cast(
-      Context::GetCurrent()->Global()->Get(String::New("Buffer") )
+      NanGetCurrentContext()->Global()->Get(NanNew<String>("Buffer") )
     );
     //Construct a new Buffer
-    Handle<Value> nodeBufferArgs[1] = { Integer::New(message.size()) };
+    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>(message.size()) };
     Local<Object> buf = nodeBufConstructor->NewInstance(1, nodeBufferArgs);
     char* data = Buffer::Data(buf);
     int j = 0;
@@ -218,8 +218,8 @@ HID::recvAsyncDone(uv_work_t* req)
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
 
   Local<Value> argv[2];
-  argv[0] = NanNewLocal<Value>(Undefined());
-  argv[1] = NanNewLocal<Value>(Undefined());
+  argv[0] = NanUndefined();
+  argv[1] = NanUndefined();
 
   iocb->_hid->readResultsToJSCallbackArguments(iocb, argv);
   iocb->_hid->Unref();
@@ -242,7 +242,7 @@ NAN_METHOD(HID::read)
 
   if (args.Length() != 1
       || !args[0]->IsFunction()) {
-    NanReturnValue(ThrowException(String::New("need one callback function argument in read")));
+    NanThrowError("need one callback function argument in read");
   }
 
   HID* hid = ObjectWrap::Unwrap<HID>(args.This());
@@ -261,7 +261,7 @@ NAN_METHOD(HID::getFeatureReport)
 
   if (args.Length() != 2
       || args[1]->ToUint32()->Value() == 0) {
-    NanReturnValue(ThrowException(String::New("need report ID and non-zero length parameter in getFeatureReport")));
+    NanThrowError("need report ID and non-zero length parameter in getFeatureReport");
   }
 
   const uint8_t reportId = args[0]->ToUint32()->Value();
@@ -275,12 +275,12 @@ NAN_METHOD(HID::getFeatureReport)
 
   if (returnedLength == -1) {
     delete[] buf;
-    NanReturnValue(ThrowException(String::New("could not get feature report from device")));
+    NanThrowError("could not get feature report from device");
   }
-  Local<Array> retval = Array::New();
+  Local<Array> retval = NanNew<Array>();
 
   for (int i = 0; i < returnedLength; i++) {
-    retval->Set(i, Integer::New(buf[i]));
+    retval->Set(i, NanNew<Integer>(buf[i]));
   }
   delete[] buf;
   NanReturnValue(retval);
@@ -292,7 +292,7 @@ NAN_METHOD(HID::sendFeatureReport)
   NanScope();
 
   if (args.Length() != 1){
-    NanReturnValue(ThrowException(String::New("need report (including id in first byte) only in sendFeatureReport")));
+    NanThrowError("need report (including id in first byte) only in sendFeatureReport");
   }
 
 
@@ -318,10 +318,10 @@ NAN_METHOD(HID::sendFeatureReport)
   int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
   delete[] buf;
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0. 
-    NanReturnValue(ThrowException(String::New("could not send feature report to device")));
+    NanThrowError("could not send feature report to device");
   }
 
-  NanReturnValue(Integer::New(returnedLength));
+  NanReturnValue(NanNew<Integer>(returnedLength));
 }
 
 
@@ -332,11 +332,11 @@ NAN_METHOD(HID::New)
   NanScope();
 
   if (!args.IsConstructCall()) {
-    NanReturnValue(ThrowException(String::New("HID function can only be used as a constructor")));
+    NanThrowError("HID function can only be used as a constructor");
   }
 
   if (args.Length() < 1) {
-    NanReturnValue(ThrowException(String::New("HID constructor requires at least one argument")));
+    NanThrowError("HID constructor requires at least one argument");
   }
 
   try {
@@ -358,7 +358,7 @@ NAN_METHOD(HID::New)
     NanReturnValue(args.This());
   }
   catch (const JSException& e) {
-    NanReturnValue(e.asV8Exception());
+    e.asV8Exception();
   }
 }
 
@@ -372,7 +372,7 @@ NAN_METHOD(HID::close)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    NanReturnValue(e.asV8Exception());
+    e.asV8Exception();
   }
 }
 
@@ -381,7 +381,7 @@ NAN_METHOD(HID::setNonBlocking)
   NanScope();
 
   if (args.Length() != 1) {
-    NanReturnValue(ThrowException(String::New("Expecting a 1 to enable, 0 to disable as the first argument.")));
+    NanThrowError("Expecting a 1 to enable, 0 to disable as the first argument.");
   }
   int blockStatus = 0;
   blockStatus = args[0]->Int32Value();
@@ -391,7 +391,7 @@ NAN_METHOD(HID::setNonBlocking)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    NanReturnValue(e.asV8Exception());
+    e.asV8Exception();
   }
 }
 
@@ -400,7 +400,7 @@ NAN_METHOD(HID::write)
   NanScope();
 
   if (args.Length() != 1) {
-    NanReturnValue(ThrowException(String::New("HID write requires one argument")));
+    NanThrowError("HID write requires one argument");
   }
 
   try {
@@ -419,7 +419,7 @@ NAN_METHOD(HID::write)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    NanReturnValue(e.asV8Exception());
+    e.asV8Exception();
   }
 }
 
@@ -454,32 +454,32 @@ NAN_METHOD(HID::devices)
     }
   }
   catch (JSException& e) {
-    NanReturnValue(e.asV8Exception());
+    e.asV8Exception();
   }
   
   hid_device_info* devs = hid_enumerate(vendorId, productId);
-  Local<Array> retval = Array::New();
+  Local<Array> retval = NanNew<Array>();
   int count = 0;
   for (hid_device_info* dev = devs; dev; dev = dev->next) {
-    Local<Object> deviceInfo = Object::New();
-    deviceInfo->Set(String::NewSymbol("vendorId"), Integer::New(dev->vendor_id));
-    deviceInfo->Set(String::NewSymbol("productId"), Integer::New(dev->product_id));
+    Local<Object> deviceInfo = NanNew<Object>();
+    deviceInfo->Set(NanNew<String>("vendorId"), NanNew<Integer>(dev->vendor_id));
+    deviceInfo->Set(NanNew<String>("productId"), NanNew<Integer>(dev->product_id));
     if (dev->path) {
-      deviceInfo->Set(String::NewSymbol("path"), String::New(dev->path));
+      deviceInfo->Set(NanNew<String>("path"), NanNew<String>(dev->path));
     }
     if (dev->serial_number) {
-      deviceInfo->Set(String::NewSymbol("serialNumber"), String::New(narrow(dev->serial_number).c_str()));
+      deviceInfo->Set(NanNew<String>("serialNumber"), NanNew<String>(narrow(dev->serial_number).c_str()));
     }
     if (dev->manufacturer_string) {
-      deviceInfo->Set(String::NewSymbol("manufacturer"), String::New(narrow(dev->manufacturer_string).c_str()));
+      deviceInfo->Set(NanNew<String>("manufacturer"), NanNew<String>(narrow(dev->manufacturer_string).c_str()));
     }
     if (dev->product_string) {
-      deviceInfo->Set(String::NewSymbol("product"), String::New(narrow(dev->product_string).c_str()));
+      deviceInfo->Set(NanNew<String>("product"), NanNew<String>(narrow(dev->product_string).c_str()));
     }
-    deviceInfo->Set(String::NewSymbol("release"), Integer::New(dev->release_number));
-    deviceInfo->Set(String::NewSymbol("interface"), Integer::New(dev->interface_number));
-    deviceInfo->Set(String::NewSymbol("usagePage"), Integer::New(dev->usage_page));
-    deviceInfo->Set(String::NewSymbol("usage"), Integer::New(dev->usage));
+    deviceInfo->Set(NanNew<String>("release"), NanNew<Integer>(dev->release_number));
+    deviceInfo->Set(NanNew<String>("interface"), NanNew<Integer>(dev->interface_number));
+    deviceInfo->Set(NanNew<String>("usagePage"), NanNew<Integer>(dev->usage_page));
+    deviceInfo->Set(NanNew<String>("usage"), NanNew<Integer>(dev->usage));
     retval->Set(count++, deviceInfo);
   }
   hid_free_enumeration(devs);
@@ -507,9 +507,9 @@ HID::Initialize(Handle<Object> target)
 
   NanScope();
 
-  Local<FunctionTemplate> hidTemplate = FunctionTemplate::New(HID::New);
+  Local<FunctionTemplate> hidTemplate = NanNew<FunctionTemplate>(HID::New);
   hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
-  hidTemplate->SetClassName(String::New("HID"));
+  hidTemplate->SetClassName(NanNew<String>("HID"));
 
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "close", close);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "read", read);
@@ -518,9 +518,9 @@ HID::Initialize(Handle<Object> target)
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "sendFeatureReport", sendFeatureReport);
   NODE_SET_PROTOTYPE_METHOD(hidTemplate, "setNonBlocking", setNonBlocking);
 
-  target->Set(String::NewSymbol("HID"), hidTemplate->GetFunction());
+  target->Set(NanNew<String>("HID"), hidTemplate->GetFunction());
 
-  target->Set(String::NewSymbol("devices"), FunctionTemplate::New(HID::devices)->GetFunction());
+  target->Set(NanNew<String>("devices"), NanNew<FunctionTemplate>(HID::devices)->GetFunction());
 }
 
 
