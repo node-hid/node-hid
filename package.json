@@ -20,7 +20,8 @@
   "scripts": {
     "preupdate": "sh get-hidapi.sh",
     "preinstall": "sh get-hidapi.sh",
-    "install": "sh install.sh"
+    "install": "sh install.sh",
+    "install-nw": "sh install-nw.sh"
   },
   "main": "./index.js",
   "engines": {
