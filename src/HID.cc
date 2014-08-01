@@ -48,7 +48,7 @@ public:
   JSException(const string& text) : _message(text) {}
   virtual ~JSException() {}
   virtual const string message() const { return _message; }
-  virtual void asV8Exception() const { NanThrowError(message().c_str()); }
+  virtual void throwAsV8Exception() const { NanThrowError(message().c_str()); }
 
 protected:
   string _message;
@@ -358,7 +358,8 @@ NAN_METHOD(HID::New)
     NanReturnValue(args.This());
   }
   catch (const JSException& e) {
-    e.asV8Exception();
+    e.throwAsV8Exception();
+    NanReturnUndefined(); // make the compiler happy
   }
 }
 
@@ -372,7 +373,8 @@ NAN_METHOD(HID::close)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.asV8Exception();
+    e.throwAsV8Exception();
+    NanReturnUndefined();
   }
 }
 
@@ -391,7 +393,8 @@ NAN_METHOD(HID::setNonBlocking)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.asV8Exception();
+    e.throwAsV8Exception();
+    NanReturnUndefined();
   }
 }
 
@@ -419,7 +422,8 @@ NAN_METHOD(HID::write)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.asV8Exception();
+    e.throwAsV8Exception();
+    NanReturnUndefined();
   }
 }
 
@@ -454,7 +458,7 @@ NAN_METHOD(HID::devices)
     }
   }
   catch (JSException& e) {
-    e.asV8Exception();
+    e.throwAsV8Exception();
   }
   
   hid_device_info* devs = hid_enumerate(vendorId, productId);
