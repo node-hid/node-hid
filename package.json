@@ -14,9 +14,7 @@
     "type": "git",
     "url": "git://github.com/hanshuebner/node-hid.git"
   },
-  "scripts": {
-    "prepublish": "sh get-hidapi.sh"
-  },
+  "scripts": {},
   "main": "./index.js",
   "engines": {
     "node": ">=0.8.0"
