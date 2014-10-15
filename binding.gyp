@@ -39,8 +39,7 @@
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'hidapi/hidapi',
-          "<!(node -e \"require('nan')\")"
+          'hidapi/hidapi'
         ]
       },
       'include_dirs': [
