@@ -18,7 +18,8 @@
     "hidapi"
   ],
   "scripts": {
-    "preinstall" : "git submodule update --init && node-gyp rebuild install"
+    "preinstall": "git submodule update --init",
+    "install": "node-gyp rebuild install"
   },
   "main": "./index.js",
   "engines": {
