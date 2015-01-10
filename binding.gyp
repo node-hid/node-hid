@@ -99,6 +99,9 @@
           }
         }]
       ],
+      "include_dirs" : [
+        "<!(node -e \"require('nan')\")"
+      ],
       'cflags!': ['-ansi', '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
       'cflags': ['-g', '-exceptions'],
