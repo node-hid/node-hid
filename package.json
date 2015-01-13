@@ -1,34 +1,29 @@
 {
-  "name": "node-hid",
-  "description": "USB HID device access library",
-  "version": "0.3.1",
-  "author": {
-    "name": "Hans Hübner",
-    "email": "hans.huebner@gmail.com",
-    "url": "https://github.com/hanshuebner"
-  },
-  "contributors": [
-    "Blake Miner <miner.blake@gmail.com>"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/hanshuebner/node-hid.git"
-  },
-  "bundleDependencies": [
-    "hidapi"
-  ],
-  "scripts": {
-    "preupdate": "sh get-hidapi.sh",
-    "preinstall": "sh get-hidapi.sh",
-    "install": "sh install.sh"
-  },
-  "main": "./index.js",
-  "engines": {
-    "node": ">=0.8.0"
-  },
-  "license": "MIT/X11",
-  "dependencies": {
-    "nan": "^0.8.0"
-  },
-  "devDependencies": {}
+    "name": "node-hid",
+    "description": "USB HID device access library",
+    "version": "0.3.2",
+    "author": {
+        "name": "Hans Hübner",
+        "email": "hans.huebner@gmail.com",
+        "url": "https://github.com/hanshuebner"
+    },
+    "contributors": [
+        "Blake Miner <miner.blake@gmail.com>"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/hanshuebner/node-hid.git"
+    },
+    "scripts": {
+        "preupdate": "sh get-hidapi.sh",
+        "preinstall": "sh get-hidapi.sh",
+        "install": "sh install.sh"
+    },
+    "main": "./index.js",
+    "engines": {
+        "node": ">=0.8.0"
+    },
+    "license": "MIT/X11",
+    "dependencies": { },
+    "devDependencies": {}
 }

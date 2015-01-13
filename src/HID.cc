@@ -478,6 +478,8 @@ NAN_METHOD(HID::devices)
     }
     deviceInfo->Set(String::NewSymbol("release"), Integer::New(dev->release_number));
     deviceInfo->Set(String::NewSymbol("interface"), Integer::New(dev->interface_number));
+    deviceInfo->Set(String::NewSymbol("usagePage"), Integer::New(dev->usage_page));
+    deviceInfo->Set(String::NewSymbol("usage"), Integer::New(dev->usage));
     retval->Set(count++, deviceInfo);
   }
   hid_free_enumeration(devs);
