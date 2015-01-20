@@ -29,7 +29,7 @@
   },
   "license": "MIT/X11",
   "dependencies": {
-    "nan": "^1.2.0"
+    "nan": "^1.5.1"
   },
   "devDependencies": {}
 }

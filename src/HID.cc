@@ -200,7 +200,7 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
       NanGetCurrentContext()->Global()->Get(NanNew<String>("Buffer") )
     );
     //Construct a new Buffer
-    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>(message.size()) };
+    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>((unsigned int) message.size()) };
     Local<Object> buf = nodeBufConstructor->NewInstance(1, nodeBufferArgs);
     char* data = Buffer::Data(buf);
     int j = 0;
@@ -343,14 +343,14 @@ NAN_METHOD(HID::New)
     HID* hid;
     if (args.Length() == 1) {
       // open by path
-      hid = new HID(*String::Utf8Value(args[0]));
+      hid = new HID(*NanUtf8String(args[0]));
     } else {
       int32_t vendorId = args[0]->Int32Value();
       int32_t productId = args[1]->Int32Value();
       Handle<Value> serial;
       wchar_t* serialPointer = 0;
       if (args.Length() > 2) {
-        serialPointer = (wchar_t*) *String::Value(args[2]);
+        serialPointer = (wchar_t*) *NanUcs2String(args[2]);
       }
       hid = new HID(vendorId, productId, serialPointer);
     }
