@@ -14,9 +14,6 @@
     "type": "git",
     "url": "git://github.com/hanshuebner/node-hid.git"
   },
-  "bundleDependencies": [
-    "hidapi"
-  ],
   "scripts": {
     "preupdate": "sh get-hidapi.sh",
     "preinstall": "sh get-hidapi.sh",
