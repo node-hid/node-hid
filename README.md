@@ -15,7 +15,7 @@
 Use npm to execute all installation steps:
 
 ```
-npm install
+npm install node-hid
 ```
 
 ### Compile from source on Windows
