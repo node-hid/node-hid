@@ -200,7 +200,7 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
       NanGetCurrentContext()->Global()->Get(NanNew<String>("Buffer") )
     );
     //Construct a new Buffer
-    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>(message.size()) };
+    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>((uint32_t)message.size()) };
     Local<Object> buf = nodeBufConstructor->NewInstance(1, nodeBufferArgs);
     char* data = Buffer::Data(buf);
     int j = 0;
