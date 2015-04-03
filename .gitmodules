@@ -1,0 +1,3 @@
+[submodule "hidapi"]
+	path = hidapi
+	url = https://github.com/signal11/hidapi.git

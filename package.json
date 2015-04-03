@@ -15,10 +15,7 @@
     "url": "git://github.com/hanshuebner/node-hid.git"
   },
   "scripts": {
-    "preupdate": "sh get-hidapi.sh",
-    "preinstall": "sh get-hidapi.sh",
-    "install": "sh install.sh",
-    "install-nw": "sh install-nw.sh"
+    "prepublish": "git submodule update --init"
   },
   "main": "./index.js",
   "engines": {
@@ -26,7 +23,7 @@
   },
   "license": "MIT/X11",
   "dependencies": {
-    "nan": "^1.5.1"
+    "nan": "^1.2.0"
   },
   "devDependencies": {}
 }
