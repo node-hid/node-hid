@@ -65,14 +65,16 @@
       ],
       'conditions': [
         [ 'OS=="mac"', {
-          'ldflags': [
-            '-framework',
-            'IOKit',
-            '-framework',
-            'CoreFoundation'
+              'LDFLAGS': [
+            '-framework IOKit',
+            '-framework CoreFoundation'
           ],
           'xcode_settings': {
-            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+            'OTHER_LDFLAGS': [
+              '-framework IOKit',
+              '-framework CoreFoundation'
+            ],    
           }
         }],
         [ 'OS=="linux"', {
