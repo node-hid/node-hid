@@ -48,7 +48,7 @@ public:
   JSException(const string& text) : _message(text) {}
   virtual ~JSException() {}
   virtual const string message() const { return _message; }
-  virtual void throwAsV8Exception() const { NanThrowError(message().c_str()); }
+  virtual void asV8Exception() const { NanThrowError(message().c_str()); }
 
 protected:
   string _message;
@@ -200,7 +200,7 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
       NanGetCurrentContext()->Global()->Get(NanNew<String>("Buffer") )
     );
     //Construct a new Buffer
-    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>((unsigned int) message.size()) };
+    Handle<Value> nodeBufferArgs[1] = { NanNew<Integer>((uint32_t)message.size()) };
     Local<Object> buf = nodeBufConstructor->NewInstance(1, nodeBufferArgs);
     char* data = Buffer::Data(buf);
     int j = 0;
@@ -358,8 +358,7 @@ NAN_METHOD(HID::New)
     NanReturnValue(args.This());
   }
   catch (const JSException& e) {
-    e.throwAsV8Exception();
-    NanReturnUndefined(); // make the compiler happy
+    e.asV8Exception();
   }
 }
 
@@ -373,8 +372,7 @@ NAN_METHOD(HID::close)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.throwAsV8Exception();
-    NanReturnUndefined();
+    e.asV8Exception();
   }
 }
 
@@ -393,8 +391,7 @@ NAN_METHOD(HID::setNonBlocking)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.throwAsV8Exception();
-    NanReturnUndefined();
+    e.asV8Exception();
   }
 }
 
@@ -422,8 +419,7 @@ NAN_METHOD(HID::write)
     NanReturnUndefined();
   }
   catch (const JSException& e) {
-    e.throwAsV8Exception();
-    NanReturnUndefined();
+    e.asV8Exception();
   }
 }
 
@@ -458,7 +454,7 @@ NAN_METHOD(HID::devices)
     }
   }
   catch (JSException& e) {
-    e.throwAsV8Exception();
+    e.asV8Exception();
   }
   
   hid_device_info* devs = hid_enumerate(vendorId, productId);
@@ -482,8 +478,6 @@ NAN_METHOD(HID::devices)
     }
     deviceInfo->Set(NanNew<String>("release"), NanNew<Integer>(dev->release_number));
     deviceInfo->Set(NanNew<String>("interface"), NanNew<Integer>(dev->interface_number));
-    deviceInfo->Set(NanNew<String>("usagePage"), NanNew<Integer>(dev->usage_page));
-    deviceInfo->Set(NanNew<String>("usage"), NanNew<Integer>(dev->usage));
     retval->Set(count++, deviceInfo);
   }
   hid_free_enumeration(devs);
