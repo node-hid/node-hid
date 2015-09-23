@@ -231,6 +231,7 @@ HID::recvAsyncDone(uv_work_t* req)
     FatalException(tryCatch);
   }
 
+  delete req;
   delete iocb->_callback;
 
   delete iocb;
