@@ -25,7 +25,5 @@
   "dependencies": {
     "nan": "^2.0.9"
   },
-  "devDependencies": {
-    "node-gyp": "^3.0.3"
-  }
+  "devDependencies": {}
 }
