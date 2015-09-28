@@ -23,7 +23,9 @@
   },
   "license": "MIT/X11",
   "dependencies": {
-    "nan": "^1.2.0"
+    "nan": "^2.0.9"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "node-gyp": "^3.0.3"
+  }
 }
