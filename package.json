@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/hanshuebner/node-hid.git"
+    "url": "git://github.com/node-hid/node-hid.git"
   },
   "scripts": {
     "prepublish": "git submodule update --init"
