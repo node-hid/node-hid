@@ -1,7 +1,7 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "author": {
     "name": "Hans Hübner",
     "email": "hans.huebner@gmail.com",
@@ -19,7 +19,7 @@
   },
   "main": "./index.js",
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">=4.0.0"
   },
   "license": "MIT/X11",
   "dependencies": {
