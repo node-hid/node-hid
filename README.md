@@ -1,16 +1,19 @@
 # node-hid - Access USB HID devices from node.js #
 
 ## Installation
+```
+npm install node-hid
+```
 
 ### Prerequisites:
 
-* Mac OS (I use 10.6.8) or Linux (kernel 2.6+) or Windows XP+
-* node.js v0.8
+* Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
+* Node.js v4.x+  (use node-hid v0.4.0 for Node 0.12.7)
 * libudev-dev (Linux only)
 * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
 * git
 
-### Compile from source on Linux or OSX
+### Compile from source for development
 
 To develop locally you'll need the following commands:
 
@@ -19,9 +22,10 @@ git submodule update --init   # done automatically on publish, but you'll need i
 npm install       # rebuilds the module
 ```
 
-### Compile from source on Windows
+#### Compiling on Windows
 
-Use node-gyp to compile the extension.
+Be sure node-gyp is present to compile the extension.
+You will need MSVC 2012 or equivalent.
 
 Please note that Windows support is incomplete and needs some work
 to pull it to the same level as on Linux and OSX.  See issues #10
@@ -30,8 +34,8 @@ support would be welcome.
 
 ## Test it
 
-In the ```src/``` directory, various JavaScript programs can be found
-that talk to specific devices in some way.  The ```show-devices.js```
+In the `src/` directory, various JavaScript programs can be found
+that talk to specific devices in some way.  The `show-devices.js`
 program can be used to display all HID devices in the system.
 
 ## How to Use
@@ -48,10 +52,10 @@ var HID = require('node-hid');
 var devices = HID.devices()
 ```
 
-devices will contain an array of objects, one for each HID device
-available.  Of particular interest are the ```vendorId``` and
-```productId```, as they uniquely identify a device, and the
-```path```, which is needed to open a particular device.
+`devices` will contain an array of objects, one for each HID device
+available.  Of particular interest are the `vendorId` and
+`productId`, as they uniquely identify a device, and the
+`path`, which is needed to open a particular device.
 
 Here is some sample output:
 ```
@@ -83,7 +87,7 @@ Before a device can be read from or written to, it must be opened:
 var device = new HID.HID(path);
 ```
 
-```device``` will contain a handle to the device.  The ```path``` can
+`device` will contain a handle to the device.  The `path` can
 be determined by a prior HID.devices() call.  If an error occurs
 opening the device, an exception will be thrown.
 
@@ -113,12 +117,9 @@ handle.  All writing is synchronous.
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 ```
 
-### Support
+#### Sending Feature report
+To send to a particular HID feature report, include report_id as first byte of array.
 
-I can only provide limited support, in particular for operating
-systems and devices that I don't know.  Please use the
-[node-hid Google Group](https://groups.google.com/d/forum/node-hid) 
-for general support inquiries (node-hid@googlegroups.com).
 
 ## Complete API
 
@@ -158,3 +159,16 @@ be automatically called.
 
 Low-level function call to initiate an asynchronous read from the device.
 `callback` is of the form `callback(err, data)`
+
+### device.sendFeatureReport(data)
+- `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
+
+### device.getFeatureReport(report_id, report_length)
+- `report_id` - HID feature report id to get
+- `report_length` - length of report
+
+## Support
+
+Please use the [node-hid github issues page](https://github.com/node-hid/node-hid/issues)
+for support questions and issues.
+
