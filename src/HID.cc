@@ -116,7 +116,7 @@ private:
 HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
 {
   _hidHandle = hid_open(vendorId, productId, serialNumber);
-
+  
   if (!_hidHandle) {
     ostringstream os;
     os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
@@ -224,11 +224,11 @@ HID::recvAsyncDone(uv_work_t* req)
   iocb->_hid->readResultsToJSCallbackArguments(iocb, argv);
   iocb->_hid->Unref();
 
-  TryCatch tryCatch;
+  Nan::TryCatch tryCatch;
   iocb->_callback->Call(2, argv);
 
   if (tryCatch.HasCaught()) {
-    FatalException(tryCatch);
+      Nan::FatalException(tryCatch);
   }
 
   delete req;
@@ -243,7 +243,7 @@ NAN_METHOD(HID::read)
 
   if (info.Length() != 1
       || !info[0]->IsFunction()) {
-    Nan::ThrowError("need one callback function argument in read");
+    return Nan::ThrowError("need one callback function argument in read");
   }
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
@@ -262,7 +262,7 @@ NAN_METHOD(HID::getFeatureReport)
 
   if (info.Length() != 2
       || info[1]->ToUint32()->Value() == 0) {
-    Nan::ThrowError("need report ID and non-zero length parameter in getFeatureReport");
+    return Nan::ThrowError("need report ID and non-zero length parameter in getFeatureReport");
   }
 
   const uint8_t reportId = info[0]->ToUint32()->Value();
@@ -276,7 +276,7 @@ NAN_METHOD(HID::getFeatureReport)
 
   if (returnedLength == -1) {
     delete[] buf;
-    Nan::ThrowError("could not get feature report from device");
+    return Nan::ThrowError("could not get feature report from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
@@ -293,7 +293,7 @@ NAN_METHOD(HID::sendFeatureReport)
   Nan::HandleScope scope;
 
   if (info.Length() != 1){
-    Nan::ThrowError("need report (including id in first byte) only in sendFeatureReport");
+    return Nan::ThrowError("need report (including id in first byte) only in sendFeatureReport");
   }
 
 
@@ -319,7 +319,7 @@ NAN_METHOD(HID::sendFeatureReport)
   int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
   delete[] buf;
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0.
-    Nan::ThrowError("could not send feature report to device");
+    return Nan::ThrowError("could not send feature report to device");
   }
 
   info.GetReturnValue().Set(Nan::New<Integer>(returnedLength));
@@ -333,11 +333,11 @@ NAN_METHOD(HID::New)
   Nan::HandleScope scope;
 
   if (!info.IsConstructCall()) {
-    Nan::ThrowError("HID function can only be used as a constructor");
+    return Nan::ThrowError("HID function can only be used as a constructor");
   }
 
   if (info.Length() < 1) {
-    Nan::ThrowError("HID constructor requires at least one argument");
+    return Nan::ThrowError("HID constructor requires at least one argument");
   }
 
   try {
@@ -382,7 +382,7 @@ NAN_METHOD(HID::setNonBlocking)
   Nan::HandleScope scope;
 
   if (info.Length() != 1) {
-    Nan::ThrowError("Expecting a 1 to enable, 0 to disable as the first argument.");
+    return Nan::ThrowError("Expecting a 1 to enable, 0 to disable as the first argument.");
   }
   int blockStatus = 0;
   blockStatus = info[0]->Int32Value();
@@ -401,7 +401,7 @@ NAN_METHOD(HID::write)
   Nan::HandleScope scope;
 
   if (info.Length() != 1) {
-    Nan::ThrowError("HID write requires one argument");
+    return Nan::ThrowError("HID write requires one argument");
   }
 
   try {
