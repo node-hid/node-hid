@@ -21,7 +21,6 @@ try {
 // from: https://github.com/ros-drivers/joystick_drivers/blob/indigo-devel/ps3joy/scripts/ps3joy_node.py
 function setRumbleLed(hidDevice, rumbleL, rumbleR, led_cmd )
 {
-    // console.log('sendRumble',rumbleL,rumbleR);
     // write output report with report id 0x01
     hidDevice.write([
         0x01,     // <- feature report id
@@ -80,5 +79,6 @@ hid.read(hid.gotData.bind(hid));
  *  42,43 - Y-axis accelerometer
  *  44,45 - Z-axis accelerometer
  *  46,47 - Z-axis gyro
-  */
+ */
+// from: https://github.com/ribbotson/USB-Host/blob/master/ps3/PS3USB/ps3_usb.h
 // from: https://code.google.com/p/openaxis/
