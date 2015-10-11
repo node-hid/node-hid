@@ -32,6 +32,22 @@ to pull it to the same level as on Linux and OSX.  See issues #10
 and #15 in github for discussion.  Pull requests to improve Windows
 support would be welcome.
 
+#### Compiling on Mac OS X
+
+You will need to install Xcode and make sure the command-line tools are working.
+To do this in terminal, type `gcc --version`.
+
+#### Compiling on Raspbian Raspberry Pi w/ Node v4.x
+
+Node v4.x uses features of g++-4.8 and Raspian older than "Jessie" ships with g++-4.6.
+To compile node-hid on Raspbian, install g++-4.8 and force npm to use it:
+```
+$ sudo apt-get install gcc-4.8 g++-4.8
+$ export CXX=g++-4.8
+$ npm install node-hid
+```
+Clean installs of Raspbian "Jessie" ships with g++-4.9 so this only affects upgraded systems.
+
 ## Test it
 
 In the `src/` directory, various JavaScript programs can be found
@@ -171,4 +187,3 @@ Low-level function call to initiate an asynchronous read from the device.
 
 Please use the [node-hid github issues page](https://github.com/node-hid/node-hid/issues)
 for support questions and issues.
-
