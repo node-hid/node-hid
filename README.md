@@ -9,7 +9,7 @@ npm install node-hid
 
 * Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
 * Node.js v4.x+  (use node-hid v0.4.0 for Node 0.12.7)
-* libudev-dev (Linux only)
+* libudev-dev (Linux only, Fedora: yum install libusbx-devel)
 * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
 * git
 
