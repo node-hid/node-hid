@@ -7,6 +7,7 @@ environment:
 
 matrix:
 - nodejs_version: "4.2.0"
+- nodejs_version: "4.2.1"
 
 platform:
 - x64
