@@ -40,16 +40,6 @@ install:
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
-  - cmd: ECHO "BUILDING ia32 version:"
-  - cmd: npm install --build-from-source
-  - cmd: SET PATH=%cd%\node_modules\.bin\;%PATH%
-  - cmd: node nodehid.js
-  - cmd: ECHO "PUBLISH ia32 package:"
-  - cmd: npm install aws-sdk
-  - cmd: IF %PUBLISH_BINARY%==true (node-pre-gyp package publish 2>&1)
-  - cmd: node-pre-gyp clean
-  - cmd: node-gyp clean
-  - cmd: rmdir /q /s node_modules
   - cmd: ECHO "INSTALLING x64 node.js:"
   # We add newest MSBuild so we can use the correct libs for the x64 version
   - cmd: SET PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%
@@ -57,7 +47,7 @@ build_script:
   - cmd: set NODIST_X64=1
   - cmd: nodist update
   - cmd: nodist %nodejs_version%
-  - cmd: npm install -g node-gyp
+  - cmd: npm install -g node-gyp  
   - cmd: ECHO "BUILDING x64 version:"
   - cmd: npm install --build-from-source --msvs_version=2013
   - cmd: ECHO "PUBLISH package:"
