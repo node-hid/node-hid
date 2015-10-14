@@ -2,7 +2,11 @@ var EventEmitter = require("events").EventEmitter,
 	util = require("util");
 
 //Load C++ binding
-var binding = require("./build/Release/HID.node");
+//var binding = require("./build/Release/HID.node");
+var binary = require('node-pre-gyp');
+var path = require('path');
+var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
+var binding = require(binding_path);
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
@@ -23,7 +27,7 @@ function HID() {
 		thisPlusArgs[i + 1] = arguments[i];
 	this._raw = new (Function.prototype.bind.apply(binding.HID,
 		thisPlusArgs) )();
-	
+
 	/* Now we have `this._raw` Object from which we need to
 		inherit.  So, one solution is to simply copy all
 		prototype methods over to `this` and binding them to

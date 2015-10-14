@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# this is for if you have node-webkit, and even then maybe not -tod
+#
 
 set -e
 

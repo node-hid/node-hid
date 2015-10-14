@@ -1,21 +1,30 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": {
     "name": "Hans Hübner",
     "email": "hans.huebner@gmail.com",
     "url": "https://github.com/hanshuebner"
   },
   "contributors": [
-    "Blake Miner <miner.blake@gmail.com>"
+    "Blake Miner <miner.blake@gmail.com>",
+    "Tod Kurt <todbotdotcom@gmail.com>"
   ],
   "repository": {
     "type": "git",
     "url": "git://github.com/node-hid/node-hid.git"
   },
   "scripts": {
-    "prepublish": "git submodule update --init"
+    "test": "node ./src/show-devices.js",
+    "prepublish": "git submodule update --init",
+    "install": "node-pre-gyp install --fallback-to-build"
+  },
+  "binary": {
+    "module_name": "HID",
+    "module_path": "./build/{module_name}/v{version}/{configuration}/{node_abi}-{platform}-{arch}/",
+    "remote_path": "./{module_name}/v{version}/{configuration}/",
+    "host": "https://node-hid.s3.amazonaws.com"
   },
   "main": "./index.js",
   "engines": {
@@ -23,7 +32,13 @@
   },
   "license": "MIT/X11",
   "dependencies": {
-    "nan": "^2.0.9"
+    "nan": "^2.0.9",
+    "node-pre-gyp": "^0.6.12"
   },
-  "devDependencies": {}
+  "bundledDependencies": [
+    "node-pre-gyp"
+  ],
+  "devDependencies": {
+    "aws-sdk": "^2.2.9"
+  }
 }

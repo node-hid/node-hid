@@ -74,7 +74,7 @@
             'OTHER_LDFLAGS': [
               '-framework IOKit',
               '-framework CoreFoundation'
-            ],    
+            ],
           }
         }],
         [ 'OS=="linux"', {
@@ -106,6 +106,17 @@
       'cflags_cc!': [ '-fno-exceptions' ],
       'cflags': ['-g', '-exceptions'],
       'cflags_cc': ['-g', '-exceptions']
+    },
+    {
+        "target_name": "action_after_build",
+        "type": "none",
+        "dependencies": [ "<(module_name)" ],
+        "copies": [
+        {
+            "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
+            "destination": "<(module_path)"
+        }
+      ]
     }
   ]
 }
