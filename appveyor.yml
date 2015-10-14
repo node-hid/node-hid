@@ -17,7 +17,6 @@ install:
   - cmd: SET COMMIT_MSG="%APPVEYOR_REPO_COMMIT_MESSAGE%"
   - cmd: SET NODIST_PREFIX=C:\nodist
   - cmd: SET PATH=C:\nodist\bin;%PATH%
-  - cmd: SET PUBLISH_BINARY=false
   # Check to verify the branch is the same than latest tag, if so
   # then we publish the binaries if everything else is successful.
   - cmd: git describe --tags --always HEAD > _git_tag.tmp
@@ -27,11 +26,6 @@ install:
   - cmd: ECHO "APPVEYOR REPO BRANCH/TAG:"
   - cmd: ECHO %APPVEYOR_REPO_BRANCH%
   - cmd: DEL _git_tag.tmp
-  - cmd: IF x%APPVEYOR_REPO_BRANCH%==x%GIT_TAG% SET PUBLISH_BINARY=true
-  # Or look for commit message containing `[publish binary]`
-  - cmd: IF not x%COMMIT_MSG:[publish binary]=%==x%COMMIT_MSG% SET PUBLISH_BINARY=true
-  - cmd: ECHO "Env Var PUBLISH_BINARY:"
-  - cmd: ECHO %PUBLISH_BINARY%
   - cmd: git clone https://github.com/marcelklehr/nodist.git c:\nodist 2>&1
   - cmd: SET NODIST_X64=0
   - cmd: nodist update
@@ -49,9 +43,10 @@ build_script:
   - cmd: nodist %nodejs_version%
   - cmd: npm install -g node-gyp  
   - cmd: ECHO "BUILDING x64 version:"
+  - cmd: git submodule update --init
   - cmd: npm install --build-from-source --msvs_version=2013
   - cmd: ECHO "PUBLISH package:"
   - cmd: npm install aws-sdk
-  - cmd: IF %PUBLISH_BINARY%==true (node-pre-gyp package publish 2>&1)
+  - cmd: node-pre-gyp package publish 2>&1
   - cmd: node-pre-gyp clean
   - cmd: node-gyp clean
