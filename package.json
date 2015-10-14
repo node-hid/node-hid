@@ -16,7 +16,7 @@
     "url": "git://github.com/node-hid/node-hid.git"
   },
   "scripts": {
-    "test": "node ./src/show-devices.js",
+    "test": "node nodehid.js",
     "prepublish": "git submodule update --init",
     "install": "node-pre-gyp install --fallback-to-build"
   },
@@ -26,7 +26,7 @@
     "remote_path": "./{module_name}/v{version}/{configuration}/",
     "host": "https://node-hid.s3.amazonaws.com"
   },
-  "main": "./index.js",
+  "main": "./nodehid.js",
   "engines": {
     "node": ">=4.0.0"
   },
