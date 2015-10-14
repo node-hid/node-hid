@@ -4,10 +4,7 @@ environment:
     secure: /v/gQoDu7Y5ossb9oEt20y+2OWe4X9EW+sloFOANvQo=
   node_pre_gyp_secretAccessKey:
     secure: l7+hDEKs1otLl8hVxYKdAtF7VsulJ+JN6yZDeq37IP00ncVa4S7dPSq7SIBB2L/m
-
-matrix:
-- nodejs_version: "4.2.0"
-- nodejs_version: "4.2.1"
+  nodejs_version: "4.2.0"
 
 platform:
 - x64
