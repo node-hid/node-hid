@@ -179,7 +179,7 @@ To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary 
     * node-gyp installed globally (`npm install -g node-gyp`)
     * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
 * Linux (kernel 2.6+)
-    * Compiler tools (`apt-get install build-essential git` for Debin/Ubuntu/Raspian)
+    * Compiler tools (`apt-get install build-essential git` for Debian/Ubuntu/Raspian)
     * libudev-dev (Fedora: `yum install libusbx-devel`)
     * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
     * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
