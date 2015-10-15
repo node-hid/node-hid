@@ -2,14 +2,10 @@
   "name": "node-hid",
   "description": "USB HID device access library",
   "version": "0.5.1",
-  "author": {
-    "name": "Hans Hübner",
-    "email": "hans.huebner@gmail.com",
-    "url": "https://github.com/hanshuebner"
-  },
+  "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "contributors": [
     "Blake Miner <miner.blake@gmail.com>",
-    "Tod Kurt <todbotdotcom@gmail.com>"
+    "Tod Kurt <todbotdotcom@gmail.com> (https://github.com/todbot)"
   ],
   "repository": {
     "type": "git",
@@ -31,7 +27,7 @@
   "engines": {
     "node": ">=4.0.0"
   },
-  "license": "MIT/X11",
+  "license": "(MIT OR X11)",
   "dependencies": {
     "nan": "^2.0.9",
     "node-pre-gyp": "^0.6.12"

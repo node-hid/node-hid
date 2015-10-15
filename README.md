@@ -12,26 +12,29 @@ npm install node-hid
 * libudev-dev, libusb-1.0-0-dev (if Linux, see Compile below)
 * [git](https://git-scm.com/)
 
-node-hid now uses node-pre-gyp to store pre-compiled bundles of the native code, so usually no compiler is needed to install!
+node-hid now uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install!
 
 Platforms we pre-build node-hid binaries for:
-- Node v4.2.x, v0.12
-- Mac OS X x64
-- Windows x64 & x32
-- Linux Debian/Ubuntu x64
-- Raspberry Pi arm
+- Mac OS X x64: v0.10, v0.12, v4.2.x
+- Windows x64 & x86: v0.10, v0.12, v4.2.x
+- Linux Debian/Ubuntu x64: v4.2.x
+- Raspberry Pi arm: v4.2.x
 
 If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.  In which case you'll need the **Compiler tools** mentioned below.
 
 ## Test it
 
 In the `src/` directory, various JavaScript programs can be found
-that talk to specific devices in some way.  The `show-devices.js`
-program can be used to display all HID devices in the system.
+that talk to specific devices in some way.  Some interesting ones:
+- [`show-devices.js`](https://github.com/node-hid/node-hid/blob/master/src/show-devices.js) - display all HID devices in the system
+- [`test-ps3-rumbleled.js`](https://github.com/node-hid/node-hid/blob/master/src/test-ps3-rumbleled.js) - Read PS3 joystick and control its LED & rumblers.
+- [`powermate.js`](https://github.com/node-hid/node-hid/blob/master/src/powermate.js) - Read Griffin PowerMate knob and change its LED
+
+To try them out, call them like `node src/showdevices.js` from the node-hid directory.
 
 ## How to Use
 
-### Load the extension
+### Load the module
 
 ```
 var HID = require('node-hid');
@@ -166,7 +169,7 @@ Low-level function call to initiate an asynchronous read from the device.
 - `report_length` - length of report
 
 
-### - Compiling from source for development
+## Compiling from source for development
 
 To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary for you), you will need the following tools:
 * Mac OS X 10.8+
