@@ -7,46 +7,21 @@ npm install node-hid
 
 ### Prerequisites:
 
+* [Node.js](https://nodejs.org/) v0.8 - v4.x+
 * Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
-* Node.js v4.x+  (use node-hid v0.4.0 for Node 0.12.7)
-* libudev-dev (Linux only, Fedora: yum install libusbx-devel)
-* libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
-* git
+* libudev-dev, libusb-1.0-0-dev (if Linux, see Compile below)
+* [git](https://git-scm.com/)
 
-### Compile from source for development
+node-hid now uses node-pre-gyp to store pre-compiled bundles of the native code, so usually no compiler is needed to install!
 
-To develop locally you'll need the following commands:
+Platforms we pre-build node-hid binaries for:
+- Node v4.2.x, v0.12
+- Mac OS X x64
+- Windows x64 & x32
+- Linux Debian/Ubuntu x64
+- Raspberry Pi arm
 
-```
-git submodule update --init   # done automatically on publish, but you'll need it locally
-npm install       # rebuilds the module
-```
-
-#### Compiling on Windows
-
-Be sure node-gyp is present to compile the extension.
-You will need MSVC 2012 or equivalent.
-
-Please note that Windows support is incomplete and needs some work
-to pull it to the same level as on Linux and OSX.  See issues #10
-and #15 in github for discussion.  Pull requests to improve Windows
-support would be welcome.
-
-#### Compiling on Mac OS X
-
-You will need to install Xcode and make sure the command-line tools are working.
-To do this in terminal, type `gcc --version`.
-
-#### Compiling on Raspbian Raspberry Pi w/ Node v4.x
-
-Node v4.x uses features of g++-4.8 and Raspian older than "Jessie" ships with g++-4.6.
-To compile node-hid on Raspbian, install g++-4.8 and force npm to use it:
-```
-$ sudo apt-get install gcc-4.8 g++-4.8
-$ export CXX=g++-4.8
-$ npm install node-hid
-```
-Clean installs of Raspbian "Jessie" ships with g++-4.9 so this only affects upgraded systems.
+If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.  In which case you'll need the **Compiler tools** mentioned below.
 
 ## Test it
 
@@ -97,15 +72,20 @@ HID.devices();
 
 ### Opening a device
 
-Before a device can be read from or written to, it must be opened:
-
+Before a device can be read from or written to, it must be opened.
+The `path` can
+be determined by a prior HID.devices() call. Use either the `path` from
+the list returned by a prior call to `HID.devices()`:
 ```
 var device = new HID.HID(path);
 ```
+or open the first device matching a VID/PID pair:
+```
+var device = new HID.HID(vid,pid);
+```
 
-`device` will contain a handle to the device.  The `path` can
-be determined by a prior HID.devices() call.  If an error occurs
-opening the device, an exception will be thrown.
+`device` will contain a handle to the device.
+If an error occurs opening the device, an exception will be thrown.
 
 ### Reading from a device
 
@@ -132,9 +112,11 @@ handle.  All writing is synchronous.
 ```
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 ```
-
-#### Sending Feature report
-To send to a particular HID feature report, include report_id as first byte of array.
+Notes:
+- The `write()` method sends OUTPUT reports. To send Feature reports,
+see the `sendFeatureReport()` method below.
+- Some devices use reportIds for OUTPUT reports.  If that is the case,
+the first byte of the array to `write()` should be the reportId.
 
 
 ## Complete API
@@ -182,6 +164,28 @@ Low-level function call to initiate an asynchronous read from the device.
 ### device.getFeatureReport(report_id, report_length)
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
+
+
+### - Compiling from source for development
+
+To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary for you), you will need the following tools:
+* Mac OS X 10.8+
+    * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
+* Windows XP+
+    * [Python 2.7](https://www.python.org/downloads/windows/)
+    * node-gyp installed globally (`npm install -g node-gyp`)
+    * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
+* Linux (kernel 2.6+)
+    * Compiler tools (`apt-get install build-essential git` for Debin/Ubuntu/Raspian)
+    * libudev-dev (Fedora: `yum install libusbx-devel`)
+    * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
+    * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
+
+You'll also need to issue the following command in the 'node-hid' directory:
+```
+git submodule update --init   # done on publish automatically
+npm install       # rebuilds the module
+```
 
 ## Support
 
