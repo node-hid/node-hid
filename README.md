@@ -168,6 +168,9 @@ Low-level function call to initiate an asynchronous read from the device.
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
 
+## Notes for Specific Devices
+
+- Xbox 360 Controller on Windows 10 -- does not work 
 
 ## Compiling from source for development
 
@@ -188,6 +191,10 @@ You'll also need to issue the following command in the 'node-hid' directory:
 ```
 git submodule update --init   # done on publish automatically
 npm install       # rebuilds the module
+```
+Once you do that, you can then rebuild from source with:
+```
+./node_modules/.bin/node-pre-gyp rebuild
 ```
 
 ## Support
