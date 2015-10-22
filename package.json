@@ -30,7 +30,7 @@
   "license": "(MIT OR X11)",
   "dependencies": {
     "nan": "^2.0.9",
-    "node-pre-gyp": "^0.6.12"
+    "node-pre-gyp": "0.6.x"
   },
   "bundledDependencies": [
     "node-pre-gyp"
