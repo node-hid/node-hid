@@ -116,7 +116,7 @@ private:
 HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
 {
   _hidHandle = hid_open(vendorId, productId, serialNumber);
-  
+
   if (!_hidHandle) {
     ostringstream os;
     os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
@@ -479,6 +479,8 @@ NAN_METHOD(HID::devices)
     }
     deviceInfo->Set(Nan::New<String>("release").ToLocalChecked(), Nan::New<Integer>(dev->release_number));
     deviceInfo->Set(Nan::New<String>("interface").ToLocalChecked(), Nan::New<Integer>(dev->interface_number));
+    deviceInfo->Set(Nan::New<String>("usagePage").ToLocalChecked(), Nan::New<Integer>(dev->usage_page));
+    deviceInfo->Set(Nan::New<String>("usage").ToLocalChecked(), Nan::New<Integer>(dev->usage));
     retval->Set(count++, deviceInfo);
   }
   hid_free_enumeration(devs);
@@ -528,10 +530,9 @@ extern "C" {
   static void init (Local<Object> target)
   {
     Nan::HandleScope scope;
-    
+
     HID::Initialize(target);
   }
 
   NODE_MODULE(HID, init);
 }
-
