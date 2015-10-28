@@ -170,9 +170,9 @@ Low-level function call to initiate an asynchronous read from the device.
 
 ## Notes for Specific Devices
 
-- Xbox 360 Controller on Windows 10 -- does not work 
+- Xbox 360 Controller on Windows 10 -- does not work
 
-## Compiling from source for development
+## Compiling from source
 
 To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary for you), you will need the following tools:
 * Mac OS X 10.8+
