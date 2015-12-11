@@ -73,6 +73,8 @@ HID.devices();
 <and more>
 ```
 
+**NOTE:** Most keyboard & mice-like HID devices cannot be seen by `node-hid` on Windows & Mac.  This is not a limitation of `node-hid` but a limitation of all user-space libraries.  This is a security feature of the OS to prevent input device snooping.
+
 ### Opening a device
 
 Before a device can be read from or written to, it must be opened.
