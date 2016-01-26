@@ -286,7 +286,7 @@ NAN_METHOD(HID::readTimeout)
   Nan::HandleScope scope;
 
   if (info.Length() != 1 || !info[0]->IsUint32()) {
-    return Nan::ThrowError("readSync need time out parameter");
+    return Nan::ThrowError("readTimeout need time out parameter");
   }
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
