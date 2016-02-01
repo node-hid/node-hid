@@ -80,6 +80,8 @@ private:
   static NAN_METHOD(close);
   static NAN_METHOD(setNonBlocking);
   static NAN_METHOD(getFeatureReport);
+  static NAN_METHOD(readSync);
+  static NAN_METHOD(readTimeout);
 
   static NAN_METHOD(sendFeatureReport);
 
@@ -254,6 +256,53 @@ NAN_METHOD(HID::read)
   uv_queue_work(uv_default_loop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
 
   return;
+}
+
+NAN_METHOD(HID::readSync)
+{
+  Nan::HandleScope scope;
+
+  if (info.Length() != 0) {
+    return Nan::ThrowError("readSync need zero length parameter");
+  }
+
+  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  unsigned char buff_read[1024];	
+  int returnedLength = hid_read(hid->_hidHandle, buff_read, sizeof buff_read);
+
+  if (returnedLength == -1) {    
+    return Nan::ThrowError("could not read data from device");
+  }
+  Local<Array> retval = Nan::New<Array>();
+
+  for (int i = 0; i < returnedLength; i++) {
+    retval->Set(i, Nan::New<Integer>(buff_read[i]));
+  }  
+  info.GetReturnValue().Set(retval);
+}
+
+NAN_METHOD(HID::readTimeout)
+{
+  Nan::HandleScope scope;
+
+  if (info.Length() != 1 || !info[0]->IsUint32()) {
+    return Nan::ThrowError("readTimeout need time out parameter");
+  }
+
+  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  const int timeout = info[0]->ToUint32()->Value();
+  unsigned char buff_read[1024];	
+  int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
+
+  if (returnedLength == -1) {    
+    return Nan::ThrowError("could not read data from device");
+  }
+  Local<Array> retval = Nan::New<Array>();
+
+  for (int i = 0; i < returnedLength; i++) {
+    retval->Set(i, Nan::New<Integer>(buff_read[i]));
+  }  
+  info.GetReturnValue().Set(retval);
 }
 
 NAN_METHOD(HID::getFeatureReport)
@@ -516,6 +565,8 @@ HID::Initialize(Local<Object> target)
   Nan::SetPrototypeMethod(hidTemplate, "getFeatureReport", getFeatureReport);
   Nan::SetPrototypeMethod(hidTemplate, "sendFeatureReport", sendFeatureReport);
   Nan::SetPrototypeMethod(hidTemplate, "setNonBlocking", setNonBlocking);
+  Nan::SetPrototypeMethod(hidTemplate, "readSync", readSync);
+  Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
 
   target->Set(Nan::New<String>("HID").ToLocalChecked(), hidTemplate->GetFunction());
 
