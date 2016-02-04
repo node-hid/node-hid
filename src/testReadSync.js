@@ -5,6 +5,7 @@
 "use strict";
 
 var HID = require("node-hid");
+var sleep = require("sleep");
 
 var Commands = {
     BSL_RX_DATA_BLOCK: 0x10,
@@ -111,6 +112,8 @@ try {
 } catch (err) {
     console.log("Trace exception BslRxPassword, " + err);
 }
+
+sleep.sleep(1);
 
 var package_erase_password_2 = [];
 
