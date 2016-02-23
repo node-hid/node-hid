@@ -1,5 +1,5 @@
 /**
- * Simple demostration of sendFeatureReport 
+ * Simple demostration of sendFeatureReport
  * for a blink(1) USB LED by ThingM http://blink1.thingm.com/
  */
 
@@ -16,14 +16,16 @@ if( devices_found.length === 0 ) {
     console.log("no blink(1) devices found");
     process.exit(0);
 }
-console.log("blink(1) devices found:", devices_found);
+console.log("blink(1) devices found:", devices_found,'\n');
 
 var hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID );
 
-hidDevice.on('data', function(data) {
-    console.log("got data");
-});
+var deviceInfo = hidDevice.getDeviceInfo();
+console.log("deviceInfo.manufacturer:", deviceInfo.manufacturer);
+console.log("deviceInfo.product:", deviceInfo.product);
+console.log("deviceInfo.serialNumber:", deviceInfo.serialNumber);
 
+// shamelessly stolen from node-blink1
 var blink1_sendCommand = function( /* command [, args ...]*/ ) {
     var featureReport = [REPORT_ID, 0, 0, 0, 0, 0, 0, 0, 0];
 
