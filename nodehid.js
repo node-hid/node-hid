@@ -55,6 +55,7 @@ util.inherits(HID, EventEmitter);
 
 HID.prototype.close = function close() {
 	this._closing = true;
+	this.removeAllListeners();
 	this._raw.close();
 };
 //Pauses the reader, which stops "data" events from being emitted
