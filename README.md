@@ -163,6 +163,15 @@ be automatically called.
 Low-level function call to initiate an asynchronous read from the device.
 `callback` is of the form `callback(err, data)`
 
+### device.readSync()
+
+Return an array of numbers data. If an error occurs, an exception will be thrown.
+
+### device.readTimeout(time_out)
+
+- `time_out` - timeout in milliseconds
+Return an array of numbers data. If an error occurs, an exception will be thrown.
+
 ### device.sendFeatureReport(data)
 - `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
 
@@ -198,6 +207,13 @@ Once you do that, you can then rebuild from source with:
 ```
 ./node_modules/.bin/node-pre-gyp rebuild
 ```
+
+* Build for nwjs project
+```
+    npm install node-pre-gyp
+    ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
+```   
+You can change 0.12.3 to version nwjs that you want deploy.
 
 ## Support
 
