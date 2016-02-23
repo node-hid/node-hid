@@ -84,6 +84,7 @@ private:
   static NAN_METHOD(readTimeout);
 
   static NAN_METHOD(sendFeatureReport);
+  static NAN_METHOD(getDeviceInfo);
 
 
   static void recvAsync(uv_work_t* req);
@@ -118,7 +119,7 @@ private:
 HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
 {
   _hidHandle = hid_open(vendorId, productId, serialNumber);
-  
+
   if (!_hidHandle) {
     ostringstream os;
     os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
@@ -267,17 +268,17 @@ NAN_METHOD(HID::readSync)
   }
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  unsigned char buff_read[1024];	
+  unsigned char buff_read[1024];
   int returnedLength = hid_read(hid->_hidHandle, buff_read, sizeof buff_read);
 
-  if (returnedLength == -1) {    
+  if (returnedLength == -1) {
     return Nan::ThrowError("could not read data from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
   for (int i = 0; i < returnedLength; i++) {
     retval->Set(i, Nan::New<Integer>(buff_read[i]));
-  }  
+  }
   info.GetReturnValue().Set(retval);
 }
 
@@ -291,17 +292,17 @@ NAN_METHOD(HID::readTimeout)
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   const int timeout = info[0]->ToUint32()->Value();
-  unsigned char buff_read[1024];	
+  unsigned char buff_read[1024];
   int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
 
-  if (returnedLength == -1) {    
+  if (returnedLength == -1) {
     return Nan::ThrowError("could not read data from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
   for (int i = 0; i < returnedLength; i++) {
     retval->Set(i, Nan::New<Integer>(buff_read[i]));
-  }  
+  }
   info.GetReturnValue().Set(retval);
 }
 
@@ -484,6 +485,36 @@ narrow(wchar_t* wide)
   return os.str();
 }
 
+NAN_METHOD(HID::getDeviceInfo)
+{
+  Nan::HandleScope scope;
+  Local<Object> deviceInfo = Nan::New<Object>();
+  int maxlen = 256;
+  wchar_t wstr[maxlen]; // FIXME: use new & delete
+
+  try {
+    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+
+    hid_get_manufacturer_string(hid->_hidHandle, wstr, maxlen);
+    deviceInfo->Set(Nan::New<String>("manufacturer").ToLocalChecked(),
+      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
+
+    hid_get_product_string(hid->_hidHandle, wstr, maxlen);
+    deviceInfo->Set(Nan::New<String>("product").ToLocalChecked(),
+      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
+
+    hid_get_serial_number_string(hid->_hidHandle, wstr, maxlen);
+    deviceInfo->Set(Nan::New<String>("serialNumber").ToLocalChecked(),
+      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
+
+  }
+  catch (const JSException& e) {
+    e.asV8Exception();
+  }
+
+  info.GetReturnValue().Set(deviceInfo);
+}
+
 NAN_METHOD(HID::devices)
 {
   Nan::HandleScope scope;
@@ -567,6 +598,7 @@ HID::Initialize(Local<Object> target)
   Nan::SetPrototypeMethod(hidTemplate, "setNonBlocking", setNonBlocking);
   Nan::SetPrototypeMethod(hidTemplate, "readSync", readSync);
   Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
+  Nan::SetPrototypeMethod(hidTemplate, "getDeviceInfo", getDeviceInfo);
 
   target->Set(Nan::New<String>("HID").ToLocalChecked(), hidTemplate->GetFunction());
 
@@ -579,10 +611,9 @@ extern "C" {
   static void init (Local<Object> target)
   {
     Nan::HandleScope scope;
-    
+
     HID::Initialize(target);
   }
 
   NODE_MODULE(HID, init);
 }
-
