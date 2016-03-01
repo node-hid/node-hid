@@ -12,9 +12,9 @@ npm install node-hid
 * libudev-dev, libusb-1.0-0-dev (if Linux, see Compile below)
 * [git](https://git-scm.com/)
 
-node-hid now uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install!
+node-hid uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install.
 
-Platforms we pre-build node-hid binaries for:
+Platforms we pre-build binaries for:
 - Mac OS X x64: v0.10, v0.12, v4.2.x
 - Windows x64 & x86: v0.10, v0.12, v4.2.x
 - Linux Debian/Ubuntu x64: v4.2.x
@@ -208,7 +208,15 @@ Once you do that, you can then rebuild from source with:
 ./node_modules/.bin/node-pre-gyp rebuild
 ```
 
-* Build for nwjs project
+## Using `node-hid` in Electron projects
+In your electron project, add `electron-rebuild` and `electron-prebuilt` to your dependencies.
+Then for whatever version you have of electron-prebuilt, specify it explicitly when rebuilding with electron-rebuild, like:
+
+```
+./node_modules/.bin/electron-rebuild -v 0.36.5 -p -f -m . -w node-hid -e node_modules/electron-prebuilt
+```
+
+## Using `node-hid` in NW.js projects
 ```
     npm install node-pre-gyp
     ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
