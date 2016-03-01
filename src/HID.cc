@@ -489,7 +489,7 @@ NAN_METHOD(HID::getDeviceInfo)
 {
   Nan::HandleScope scope;
   Local<Object> deviceInfo = Nan::New<Object>();
-  int maxlen = 256;
+  const int maxlen = 256;
   wchar_t wstr[maxlen]; // FIXME: use new & delete
 
   try {
