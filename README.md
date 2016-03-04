@@ -209,11 +209,15 @@ Once you do that, you can then rebuild from source with:
 ```
 
 ## Using `node-hid` in Electron projects
-In your electron project, add `electron-rebuild` and `electron-prebuilt` to your dependencies.
-Then for whatever version you have of electron-prebuilt, specify it explicitly when rebuilding with electron-rebuild, like:
-
+In your electron project, add `electron-rebuild` and `electron-prebuilt` to your `devDependencies`.
+Then in your package.json `scripts` add:
 ```
-./node_modules/.bin/electron-rebuild -v 0.36.5 -p -f -m . -w node-hid -e node_modules/electron-prebuilt
+  "postinstall": "electron-rebuild --pre-gyp-fix --force"
+```
+
+If you want a specific version of electron, do something like:
+```
+electron-rebuild -v 0.36.5 --pre-gyp-fix --force -m . -w node-hid
 ```
 
 ## Using `node-hid` in NW.js projects
@@ -221,7 +225,7 @@ Then for whatever version you have of electron-prebuilt, specify it explicitly w
     npm install node-pre-gyp
     ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
 ```   
-You can change 0.12.3 to version nwjs that you want deploy.
+You can change 0.12.3 to version nwjs that you want to deploy.
 
 ## Support
 
