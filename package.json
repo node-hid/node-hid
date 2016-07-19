@@ -14,7 +14,10 @@
   "scripts": {
     "test": "node nodehid.js",
     "prepublish": "git submodule update --init",
-    "install": "node-pre-gyp install --fallback-to-build"
+    "install": "node-pre-gyp install --fallback-to-build",
+    "gyppackage": "node-pre-gyp package",
+    "gyppublish": "node-pre-gyp publish",
+    "clean": "rimraf build node_modules"
   },
   "binary": {
     "module_name": "HID",
@@ -36,6 +39,7 @@
     "node-pre-gyp"
   ],
   "devDependencies": {
-    "aws-sdk": "^2.2.9"
+    "aws-sdk": "^2.2.9",
+    "rimraf": "^2.5.3"
   }
 }
