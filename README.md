@@ -203,9 +203,11 @@ You'll also need to issue the following command in the 'node-hid' directory:
 git submodule update --init   # done on publish automatically
 npm install       # rebuilds the module
 ```
-Once you do that, you can then rebuild from source with:
+Once you do that, you will need to copy all of the files and folders in the node-hid folder, except for the .git, build, and node_module folders to ./node_modules/.bin/ folder.  
 ```
-./node_modules/.bin/node-pre-gyp rebuild
+Once the files have been copied you can navigate to ./node_modules/.bin/ and issue the following command:
+```
+node-pre-gyp rebuild
 ```
 
 ## Using `node-hid` in Electron projects
