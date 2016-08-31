@@ -22,7 +22,7 @@ Differences for beta release
 
 ## Binary Hand-publish Notes
 * On Mac/Linux, have a ~/.node_pre_gyprc with Amazon AWS S3 accessKeyId & secretAccessKey
-* On Windows, put that file in /c/Users/<username> when using MinGW
+* On Windows, put that file in /c/Users/{username} when using MinGW
 
 ## Hand-publish steps
 1. Pick node version (e.g. "nvm use v4" or "nodist use v4")
