@@ -19,6 +19,9 @@
     "gyppublish": "node-pre-gyp publish",
     "clean": "rimraf build node_modules"
   },
+  "bin": {
+      "hid-showdevices": "./src/show-devices.js"
+  },
   "binary": {
     "module_name": "HID",
     "module_path": "./build/{module_name}/v{version}/{configuration}/{node_abi}-{platform}-{arch}/",
