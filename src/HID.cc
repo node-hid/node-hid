@@ -38,6 +38,8 @@ using namespace std;
 using namespace v8;
 using namespace node;
 
+#define READ_BUFF_MAXSIZE 2048
+
 // //////////////////////////////////////////////////////////////////
 // Throwable error class that can be converted to a JavaScript
 // exception
@@ -182,7 +184,7 @@ HID::recvAsync(uv_work_t* req)
   ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
   HID* hid = iocb->_hid;
 
-  unsigned char buf[1024];
+  unsigned char buf[READ_BUFF_MAXSIZE];
   int len = hid_read(hid->_hidHandle, buf, sizeof buf);
   if (len < 0) {
     iocb->_error = new JSException("could not read from HID device");
@@ -268,7 +270,7 @@ NAN_METHOD(HID::readSync)
   }
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  unsigned char buff_read[1024];
+  unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read(hid->_hidHandle, buff_read, sizeof buff_read);
 
   if (returnedLength == -1) {
@@ -292,7 +294,7 @@ NAN_METHOD(HID::readTimeout)
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   const int timeout = info[0]->ToUint32()->Value();
-  unsigned char buff_read[1024];
+  unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
 
   if (returnedLength == -1) {
