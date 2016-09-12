@@ -185,7 +185,7 @@ Return an array of numbers data. If an error occurs, an exception will be thrown
 
 ## Compiling from source
 
-To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary for you), you will need the following tools:
+To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binary for you), you will need the following tools:
 * Mac OS X 10.8+
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 * Windows XP+
@@ -198,33 +198,52 @@ To compile & develop locally (or if node-pre-gyp cannot find a pre-built binary 
     * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
     * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
 
-You'll also need to issue the following command in the 'node-hid' directory:
+To start building node-hid, check out a copy of this repo and change into its directory:
+
+```
+git clone https://github.com/node-hid/node-hid.git
+cd node-hid
+```
+
+NOTE: you must be in the "node-hid" directory for the following commands to work.
+
+Then, update the hidapi C library submodule and install node-hid dependencies:
+
 ```
 git submodule update --init   # done on publish automatically
 npm install       # rebuilds the module
 ```
+
 Once you do that, you can then rebuild from source with:
+
 ```
 ./node_modules/.bin/node-pre-gyp rebuild
 ```
 
+You will likely see some warnings from the C compiler as it compiles hidapi.  This is expected.
+
+
 ## Using `node-hid` in Electron projects
 In your electron project, add `electron-rebuild` and `electron-prebuilt` to your `devDependencies`.
 Then in your package.json `scripts` add:
+
 ```
   "postinstall": "electron-rebuild --pre-gyp-fix --force"
 ```
 
 If you want a specific version of electron, do something like:
+
 ```
 electron-rebuild -v 0.36.5 --pre-gyp-fix --force -m . -w node-hid
 ```
 
 ## Using `node-hid` in NW.js projects
+
 ```
     npm install node-pre-gyp
     ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
 ```   
+
 You can change 0.12.3 to version nwjs that you want to deploy.
 
 ## Support
