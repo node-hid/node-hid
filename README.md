@@ -190,34 +190,27 @@ To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binar
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 * Windows XP+
     * [Python 2.7](https://www.python.org/downloads/windows/)
-    * node-gyp installed globally (`npm install -g node-gyp`)
     * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
+    * node-gyp installed globally (`npm install -g node-gyp`)
 * Linux (kernel 2.6+)
     * Compiler tools (`apt-get install build-essential git` for Debian/Ubuntu/Raspian)
     * libudev-dev (Fedora: `yum install libusbx-devel`)
     * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
     * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
 
-To start building node-hid, check out a copy of this repo and change into its directory:
+To build node-hid, check out a copy of this repo, change into its directory, update the submodules, build the node package, then node-pre-gyp to rebuild the C code:
 
 ```
 git clone https://github.com/node-hid/node-hid.git
-cd node-hid
+cd node-hid                                        # must change into node-hid directory
+git submodule update --init                        # done on publish automatically
+npm install                                        # rebuilds the module
+./node_modules/.bin/node-pre-gyp rebuild           # rebuilds the C code
 ```
 
-NOTE: you must be in the "node-hid" directory for the following commands to work.
-
-Then, update the hidapi C library submodule and install node-hid dependencies:
-
+On Windows CMD shell, the last line will instead need to be:
 ```
-git submodule update --init   # done on publish automatically
-npm install       # rebuilds the module
-```
-
-Once you do that, you can then rebuild from source with:
-
-```
-./node_modules/.bin/node-pre-gyp rebuild
+.\node_modules\.bin\node-pre-gyp rebuild           # rebuilds the C code
 ```
 
 You will likely see some warnings from the C compiler as it compiles hidapi.  This is expected.
