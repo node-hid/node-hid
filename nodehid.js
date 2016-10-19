@@ -62,7 +62,7 @@ HID.prototype.close = function close() {
 HID.prototype.pause = function pause() {
 	this._paused = true;
 };
-HID.prototype.resume = function pause() {
+HID.prototype.resume = function resume() {
 	var self = this;
 	if(self._paused && self.listeners("data").length > 0)
 	{
