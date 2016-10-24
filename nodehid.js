@@ -34,7 +34,7 @@ function HID() {
 		`this._raw`
 	*/
 	for(var i in binding.HID.prototype)
-		if(i != "close")
+		if(i != "close" && i != "read")
 			this[i] = binding.HID.prototype[i].bind(this._raw);
 
 	/* We are now done inheriting from `binding.HID` and EventEmitter.
@@ -57,11 +57,21 @@ HID.prototype.close = function close() {
 	this._closing = true;
 	this.removeAllListeners();
 	this._raw.close();
+	this._closed = true;
 };
 //Pauses the reader, which stops "data" events from being emitted
 HID.prototype.pause = function pause() {
 	this._paused = true;
 };
+
+HID.prototype.read = function read(callback) {
+	if (this._closed) {
+    throw new Error('Unable to read from a closed HID device');
+  } else {
+    return this._raw.read(callback);
+  }
+};
+
 HID.prototype.resume = function resume() {
 	var self = this;
 	if(self._paused && self.listeners("data").length > 0)
