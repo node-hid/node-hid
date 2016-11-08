@@ -15,19 +15,19 @@
     "test": "node nodehid.js",
     "prepublish": "git submodule update --init",
     "install": "node-pre-gyp install --fallback-to-build",
+    "rebuild-all": "npm rebuild && node-gyp rebuild",
     "gyppackage": "node-pre-gyp package",
     "gyppublish": "node-pre-gyp publish",
     "clean": "rimraf build node_modules"
   },
   "bin": {
-      "hid-showdevices": "./src/show-devices.js"
+    "hid-showdevices": "./src/show-devices.js"
   },
   "binary": {
-    "module_name": "HID",
-    "module_path": "./build/{module_name}/v{version}/{configuration}/{node_abi}-{platform}-{arch}/",
-    "remote_path": "./{module_name}/v{version}/{configuration}/",
-    "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
-    "host": "https://node-hid.s3.amazonaws.com"
+      "module_name": "HID",
+      "module_path": "./build/{module_name}/{configuration}/",
+      "host": "https://github.com/node-hid/node-hid/releases/download/",
+      "remote_path": "{version}"
   },
   "main": "./nodehid.js",
   "engines": {
@@ -35,14 +35,14 @@
   },
   "license": "(MIT OR X11)",
   "dependencies": {
-    "nan": "^2.0.9",
-    "node-pre-gyp": "0.6.x"
+    "nan": "^2.4.0",
+    "node-pre-gyp": "0.6.31"
   },
   "bundledDependencies": [
     "node-pre-gyp"
   ],
   "devDependencies": {
-    "aws-sdk": "^2.2.9",
+    "node-pre-gyp-github": "^1.3.1",
     "rimraf": "^2.5.3"
   }
 }
