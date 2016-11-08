@@ -189,6 +189,10 @@ To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binar
 * Mac OS X 10.8+
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 * Windows XP+
+    * `npm install --global windows-build-tools`
+    * add "%USERPROFILE%\.windows-build-tools\python27" to PATH, like:
+        powershell: `$env:Path += ";$env:USERPROFILE\.windows-build-tools\python27"`
+    or 
     * [Python 2.7](https://www.python.org/downloads/windows/)
     * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
     * node-gyp installed globally (`npm install -g node-gyp`)
