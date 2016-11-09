@@ -18,7 +18,7 @@
     "rebuild-all": "npm rebuild && node-gyp rebuild",
     "gyppackage": "node-pre-gyp package",
     "gyppublish": "node-pre-gyp publish",
-    "clean": "rimraf build node_modules"
+    "clean": "rimraf node_modules build"
   },
   "bin": {
     "hid-showdevices": "./src/show-devices.js"

@@ -1,9 +1,76 @@
 How to publish node-hid
 ========================
+
+## New publish method using `node-pre-gyp-github`
+* Install tools globally to make things easier:
+```
+npm install -g node-pre-gyp
+npm install -g node-pre-gyp-github
+npm install -g rimraf
+```
+* Checkout clean node-hid:
+```
+rm -rf node-hid
+git clone https://github.com/node-hid/node-hid.git
+cd node-hid
+npm run prepublish
+```
+
+* Clean checkout before each build:
+```
+npm run clean
+npm install
+```
+
+* Do simple sanity tests
+```
+node ./src/show-devices.js
+node ./src/test-blink1.js
+```
+
+* Test out node-pre-gyp packaging and publish draft:
+```
+node-pre-gyp configure
+node-pre-gyp build
+node-pre-gyp package
+node-pre-gyp-github publish
+```
+
+* Do the above for each version of node:
+  * v6.9.1 LTS
+  * v4.6.2 LTS
+  * v0.12.17
+
+
+### Windows notes:
+* Using nvm-windows, install each version of node needed (32-bit & 64-bit):
+```
+nvm install v0.12.7 32
+nvm install v0.12.7 64
+nvm install v4.6.2 32
+nvm install v4.6.2 64
+nvm install v6.9.1 32
+nvm install v6.9.1 64
+```
+
+* Then, before each build:
+```
+nvm use v0.12.7 32
+node install -g node-pre-gyp
+node install -g node-pre-gyp-github
+node install -g rimraf
+npm run clean
+npm install
+
+```
+
+
+
+## Old publish method
+
 (cribbed from node-serialport)
 
 ## Setup for Linux, Windows and OSX
-
 
 1. Merge all changes and new features into master.
 2. Fill out changelog.md.
