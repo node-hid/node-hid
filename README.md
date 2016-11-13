@@ -183,38 +183,72 @@ Return an array of numbers data. If an error occurs, an exception will be thrown
 
 - Xbox 360 Controller on Windows 10 -- does not work
 
+## Linux-specific Notes
+
+### `usage` and `usagePage` device info fields
+  These are not available by default on Linux.
+  For the reason why, see:
+  However, you can use the optional `hidraw` driver type (see below)
+
+### hidraw support
+  To install node-hid with the `hidraw` driver instead of the default libusb one,
+  install the "libudev-dev" package and rebuild the library with:
+  ```
+  npm install node-hid --driver=hidraw
+  ```
+
+### udev device permissions
+Most Linux distros use `udev` to manage access to physical devices,
+and USB HID devices are normally owned by the `root` user.
+To allow non-root access, you must create a udev rule for the device,
+based on the devices vendorId and productId.
+
+This rule is a file, placed in `/etc/udev/rules.d`, with the lines:
+```
+SUBSYSTEM=="input", GROUP="input", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="27b8", ATTRS{idProduct}=="01ed", MODE:="666", GROUP="plugdev"
+```
+(the above is for vendorId = 27b8, productId = 01ed)
+
+Then the udev service is reloaded with: `sudo udevadm control --reload-rules`
+For an example, see the
+[blink1 udev rules](https://github.com/todbot/blink1/blob/master/linux/51-blink1.rules).
+
 ## Compiling from source
 
 To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binary for you), you will need the following tools:
+* All OSes:
+    * node-gyp installed globally: `npm install -g node-gyp`
+    * node-pre-gyp installed globally: `npm install -g node-pre-gyp`
 * Mac OS X 10.8+
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 * Windows XP+
-    * `npm install --global windows-build-tools`
-    * add "%USERPROFILE%\.windows-build-tools\python27" to PATH, like:
-        powershell: `$env:Path += ";$env:USERPROFILE\.windows-build-tools\python27"`
-    or 
-    * [Python 2.7](https://www.python.org/downloads/windows/)
-    * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
-    * node-gyp installed globally (`npm install -g node-gyp`)
+    * Visual C++ compiler and Python 2.7, via either:
+        * `npm install --global windows-build-tools`
+        * add `%USERPROFILE%\.windows-build-tools\python27` to `PATH`, like:
+            PowerShell: `$env:Path += ";$env:USERPROFILE\.windows-build-tools\python27"`
+        or:
+        * [Python 2.7](https://www.python.org/downloads/windows/)
+        * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
 * Linux (kernel 2.6+)
     * Compiler tools (`apt-get install build-essential git` for Debian/Ubuntu/Raspian)
+    * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
     * libudev-dev (Fedora: `yum install libusbx-devel`)
     * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
-    * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
 
-To build node-hid, check out a copy of this repo, change into its directory, update the submodules, build the node package, then node-pre-gyp to rebuild the C code:
+To build node-hid:
+* check out a copy of this repo
+* change into its directory
+* update the submodules
+* build the node package
+* node-pre-gyp to rebuild the C code:
 
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid                                        # must change into node-hid directory
 git submodule update --init                        # done on publish automatically
 npm install                                        # rebuilds the module
-./node_modules/.bin/node-pre-gyp rebuild           # rebuilds the C code
-```
-
-On Windows CMD shell, the last line will instead need to be:
-```
-.\node_modules\.bin\node-pre-gyp rebuild           # rebuilds the C code
+node-pre-gyp rebuild                               # rebuilds the C code
 ```
 
 You will likely see some warnings from the C compiler as it compiles hidapi.  This is expected.
@@ -225,13 +259,13 @@ In your electron project, add `electron-rebuild` and `electron-prebuilt` to your
 Then in your package.json `scripts` add:
 
 ```
-  "postinstall": "electron-rebuild --pre-gyp-fix --force"
+  "postinstall": "electron-rebuild --force"
 ```
 
 If you want a specific version of electron, do something like:
 
 ```
-electron-rebuild -v 0.36.5 --pre-gyp-fix --force -m . -w node-hid
+electron-rebuild -v 0.36.5 --force -m . -w node-hid
 ```
 
 ## Using `node-hid` in NW.js projects
