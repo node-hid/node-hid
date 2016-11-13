@@ -561,8 +561,12 @@ NAN_METHOD(HID::devices)
     }
     deviceInfo->Set(Nan::New<String>("release").ToLocalChecked(), Nan::New<Integer>(dev->release_number));
     deviceInfo->Set(Nan::New<String>("interface").ToLocalChecked(), Nan::New<Integer>(dev->interface_number));
-    deviceInfo->Set(Nan::New<String>("usagePage").ToLocalChecked(), Nan::New<Integer>(dev->usage_page));
-    deviceInfo->Set(Nan::New<String>("usage").ToLocalChecked(), Nan::New<Integer>(dev->usage));
+    if( dev->usage_page ) {
+        deviceInfo->Set(Nan::New<String>("usagePage").ToLocalChecked(), Nan::New<Integer>(dev->usage_page));
+    }
+    if( dev->usage ) {
+        deviceInfo->Set(Nan::New<String>("usage").ToLocalChecked(), Nan::New<Integer>(dev->usage));
+    }
     retval->Set(count++, deviceInfo);
   }
   hid_free_enumeration(devs);
