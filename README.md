@@ -187,7 +187,8 @@ Return an array of numbers data. If an error occurs, an exception will be thrown
 
 ### `usage` and `usagePage` device info fields
   These are not available on Linux, only Mac and Windows.
-
+  For reason why, and to ask for its addition, see:
+  https://github.com/signal11/hidapi/pull/6
 
 ### hidraw support
   To install node-hid with the `hidraw` driver instead of the default libusb one,
