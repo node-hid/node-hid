@@ -38,7 +38,7 @@ device.on('error', function(err) {
 
 var message = [];
 for(var i=0; i < 64; i++) {
-	message[i] = 120;
+    message[i] = 120;
 }
 message[0] = 121;
 message[1] = 122;
