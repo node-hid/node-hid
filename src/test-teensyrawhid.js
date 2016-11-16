@@ -5,8 +5,6 @@
 // For more details, see: https://www.pjrc.com/teensy/rawhid.html
 // and https://github.com/node-hid/node-hid/issues/165
 //
-// NOTE: On Linux, in order to get usagePage to work, you must rebuild node-hid
-// with hidraw.  Do this by: npm install node-hid --driver=hidraw
 //
 // Tod E. Kurt / github.com/todbot
 //
