@@ -186,9 +186,8 @@ Return an array of numbers data. If an error occurs, an exception will be thrown
 ## Linux-specific Notes
 
 ### `usage` and `usagePage` device info fields
-  These are not available by default on Linux.
-  For the reason why, see:
-  However, you can use the optional `hidraw` driver type (see below)
+  These are not available on Linux, only Mac and Windows.
+
 
 ### hidraw support
   To install node-hid with the `hidraw` driver instead of the default libusb one,
