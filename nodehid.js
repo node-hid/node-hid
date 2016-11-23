@@ -31,11 +31,19 @@ function HID() {
     /* Now we have `this._raw` Object from which we need to
         inherit.  So, one solution is to simply copy all
         prototype methods over to `this` and binding them to
-        `this._raw`
+        `this._raw` if we don't already have a wrapper implemented
     */
-    for(var i in binding.HID.prototype)
-        if(i != "close" && i != "read")
-            this[i] = binding.HID.prototype[i].bind(this._raw);
+    for (var i in binding.HID.prototype) {
+		if (!HID.prototype[i]) {
+			this[i] = (function(fn){
+				return function(){
+					var args = [].slice.call(arguments);
+					console.log(fn, 'called with', args);
+					this._raw[fn].apply(this._raw, args);
+				};
+			})(i);
+		}
+	}
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
 
@@ -59,17 +67,18 @@ HID.prototype.close = function close() {
     this._raw.close();
     this._closed = true;
 };
+
 //Pauses the reader, which stops "data" events from being emitted
 HID.prototype.pause = function pause() {
     this._paused = true;
 };
 
 HID.prototype.read = function read(callback) {
-    if (this._closed) {
-    throw new Error('Unable to read from a closed HID device');
-  } else {
-    return this._raw.read(callback);
-  }
+	if (this._closed) {
+		throw new Error('Unable to read from a closed HID device');
+	} else {
+		return this._raw.read(callback);
+	}
 };
 
 HID.prototype.resume = function resume() {
@@ -101,6 +110,42 @@ HID.prototype.resume = function resume() {
         });
     }
 };
+
+HID.prototype.write = function write(data) {
+    if (this._closed) {
+		throw new Error('Unable to write to a closed HID device');
+	}
+
+	return this._raw.write(toBuffer(data));
+};
+
+HID.prototype.sendFeatureReport = function sendFeatureReport(data) {
+	if (this._closed) {
+		throw new Error('Unable to sendFeatureReport to a closed HID device');
+	}
+
+	return this._raw.sendFeatureReport(toBuffer(data));
+};
+
+// utility method to convert an Array or Buffer to a Buffer for the native C++
+// code to work with.
+function toBuffer (data) {
+	if (Buffer.isBuffer(data)) {
+		return data;
+	}
+	if (Array.isArray(data)) {
+		return data.reduce(function(buf, value, i){
+			// make sure value is a number that can be converted to a byte
+			if (value >= 0 && value < 256) {
+				buf.writeUInt8(value, i);
+				return buf;
+			}
+			throw new Error("Unexpected array element in array to send/write, expecting only integers between 0 and 255");
+		}, (Buffer.hasOwnProperty(alloc))? Buffer.alloc(data.length) : new Buffer(data.length).fill(0))
+	}
+
+	throw new Error("Attempted to write or send unsupported argument to HID.");
+}
 
 //Expose API
 exports.HID = HID;

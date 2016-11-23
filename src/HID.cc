@@ -160,23 +160,27 @@ HID::setNonBlocking(int message)
   }
 }
 
-void
-HID::write(const databuf_t& message)
-  throw(JSException)
-{
-  //unsigned char buf[message.size()];
-  unsigned char* buf = new unsigned char[message.size()];
-  unsigned char* p = buf;
-  int res;
-  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
-    *p++ = *i;
-  }
-  res = hid_write(_hidHandle, buf, message.size());
-  delete[] buf;
-  if (res < 0) {
-    throw JSException("Cannot write to HID device");
-  }
-}
+// void
+// HID::write(const databuf_t& message)
+//   throw(JSException)
+// {
+//   //unsigned char buf[message.size()];
+//   unsigned char* buf = new unsigned char[message.size()];
+//   unsigned char* p = buf;
+//   int res;
+//   for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
+//     *p++ = *i;
+//   }
+//
+//   ostringstream os;
+//   os << "Writing " << message.size() << " bytes\n";
+//   cout << os.str();
+//   res = hid_write(_hidHandle, buf, message.size());
+//   delete[] buf;
+//   if (res < 0) {
+//     throw JSException("Cannot write to HID device");
+//   }
+// }
 
 void
 HID::recvAsync(uv_work_t* req)
@@ -351,25 +355,29 @@ NAN_METHOD(HID::sendFeatureReport)
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
-  vector<unsigned char> message;
-  Local<Array> messageArray = Local<Array>::Cast(info[0]);
-  for (unsigned i = 0; i < messageArray->Length(); i++) {
-    if (!messageArray->Get(i)->IsNumber()) {
-      throw JSException("unexpected array element in array to send, expecting only integers");
-    }
-    message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
-  }
+  // vector<unsigned char> message;
+  // Local<Array> messageArray = Local<Array>::Cast(info[0]);
+  // for (unsigned i = 0; i < messageArray->Length(); i++) {
+  //   if (!messageArray->Get(i)->IsNumber()) {
+  //     throw JSException("unexpected array element in array to send, expecting only integers");
+  //   }
+  //   message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
+  // }
+  //
+  // // Convert vector to char array
+  // //unsigned char buf[message.size()];
+  // unsigned char* buf = new unsigned char[message.size()];
+  // unsigned char* p = buf;
+  // for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
+  //   *p++ = *i;
+  // }
 
-  // Convert vector to char array
-  //unsigned char buf[message.size()];
-  unsigned char* buf = new unsigned char[message.size()];
-  unsigned char* p = buf;
-  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
-    *p++ = *i;
-  }
+  Local<Object> bufferObj = info[0]->ToObject();
+  unsigned char* data = (unsigned char*)Buffer::Data(bufferObj);
+  size_t length = Buffer::Length(bufferObj);
 
-  int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
-  delete[] buf;
+  int returnedLength = hid_send_feature_report(hid->_hidHandle, data, length);
+  //delete[] buf;
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0.
     return Nan::ThrowError("could not send feature report to device");
   }
@@ -456,24 +464,37 @@ NAN_METHOD(HID::write)
     return Nan::ThrowError("HID write requires one argument");
   }
 
-  try {
+  // try {
     HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
-    vector<unsigned char> message;
-    Local<Array> messageArray = Local<Array>::Cast(info[0]);
-    for (unsigned i = 0; i < messageArray->Length(); i++) {
-      if (!messageArray->Get(i)->IsNumber()) {
-        throw JSException("unexpected array element in array to send, expecting only integers");
-      }
-      message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
-    }
-    hid->write(message);
+    // vector<unsigned char> message;
+    // Local<Array> messageArray = Local<Array>::Cast(info[0]);
+    // for (unsigned i = 0; i < messageArray->Length(); i++) {
+    //   if (!messageArray->Get(i)->IsNumber()) {
+    //     throw JSException("unexpected array element in array to send, expecting only integers");
+    //   }
+    //   message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
+    // }
+    // hid->write(message);
 
-    return;
-  }
-  catch (const JSException& e) {
-    e.asV8Exception();
-  }
+    Local<Object> bufferObj = info[0]->ToObject();
+    unsigned char* data = (unsigned char*)Buffer::Data(bufferObj);
+    size_t length = Buffer::Length(bufferObj);
+
+    ostringstream os;
+    os << "Writing " << length << " bytes from buffer\n";
+    cout << os.str();
+    int res = hid_write(hid->_hidHandle, data, length);
+    //delete[] buf;
+    if (res < 0) {
+      throw JSException("Cannot write to HID device");
+    }
+  //
+  //   return;
+  // }
+  // catch (const JSException& e) {
+  //   e.asV8Exception();
+  // }
 }
 
 static string
