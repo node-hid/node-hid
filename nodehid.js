@@ -38,7 +38,7 @@ function HID() {
 			this[i] = (function(fn){
 				return function(){
 					var args = [].slice.call(arguments);
-					console.log(fn, 'called with', args);
+					//console.log(fn, 'called with', args);
 					this._raw[fn].apply(this._raw, args);
 				};
 			})(i);
