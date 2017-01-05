@@ -9,7 +9,7 @@ npm install node-hid
 
 * [Node.js](https://nodejs.org/) v0.8 - v4.x+
 * Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
-* libudev-dev, libusb-1.0-0-dev (if Linux, see Compile below)
+* `libudev-dev`, `libusb-1.0-0-dev` (for Linux, see Compile below)
 * [git](https://git-scm.com/)
 
 node-hid uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install.
@@ -17,10 +17,9 @@ node-hid uses node-pre-gyp to store pre-built binary bundles, so usually no comp
 Platforms we pre-build binaries for:
 - Mac OS X x64: v0.10, v0.12, v4.2.x
 - Windows x64 & x86: v0.10, v0.12, v4.2.x
-- Linux Debian/Ubuntu x64: v4.2.x
-- Raspberry Pi arm: v4.2.x
 
-If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.  In which case you'll need the **Compiler tools** mentioned below.
+If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.
+In which case you'll need the pre-requisites listed in **Compiler tools** mentioned below.
 
 ## Test it
 
@@ -230,13 +229,13 @@ To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binar
         or:
         * [Python 2.7](https://www.python.org/downloads/windows/)
         * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
-* Linux (kernel 2.6+)
-    * Compiler tools (`apt-get install build-essential git` for Debian/Ubuntu/Raspian)
-    * gcc-4.8+ (`apt-get install gcc-4.8 g++-4.8 && export CXX=g++-4.8`)
-    * libudev-dev (Fedora: `yum install libusbx-devel`)
-    * libusb-1.0-0-dev (Ubuntu versions missing `libusb.h` only)
+* Linux (kernel 2.6+) : install examples shown for Ubuntu
+    * Compilation tools: `apt install build-essential git`
+    * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
+    * libusb-1.0-0-dev:`sudo apt install libusb-1.0-0-dev`
+    * libudev-dev: (Fedora only) `yum install libusbx-devel`
 
-To build node-hid:
+If you want to build node-hid for development:
 * check out a copy of this repo
 * change into its directory
 * update the submodules
