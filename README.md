@@ -9,7 +9,7 @@ npm install node-hid
 
 * [Node.js](https://nodejs.org/) v0.8 - v4.x+
 * Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
-* `libudev-dev`, `libusb-1.0-0-dev` (for Linux, see [Compling from source](#Compiling from source) below)
+* `libudev-dev`, `libusb-1.0-0-dev` (for Linux, see [Compling from source](#compiling-from-source) below)
 * [git](https://git-scm.com/)
 
 node-hid uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install.
@@ -19,7 +19,7 @@ Platforms we pre-build binaries for:
 - Windows x64 & x86: v0.10, v0.12, v4.2.x
 
 If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.
-In which case you'll need the pre-requisites listed in [Compling from source](#Compiling from source) below.
+In which case you'll need the pre-requisites listed in [Compling from source](#compiling-from-source) below.
 
 ## Test it
 
