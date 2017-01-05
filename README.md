@@ -7,19 +7,28 @@ npm install node-hid
 
 ### Prerequisites:
 
-* [Node.js](https://nodejs.org/) v0.8 - v4.x+
-* Mac OS X 10.8, Linux (kernel 2.6+), and Windows XP+
-* `libudev-dev`, `libusb-1.0-0-dev` (for Linux, see [Compling from source](#compiling-from-source) below)
+* [Node.js](https://nodejs.org/) v0.10, v0.12, v4.2+
+* On Linux: (see [Compling from source](#compiling-from-source) below)
+    * `libusb-1.0-0`
+    * `libusb-1.0-0-dev`
+    * `libudev-dev`
 * [git](https://git-scm.com/)
 
-node-hid uses node-pre-gyp to store pre-built binary bundles, so usually no compiler is needed to install.
+#### Supported OSes:
+* Mac OS X 10.8+
+* Linux (kernel 2.6+)
+* Windows XP+
+
+`node-hid` uses `node-pre-gyp` to store pre-built binary bundles, thus no
+compiler is needed to install for platforms with pre-built binaries.
 
 Platforms we pre-build binaries for:
 - Mac OS X x64: v0.10, v0.12, v4.2.x
 - Windows x64 & x86: v0.10, v0.12, v4.2.x
 
-If node-hid doesn't have a pre-built binary for your system, it will attempt to compile locally.
-In which case you'll need the pre-requisites listed in [Compling from source](#compiling-from-source) below.
+If `node-hid` doesn't have a pre-built binary for your system (e.g. Linux),
+`node-gyp` is used to compile `node-hid` locally.  It will need the pre-requisites
+listed in [Compling from source](#compiling-from-source) below.
 
 ## Test it
 
@@ -72,7 +81,9 @@ HID.devices();
 <and more>
 ```
 
-**NOTE:** Most keyboard & mice-like HID devices cannot be seen by `node-hid` on Windows & Mac.  This is not a limitation of `node-hid` but a limitation of all user-space libraries.  This is a security feature of the OS to prevent input device snooping.
+**NOTE:** Most keyboard & mice-like HID devices cannot be seen by `node-hid` on Windows & Mac.
+This is not a limitation of `node-hid` but a limitation of all user-space libraries.
+This is a security feature of the OS to prevent input device snooping.
 
 ### Opening a device
 
@@ -215,12 +226,22 @@ For an example, see the
 
 ## Compiling from source
 
-To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binary for you), you will need the following tools:
+To compile & develop locally or if `node-pre-gyp` cannot download a pre-built
+binary for you, you will need the following tools:
+
 * All OSes:
-    * node-gyp installed globally: `npm install -g node-gyp`
-    * node-pre-gyp installed globally: `npm install -g node-pre-gyp`
+    * `node-gyp` installed globally: `npm install -g node-gyp`
+    * `node-pre-gyp` installed globally: `npm install -g node-pre-gyp`
+
+* Linux (kernel 2.6+) : install examples shown for Ubuntu
+    * Compilation tools: `apt install build-essential git`
+    * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
+    * libusb-1.0-0-dev:`sudo apt install libusb-1.0-0-dev`
+    * libudev-dev: (Fedora only) `yum install libusbx-devel`
+
 * Mac OS X 10.8+
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
+
 * Windows XP+
     * Visual C++ compiler and Python 2.7, via either:
         * `npm install --global windows-build-tools`
@@ -229,18 +250,15 @@ To compile & develop locally (or if `node-pre-gyp` cannot find a pre-built binar
         or:
         * [Python 2.7](https://www.python.org/downloads/windows/)
         * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
-* Linux (kernel 2.6+) : install examples shown for Ubuntu
-    * Compilation tools: `apt install build-essential git`
-    * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-    * libusb-1.0-0-dev:`sudo apt install libusb-1.0-0-dev`
-    * libudev-dev: (Fedora only) `yum install libusbx-devel`
 
-If you want to build node-hid for development:
+To build `node-hid` for development:
 * check out a copy of this repo
 * change into its directory
 * update the submodules
 * build the node package
-* node-pre-gyp to rebuild the C code:
+* node-pre-gyp to rebuild the C code
+
+For example:
 
 ```
 git clone https://github.com/node-hid/node-hid.git
@@ -250,7 +268,9 @@ npm install                                        # rebuilds the module
 node-pre-gyp rebuild                               # rebuilds the C code
 ```
 
-You will likely see some warnings from the C compiler as it compiles hidapi.  This is expected.
+You will likely see some warnings from the C compiler as it compiles
+[hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).  
+This is expected.
 
 
 ## Using `node-hid` in Electron projects
