@@ -1,6 +1,17 @@
 How to publish node-hid
 ========================
 
+
+1. Merge all changes and new features into master
+2. Fill out `changelog.md`
+3. Bump up npm version in `package.json`
+4. Update the `README.md` to reference this current version
+5. Commit then generate new tags based on package.json version number with `git tag 0.5.4 -a` and include the change log in the tag's annotation.
+6. Push tags to Github with `git push --tags`
+7. Switch to node v4 and npm 2
+8. `rm -rf node_modules build && npm install`
+
+
 ## New publish method using `node-pre-gyp-github`
 * Install tools globally to make things easier:
 ```

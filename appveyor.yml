@@ -68,6 +68,12 @@ build_script:
 test_script:
 - ps: npm run test
 
+# If we run npm test in powershell it'll have the wrong encoding
+# so we have to do it like this
+
+- IF %PUBLISH_BINARY% == 1 (node-pre-gyp package 2>&1)
+- IF %PUBLISH_BINARY% == 1 (node-pre-gyp-github publish --release 2>&1)
+
 deploy: OFF
 
 matrix:
