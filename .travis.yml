@@ -66,6 +66,7 @@ before_install:
 - node -p 'process.platform + "@" + process.arch'
 - npm --version
 - ldconfig -p | grep i386
+- ls -al /lib/i386-linux-gnu/*usb*
 
 # use g++-4.8 on Linux
 - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
