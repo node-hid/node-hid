@@ -4,14 +4,9 @@ environment:
     secure: mz0rO2OAlGR8uQ4o/vyr6hXVTGd1RX1XkNbLJ4yChRgb8ao6NS7Vc08JXZO3eAky
 
   matrix:
-  - nodejs_version: "4"
   - nodejs_version: "6"
-  - nodejs_version: "7"
-  - electron_version: "1.4.12"
-    nodejs_version: "6"
 
 platform:
-- x86
 - x64
 
 install:
@@ -67,6 +62,7 @@ install:
     npm config set spin false
 
 build_script:
+- git submodule update --init
 - npm install --build-from-source --msvs_version=2015
 
 test_script:
