@@ -45,6 +45,9 @@ you will need to build from source. The platforms, architectures and node versio
 
 | Platform / Arch | Node v4.x | Node v6.x | Node v7.x |
 |       ---       | --- | --- | --- |
+| Windows / x86   |  ☑  |  ☑  |  ☑  |
+| Windows / x64   |  ☑  |  ☑  |  ☑  |
+| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |
 | Linux / ia32    |  ☑  |  ☑  |  ☑  |
 | Linux / x64     |  ☑  |  ☑  |  ☑  |
 | Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |
@@ -52,9 +55,6 @@ you will need to build from source. The platforms, architectures and node versio
 | Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |
 | Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |
 | Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |
 
 ¹ ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
 

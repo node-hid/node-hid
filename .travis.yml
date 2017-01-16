@@ -20,7 +20,7 @@ addons:
     - libasound2:i386
     - libxss1:i386
     - socat
-    - libusb-1.0-0
+    - libusb-1.0-0:i386
     - libusb-1.0-0-dev
     - libudev-dev
 
