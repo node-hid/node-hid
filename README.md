@@ -8,15 +8,13 @@ npm install node-hid
 ### Prerequisites:
 
 * [Node.js](https://nodejs.org/) v0.10, v0.12, v4.2+
-* On Linux: (see [Compling from source](#compiling-from-source) below)
-    * `libusb-1.0-0`
-    * `libusb-1.0-0-dev`
-    * `libudev-dev`
 * [git](https://git-scm.com/)
+* For Linux: (see details at [Compling from source](#compiling-from-source))
+    * `libusb-1.0-0 libusb-1.0-0-dev libudev-dev`
 
 #### Supported OSes:
-* Mac OS X 10.8+
 * Linux (kernel 2.6+)
+* Mac OS X 10.8+
 * Windows XP+
 
 `node-hid` uses `node-pre-gyp` to store pre-built binary bundles, thus no
@@ -236,7 +234,7 @@ binary for you, you will need the following tools:
 * Linux (kernel 2.6+) : install examples shown for Ubuntu
     * Compilation tools: `apt install build-essential git`
     * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-    * libusb-1.0-0-dev:`sudo apt install libusb-1.0-0-dev`
+    * libusb-1.0-0 w/headers:`sudo apt install libusb-1.0-0 libusb-1.0-0-dev`
     * libudev-dev: (Fedora only) `yum install libusbx-devel`
 
 * Mac OS X 10.8+
@@ -266,6 +264,7 @@ cd node-hid                                        # must change into node-hid d
 git submodule update --init                        # done on publish automatically
 npm install                                        # rebuilds the module
 node-pre-gyp rebuild                               # rebuilds the C code
+node src/show-devices.js
 ```
 
 You will likely see some warnings from the C compiler as it compiles
