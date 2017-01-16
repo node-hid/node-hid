@@ -23,6 +23,7 @@ install:
       "git latest tag" = "$(git describe --tags --always HEAD)"
       "appveyor_repo_tag" = $env:appveyor_repo_tag
       "electron_version" = $env:electron_version
+      "PRE_GYP_GITHUB_TOKEN" = $env:NODE_PRE_GYP_GITHUB_TOKEN
     } | Out-String | Write-Host;
 
 # work around bug in npm 2.15.1 where checksums were coming back bad (node 0.12)
