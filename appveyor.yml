@@ -45,7 +45,6 @@ install:
     if ($env:appveyor_repo_tag -match "true" -and ("$(git describe --tags --always HEAD)" -eq $env:appveyor_repo_tag_name)) {
       $env:publish_binary = 1;
     } else {
-#      $env:publish_binary = 0;
       $env:publish_binary = 1;
     }
     true;
