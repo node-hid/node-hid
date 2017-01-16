@@ -82,3 +82,6 @@ deploy: OFF
 
 matrix:
   fast_finish: true
+
+artifacts:
+- path: 'build]**\*.tar.gz' # find all build tar balls
