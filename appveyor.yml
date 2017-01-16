@@ -9,8 +9,8 @@ environment:
   - nodejs_version: "7"
 
 platform:
-- x64
 - x86
+- x64
 
 install:
 - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform;
@@ -48,7 +48,7 @@ install:
     if ($env:appveyor_repo_tag -match "true" -and ("$(git describe --tags --always HEAD)" -eq $env:appveyor_repo_tag_name)) {
       $env:publish_binary = 1;
     } else {
-      $env:publish_binary = 1;
+      $env:publish_binary = 0;
     }
     true;
 

@@ -10,9 +10,10 @@ How to publish node-hid
 6. Push tags to Github with `git push --tags`
 7. Switch to node v4 and npm 2
 8. `rm -rf node_modules build && npm install`
+9. Publish to npm after builds finish. Builds can take half an hour and occasionally fail for seemingly no reason. Restart any failures in the travis or appeveyor ui. While you wait, remove the content of the Github release message so the tag's text shows. When the entire matrix succeeds and all binaries exist run `npm publish`.
 
 
-## New publish method using `node-pre-gyp-github`
+## Hand publish method using `node-pre-gyp-github`
 * Install tools globally to make things easier:
 ```
 npm install -g node-pre-gyp
