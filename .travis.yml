@@ -1,0 +1,101 @@
+---
+language: cpp
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.8
+    - g++-4.8-multilib
+    - gcc-multilib
+    - libgtk2.0-0
+    - libxtst6
+    - libnotify4
+    - libgconf2-4
+    - libgtk2.0-0:i386
+    - libxtst6:i386
+    - libnotify4:i386
+    - libgconf2-4:i386
+    - libnss3:i386
+    - libasound2:i386
+    - libxss1:i386
+    - socat
+    - libusb-1.0-0
+    - libusb-1.0-0-dev
+    - libudev-dev
+
+# Build matrix
+os:
+- linux
+- osx
+env:
+  global:
+  - secure: "VSd9F+3AgiRDCj1XLFTIpiMEpB8wDB5dqmjcv294+2Mqi7JM8ONsXR6KAZy9qNMjg/w0UrZFXX57qjlQ1PhOofh8nwthkcdQRv6gnKUkJyJ5OGYO74qpgHYjegZYGkYtPSZkDsF0xNCERMWP7Os+KuiqMTIIgUrjlNrRJWxQPR0="
+  matrix:
+  - TRAVIS_NODE_VERSION="4"
+  - TRAVIS_NODE_VERSION="4" ARCH="x86"
+  - TRAVIS_NODE_VERSION="6"
+  - TRAVIS_NODE_VERSION="6" ARCH="x86"
+  - TRAVIS_NODE_VERSION="7"
+  - TRAVIS_NODE_VERSION="7" ARCH="x86"
+matrix:
+  exclude:
+  - os: osx
+    env: TRAVIS_NODE_VERSION="4" ARCH="x86"
+  - os: osx
+    env: TRAVIS_NODE_VERSION="6" ARCH="x86"
+  - os: osx
+    env: TRAVIS_NODE_VERSION="7" ARCH="x86"
+
+before_install:
+# reinstall latest nvm
+- rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh
+- nvm install $TRAVIS_NODE_VERSION
+- PATH=$PATH:`pwd`/node_modules/.bin
+
+- BASE_URL=$(node -p "'https://nodejs.org/dist/' + process.version")
+- X86_FILE=$(node -p "'node-' + process.version + '-' + process.platform + '-x86'")
+# download node if testing x86 architecture
+- if [[ "$ARCH" == "x86" ]]; then wget $BASE_URL/$X86_FILE.tar.gz; tar -xf $X86_FILE.tar.gz; export PATH=$X86_FILE/bin:$PATH; fi
+
+# print versions
+- uname -a
+- file `which node`
+- node --version
+- node -p 'process.platform + "@" + process.arch'
+- npm --version
+
+# use g++-4.8 on Linux
+- if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
+- $CXX --version
+
+# figure out if we should publish
+- PUBLISH_BINARY=false
+# if we are building a tag then publish
+- echo $TRAVIS_BRANCH
+- echo `git describe --tags --always HEAD`
+- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=true; fi;
+- echo "Publishing native platform Binary Package? ->" $PUBLISH_BINARY
+
+# Cleanup the output of npm
+- npm config set progress false
+- npm config set spin false
+
+install:
+# ensure source install works
+- git submodule update --init
+- npm install --build-from-source
+
+script:
+# if publishing, do it
+- if [[ $PUBLISH_BINARY == true ]]; then node-pre-gyp package; fi;
+- if [[ $PUBLISH_BINARY == true ]]; then node-pre-gyp-github publish --release; fi;
+
+# cleanup
+- node-pre-gyp clean
+
+# test binary exists
+- if [[ $PUBLISH_BINARY == true ]]; then npm install --fallback-to-build=false; fi;
+
+# after_success:
+# - bash <(curl -s https://codecov.io/bash)
