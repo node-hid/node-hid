@@ -65,6 +65,8 @@ public:
 
   typedef vector<unsigned char> databuf_t;
 
+  void open()
+    throw(JSException);
   void write(const databuf_t& message)
     throw(JSException);
   void close();
@@ -77,6 +79,7 @@ private:
   ~HID() { close(); }
 
   static NAN_METHOD(New);
+  static NAN_METHOD(open);
   static NAN_METHOD(read);
   static NAN_METHOD(write);
   static NAN_METHOD(close);
@@ -115,28 +118,49 @@ private:
 
   void readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[]);
 
-  hid_device* _hidHandle;
+  int32_t _productId = -1;
+  int32_t _vendorId = -1;
+  wstring _serialNumber;
+  string _path;
+  hid_device* _hidHandle = NULL;
 };
 
 HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
 {
-  _hidHandle = hid_open(vendorId, productId, serialNumber);
-
-  if (!_hidHandle) {
-    ostringstream os;
-    os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
-    throw JSException(os.str());
-  }
+  _vendorId = vendorId;
+  _productId = productId;
+  _serialNumber = serialNumber;
 }
 
 HID::HID(const char* path)
 {
-  _hidHandle = hid_open_path(path);
+  _path = path;
+}
 
-  if (!_hidHandle) {
-    ostringstream os;
-    os << "cannot open device with path " << path;
-    throw JSException(os.str());
+void
+HID::open()
+  throw(JSException)
+{
+  if (_hidHandle != NULL) {
+    throw JSException("Device already open.");
+  }
+
+  if (_path.length() > 0) {
+    _hidHandle = hid_open_path(_path.c_str());
+
+    if (!_hidHandle) {
+      ostringstream os;
+      os << "cannot open device with path " << _path;
+      throw JSException(os.str());
+    }
+  } else {
+    _hidHandle = hid_open(_vendorId, _productId, _serialNumber.c_str());
+
+    if (!_hidHandle) {
+      ostringstream os;
+      os << "cannot open device with vendor id 0x" << hex << _vendorId << " and product id 0x" << _productId;
+      throw JSException(os.str());
+    }
   }
 }
 
@@ -415,6 +439,20 @@ NAN_METHOD(HID::New)
   }
 }
 
+NAN_METHOD(HID::open)
+{
+  Nan::HandleScope scope;
+
+  try {
+    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+    hid->open();
+    return;
+  }
+  catch (const JSException& e) {
+    e.asV8Exception();
+  }
+}
+
 NAN_METHOD(HID::close)
 {
   Nan::HandleScope scope;
@@ -598,6 +636,7 @@ HID::Initialize(Local<Object> target)
   hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
   hidTemplate->SetClassName(Nan::New<String>("HID").ToLocalChecked());
 
+  Nan::SetPrototypeMethod(hidTemplate, "open", open);
   Nan::SetPrototypeMethod(hidTemplate, "close", close);
   Nan::SetPrototypeMethod(hidTemplate, "read", read);
   Nan::SetPrototypeMethod(hidTemplate, "write", write);
