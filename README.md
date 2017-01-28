@@ -34,7 +34,8 @@
      * [hidraw support](#hidraw-support)
      * [udev device permissions](#udev-device-permissions)
   * [Compiling from source](#compiling-from-source)
-     * [To build node-hid for development:](#to-build-node-hid-for-development)
+   * [To build node-hid from source for your project:](#to-build-node-hid-from-source-for-your-project)
+   * [To build node-hid for development:](#to-build-node-hid-for-development)
   * [Using node-hid in Electron projects](#using-node-hid-in-electron-projects)
   * [Using node-hid in NW.js projects](#using-node-hid-in-nwjs-projects)
   * [Support](#support)
@@ -308,6 +309,12 @@ binary for you, you will need the following tools:
           * [Python 2.7](https://www.python.org/downloads/windows/)
           * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
 
+
+### To build `node-hid` from source for your project:
+
+```
+npm install node-hid --build-from-source
+```
 
 ### To build `node-hid` for development:
 
