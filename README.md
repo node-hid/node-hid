@@ -180,6 +180,7 @@ Notes:
 see the `sendFeatureReport()` method below.
 - Some devices use reportIds for OUTPUT reports.  If that is the case,
 the first byte of the array to `write()` should be the reportId.
+- BUG: if the first byte of a `write()` is 0x00, you may need to prepend an extra 0x00 due to a bug in hidapi (see issue #187)
 
 
 ## Complete API
