@@ -146,9 +146,14 @@ var device = new HID.HID(vid,pid);
 The `device` variable will contain a handle to the device.
 If an error occurs opening the device, an exception will be thrown.
 
+A `node-hid` device is an `EventEmitter`. While it shares some method names and
+usage patterns with `Readable` and `Writable` streams, it is not a stream and
+the semantics vary. For example, `device.write` does not take encoding or
+callback args and `device.pause` does not do the same thing as `readable.pause`.
+There is also no `pipe` method.
+
 ### Reading from a device
 
-A `node-hid` device is an EventEmitter.
 Reading from a device is performed by registering a "data" event handler:
 
 ```js
@@ -160,11 +165,14 @@ You can also listen for errors like this:
 ```js
 device.on("error", function(err) {});
 ```
+
 Notes:
 - All reading is asynchronous
 - The `data` event receives INPUT reports. To receive Feature reports,
   see the `readFeatureReport()` method below.
 - To remove an event handler, close the device with `device.close()`
+- When there is not yet a data handler or no data handler exists, data is not
+  read at all — there is no buffer.
 
 
 ### Writing to a device
@@ -215,7 +223,9 @@ Closes the device. Subsequent reads will raise an error.
 
 ### `device.pause()`
 
-Pauses reading and the emission of `data` events.
+Pauses reading and the emission of `data` events. This means the underlying
+device is _silenced_ until resumption — it is not like pausing a stream, where
+data continues to accumulate.
 
 ### `device.resume()`
 
@@ -337,7 +347,7 @@ node src/show-devices.js
 ```
 
 You will likely see some warnings from the C compiler as it compiles
-[hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).  
+[hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).
 This is expected.
 
 
@@ -360,7 +370,7 @@ electron-rebuild -v 0.36.5 --force -m . -w node-hid
 ```
     npm install node-pre-gyp
     ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
-```   
+```
 
 You can change 0.12.3 to version nwjs that you want to deploy.
 
