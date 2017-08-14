@@ -2,11 +2,7 @@ var EventEmitter = require("events").EventEmitter,
     util = require("util");
 
 //Load C++ binding
-//var binding = require("./build/Release/HID.node");
-var binary = require('node-pre-gyp');
-var path = require('path');
-var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
-var binding = require(binding_path);
+var binding = require('bindings')('HID.node');
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
