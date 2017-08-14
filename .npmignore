@@ -1,0 +1,15 @@
+.eslintrc
+.github
+.jshintrc
+.travis.yml
+.vscode
+appveyor.yml
+
+# MIRRORED FROM .gitignore PLEASE MAINTAIN
+.mailmap
+build/
+coverage
+node_modules
+npm-debug.log
+package-lock.json
+Release/
