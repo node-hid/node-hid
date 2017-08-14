@@ -12,7 +12,7 @@
     "url": "git://github.com/node-hid/node-hid.git"
   },
   "scripts": {
-    "test": "node .",
+    "test": "node src/test-ci.js",
     "preinstall": "git submodule update --init",
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
