@@ -56,8 +56,6 @@ build_script:
 test_script:
 - ps: npm test
 
-#- ps: npm run prebuild
-
 - ps: >
     if ($env:publish_binary -eq "true") {
       npm run prebuild-upload

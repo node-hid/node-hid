@@ -91,7 +91,6 @@ install:
 - npm install --build-from-source
 
 script:
-- node .
 - npm test
 
 # if publishing, do it
