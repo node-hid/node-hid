@@ -69,7 +69,7 @@ npm install node-hid
 
 ### Installation Special Cases
 
-We are using [node-pre-gyp](https://github.com/mapbox/node-pre-gyp) to compile and post binaries of the library for most common use cases (linux, mac, windows on standard processor platforms). If you are on a special case, `node-hid` will work, but it will compile the binary when you install.
+We are using [prebuild](https://github.com/mafintosh/prebuild) to compile and post binaries of the library for most common use cases (linux, mac, windows on standard processor platforms). If you are on a special case, `node-hid` will work, but it will compile the binary when you install.
 
 If `node-hid` doesn't have a pre-built binary for your system
 (e.g. Linux on Raspberry Pi),
@@ -285,13 +285,11 @@ For an example, see the
 
 ## Compiling from source
 
-To compile & develop locally or if `node-pre-gyp` cannot download a pre-built
+To compile & develop locally or if `prebuild` cannot download a pre-built
 binary for you, you will need the following tools:
 
 * All OSes:
     * `node-gyp` installed globally: `npm install -g node-gyp`
-    * `node-pre-gyp` installed globally: `npm install -g node-pre-gyp`
-
 
 * Linux (kernel 2.6+) : install examples shown for Ubuntu
     * Compilation tools: `apt install build-essential git`
@@ -323,17 +321,14 @@ npm install node-hid --build-from-source
 * change into its directory
 * update the submodules
 * build the node package
-* node-pre-gyp to rebuild the C code
 
 For example:
 
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid                                        # must change into node-hid directory
-git submodule update --init                        # done on publish automatically
-npm install                                        # rebuilds the module
-node-pre-gyp rebuild                               # rebuilds the C code
-node src/show-devices.js
+npm install --build-from-source                    # rebuilds the module with C code
+node ./src/show-devices.js
 ```
 
 You will likely see some warnings from the C compiler as it compiles
@@ -356,13 +351,7 @@ electron-rebuild -v 0.36.5 --force -m . -w node-hid
 ```
 
 ## Using `node-hid` in NW.js projects
-
-```
-    npm install node-pre-gyp
-    ./node_modules/.bin/node-pre-gyp rebuild --runtime=node-webkit --target=0.12.3
-```   
-
-You can change 0.12.3 to version nwjs that you want to deploy.
+(TBD)
 
 ## Support
 
