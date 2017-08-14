@@ -577,8 +577,9 @@ static void
 deinitialize(void*)
 {
   if (hid_exit()) {
-    cerr << "cannot initialize hidapi (hid_init failed)" << endl;
-    abort();
+    cerr << "cannot uninitialize hidapi (hid_exit failed)" << endl;
+    return Nan::ThrowTypeError("cannot uninitialize hidapi (hid_exit failed)");
+    // abort();
   }
 }
 
@@ -587,7 +588,8 @@ HID::Initialize(Local<Object> target)
 {
   if (hid_init()) {
     cerr << "cannot initialize hidapi (hid_init failed)" << endl;
-    abort();
+    return Nan::ThrowTypeError("cannot initialize hidapi (hid_init failed)");
+    //abort();
   }
 
   node::AtExit(deinitialize, 0);
