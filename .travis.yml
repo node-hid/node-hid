@@ -34,7 +34,8 @@ env:
   matrix:
   - TRAVIS_NODE_VERSION="4"
   - TRAVIS_NODE_VERSION="6"
-  - TRAVIS_NODE_VERSION="7"
+  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
+  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 #  - TRAVIS_NODE_VERSION="4" ARCH="x86"
 #  - TRAVIS_NODE_VERSION="6" ARCH="x86"
 #  - TRAVIS_NODE_VERSION="7" ARCH="x86"
@@ -45,7 +46,7 @@ matrix:
   - os: osx
     env: TRAVIS_NODE_VERSION="6" ARCH="x86"
   - os: osx
-    env: TRAVIS_NODE_VERSION="7" ARCH="x86"
+    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 
 before_install:
 # reinstall latest nvm
@@ -86,20 +87,19 @@ before_install:
 
 install:
 # ensure source install works
-- export V=1
-- git submodule update --init
+#- export V=1
 - npm install --build-from-source
 
 script:
+- node .
+- npm test
+
 # if publishing, do it
-- if [[ $PUBLISH_BINARY == true ]]; then node-pre-gyp package; fi;
-- if [[ $PUBLISH_BINARY == true ]]; then node-pre-gyp-github publish --release; fi;
+- >
+  if [[ $PUBLISH_BINARY == true ]]; then
+    npm run prebuild-upload;
+  fi;
 
-# cleanup
-- node-pre-gyp clean
-
-# test binary exists
-- if [[ $PUBLISH_BINARY == true ]]; then npm install --fallback-to-build=false; fi;
 
 # after_success:
 # - bash <(curl -s https://codecov.io/bash)
