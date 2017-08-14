@@ -27,12 +27,10 @@
 
 #include <stdlib.h>
 
-#include <v8.h>
 #include <node.h>
-#include <node_buffer.h>
+#include <nan.h>
 
 #include <hidapi.h>
-#include "nan.h"
 
 using namespace std;
 using namespace v8;
@@ -289,11 +287,12 @@ NAN_METHOD(HID::readTimeout)
   Nan::HandleScope scope;
 
   if (info.Length() != 1 || !info[0]->IsUint32()) {
-    return Nan::ThrowError("readTimeout need time out parameter");
+    return Nan::ThrowError("readTimeout needs time out parameter");
   }
 
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  const int timeout = info[0]->ToUint32()->Value();
+  // const int timeout = info[0]->ToUint32()->Value();
+  const int timeout = Nan::To<uint32_t>(info[0]).FromJust();
   unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
 
@@ -312,14 +311,18 @@ NAN_METHOD(HID::getFeatureReport)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 2
-      || info[1]->ToUint32()->Value() == 0) {
-    return Nan::ThrowError("need report ID and non-zero length parameter in getFeatureReport");
+  if (info.Length() != 2 || !info[1]->IsUint32() ) {
+    return Nan::ThrowError("need report ID and length parameters in getFeatureReport");
   }
 
-  const uint8_t reportId = info[0]->ToUint32()->Value();
+  const uint8_t reportId = Nan::To<uint32_t>(info[0]).FromJust();
+  const int bufSize = Nan::To<uint32_t>(info[1]).FromJust();
+  if( bufSize == 0 ) {
+    return Nan::ThrowError("Length parameter cannot be zero in getFeatureReport");
+  }
+
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  const int bufSize = info[1]->ToUint32()->Value();
+
   //unsigned char buf[bufSize];
   unsigned char* buf = new unsigned char[bufSize];
   buf[0] = reportId;
