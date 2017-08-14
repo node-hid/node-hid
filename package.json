@@ -16,7 +16,8 @@
     "preinstall": "git submodule update --init",
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
-    "rebuild-all": "npm rebuild && node-gyp rebuild",
+    "prebuild-upload": "prebuild --all --strip --verbose",
+    "rebuild": "prebuild --compile",
     "cleanbuild": "rimraf hidapi node_modules build"
   },
   "bin": {
