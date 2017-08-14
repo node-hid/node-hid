@@ -17,8 +17,6 @@
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
     "rebuild-all": "npm rebuild && node-gyp rebuild",
-    "gyppackage": "node-pre-gyp package",
-    "gyppublish": "node-pre-gyp publish",
     "cleanbuild": "rimraf hidapi node_modules build"
   },
   "bin": {

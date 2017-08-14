@@ -6,7 +6,8 @@ environment:
   matrix:
   - nodejs_version: "4"
   - nodejs_version: "6"
-  - nodejs_version: "7"
+  - binary_builder: "true"
+    nodejs_version: "8"
 
 platform:
 - x86
@@ -67,16 +68,18 @@ install:
 
 build_script:
 - git submodule update --init
-- npm install --build-from-source --msvs_version=2015
+- npm install --build-from-source
 
 test_script:
 - ps: npm run test
+- ps: npm run prebuild
 
 # If we run npm test in powershell it'll have the wrong encoding
 # so we have to do it like this
 
-- IF %PUBLISH_BINARY% == 1 (node-pre-gyp package 2>&1)
-- IF %PUBLISH_BINARY% == 1 (node-pre-gyp-github publish --release 2>&1)
+#FIXME need to do prebuild publish
+#- IF %PUBLISH_BINARY% == 1 (node-pre-gyp package 2>&1)
+#- IF %PUBLISH_BINARY% == 1 (node-pre-gyp-github publish --release 2>&1)
 
 deploy: OFF
 
@@ -84,4 +87,4 @@ matrix:
   fast_finish: true
 
 artifacts:
-- path: build 
+- path: prebuilds
