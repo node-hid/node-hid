@@ -36,9 +36,7 @@ env:
   - TRAVIS_NODE_VERSION="6"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
-#  - TRAVIS_NODE_VERSION="4" ARCH="x86"
-#  - TRAVIS_NODE_VERSION="6" ARCH="x86"
-#  - TRAVIS_NODE_VERSION="7" ARCH="x86"
+
 matrix:
   exclude:
   - os: osx
@@ -47,43 +45,48 @@ matrix:
     env: TRAVIS_NODE_VERSION="6" ARCH="x86"
   - os: osx
     env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
+  - os: linux
+    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 
 before_install:
-# reinstall latest nvm
-- rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh
-- nvm install $TRAVIS_NODE_VERSION
-- PATH=$PATH:`pwd`/node_modules/.bin
 
-- BASE_URL=$(node -p "'https://nodejs.org/dist/' + process.version")
-- X86_FILE=$(node -p "'node-' + process.version + '-' + process.platform + '-x86'")
 # download node if testing x86 architecture
-- if [[ "$ARCH" == "x86" ]]; then wget $BASE_URL/$X86_FILE.tar.gz; tar -xf $X86_FILE.tar.gz; export PATH=$X86_FILE/bin:$PATH; fi
-#- if [[ "$ARCH" == "x86" ]]; then export LDFLAGS=-L/lib/i386-linux-gnu ; fi
-
-# print versions
-- uname -a
-- file `which node`
-- node --version
-- node -p 'process.platform + "@" + process.arch'
-- npm --version
-#- ldconfig -p | grep i386
-#- ls -al /lib/i386-linux-gnu/*usb*
+- >
+  if [[ "$ARCH" == "x86" ]]; then
+    BASE_URL=$(node -p "'https://nodejs.org/dist/' + process.version");
+    X86_FILE=$(node -p "'node-' + process.version + '-' + process.platform + '-x86'");
+    wget $BASE_URL/$X86_FILE.tar.gz;
+    tar -xf $X86_FILE.tar.gz;
+    nvm deactivate;
+    export PATH=$X86_FILE/bin:$PATH;
+  else
+    nvm install $TRAVIS_NODE_VERSION
+  fi;
 
 # use g++-4.8 on Linux
 - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
 - $CXX --version
 
-# figure out if we should publish
-- PUBLISH_BINARY=false
-# if we are building a tag then publish
-- echo $TRAVIS_BRANCH
-- echo `git describe --tags --always HEAD`
-- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=true; fi;
-- echo "Publishing native platform Binary Package? ->" $PUBLISH_BINARY
+# upgrade npm if on node 4 as npm2 doesn't like our dev peer deps
+- if [[ $TRAVIS_NODE_VERSION == "4" ]]; then npm install -g npm; fi
 
 # Cleanup the output of npm
 - npm config set progress false
 - npm config set spin false
+
+# print versions
+- uname -a
+- which node; file `which node`
+- node --version
+- node -p 'process.platform + "@" + process.arch'
+- npm --version
+
+# figure out if we should publish
+- PUBLISH_BINARY=false
+- echo $TRAVIS_BRANCH
+- echo `git describe --tags --always HEAD`
+- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=$BINARY_BUILDER; fi;
+- echo "Publishing native platform Binary Package? ->" $PUBLISH_BINARY
 
 install:
 # ensure source install works
@@ -91,6 +94,7 @@ install:
 - npm install --build-from-source
 
 script:
+
 - npm test
 
 # if publishing, do it
