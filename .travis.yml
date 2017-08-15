@@ -57,13 +57,16 @@ before_install:
     tar -xf $X86_FILE.tar.gz;
     nvm deactivate;
     export PATH=$X86_FILE/bin:$PATH;
+
   else
     nvm install $TRAVIS_NODE_VERSION
   fi;
 
-- >
-    dpkg-query -L libusb-1.0-0-dev:i386
-    dpkg-query -L libusb-1.0-0
+#- >
+#  if [[ $TRAVIS_OS_NAME == "linux" && "$ARCH" == "x86" ]]; then
+#    dpkg-query -L libusb-1.0-0-dev:i386
+#    dpkg-query -L libusb-1.0-0
+#  fi;
 
 # use g++-4.8 on Linux
 - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
@@ -99,7 +102,14 @@ install:
 script:
 
 - npm test
-- ldd ./build/Release/HID.node
+
+# inspect library dependencies
+- >
+  if [[ $TRAVIS_OS_NAME == "linux" ]]; then
+    ldd ./build/Release/HID.node
+  else
+    otool -L ./build/Release/HID.node
+  fi;
 
 # if publishing, do it
 - >
