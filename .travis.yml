@@ -20,7 +20,7 @@ addons:
     - libasound2:i386
     - libxss1:i386
     - socat
-    - libusb-1.0-0
+    - libusb-1.0-0:i386
     - libusb-1.0-0-dev
     - libudev-dev
 
@@ -61,6 +61,12 @@ before_install:
     export PATH=$X86_FILE/bin:$PATH;
   else
     nvm install $TRAVIS_NODE_VERSION
+  fi;
+
+- >
+  if [[ "$ARCH" == "x86" ]]; then
+    dpkg-query -L libusb-1.0-0-dev
+    dpkg-query -L libusb-1.0-0
   fi;
 
 # use g++-4.8 on Linux
