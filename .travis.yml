@@ -62,10 +62,8 @@ before_install:
   fi;
 
 - >
-  if [[ "$ARCH" == "x86" ]]; then
     dpkg-query -L libusb-1.0-0-dev:i386
     dpkg-query -L libusb-1.0-0
-  fi;
 
 # use g++-4.8 on Linux
 - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
