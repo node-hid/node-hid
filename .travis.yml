@@ -65,7 +65,7 @@ before_install:
 
 - >
   if [[ "$ARCH" == "x86" ]]; then
-    dpkg-query -L libusb-1.0-0-dev
+    dpkg-query -L libusb-1.0-0-dev:i386
     dpkg-query -L libusb-1.0-0
   fi;
 
@@ -102,6 +102,7 @@ install:
 script:
 
 - npm test
+- ldd ./build/Release/HID.node
 
 # if publishing, do it
 - >
