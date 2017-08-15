@@ -20,8 +20,8 @@ addons:
     - libasound2:i386
     - libxss1:i386
     - socat
-    - libusb-1.0-0:i386
-    - libusb-1.0-0-dev
+#    - libusb-1.0-0:i386
+    - libusb-1.0-0-dev:i386
     - libudev-dev
 
 # Build matrix
@@ -32,9 +32,9 @@ env:
   global:
     secure: "ULgQHud6rffcRBZrDk/a1jVnAfUm6CseQJ8j89S7As7gc/bQkD9fi0OAyr5qT5ymxtn4ujXACDEeFDF/BlGwsbFoOS4sApcP33sJ5rsGVgTqihA8Dzb6k2F5e0Cd80+VzPa+lDdtMuRQMaVctA9rWe7VcfJWUc7rei4/kYfAAL0="
   matrix:
-  - TRAVIS_NODE_VERSION="4"
-  - TRAVIS_NODE_VERSION="6"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
+#  - TRAVIS_NODE_VERSION="4"
+#  - TRAVIS_NODE_VERSION="6"
+#  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 
 matrix:
