@@ -42,20 +42,21 @@
 
 ## Platform Support
 `node-hid` supports Node.js v4 and upwards. For versions 0.10 and 0.12,
-you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following;
+you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following.
+Those with checks we provide pre-built binaries, for the others you will need to compile.
 
-| Platform / Arch | Node v4.x | Node v6.x | Node v7.x |
-|       ---       | --- | --- | --- |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |
-| Linux / x64     |  ☑  |  ☑  |  ☑  |
-| Linux / ia32    |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |
-| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |
-| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |
+| Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Electron v1.0.2 | Electron v1.2.8 | Electron v1.3.13 | Electron v1.4.15 | Electron v1.5.0 | Electron v1.6.0 | Electron v1.7.0 |
+|       ---       | --- | --- | --- | --- | --- | --- |--- | --- | --- | --- | --- |
+| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
 
 ¹ ia32, ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
 
@@ -327,11 +328,12 @@ For example:
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid                                        # must change into node-hid directory
+npm run prepublish                                 # get the needed hidapi submodule
 npm install --build-from-source                    # rebuilds the module with C code
 node ./src/show-devices.js
 ```
 
-You will likely see some warnings from the C compiler as it compiles
+You will see some warnings from the C compiler as it compiles
 [hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).  
 This is expected.
 

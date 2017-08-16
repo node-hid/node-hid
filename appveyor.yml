@@ -1,7 +1,7 @@
 os: unstable
 environment:
-  # NODE_PRE_GYP_GITHUB_TOKEN:
-  #   secure: VYJPed/ilAHFpd7S0zW/C2U1jVqayW5QFBitwBqralJlKlgAPW6n1L1VUIOJswiW
+  prebuild_upload:
+    secure: rQSHWdI3848Ciz0UuAi3L04DnHi0fAzhaI1xk2RiypD+6fS4TNsl0omKROpJcDRl0I0rFkT+C4CnwubSHKzjMQ==
 
   matrix:
   - nodejs_version: "4"
