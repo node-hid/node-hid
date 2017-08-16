@@ -1,7 +1,7 @@
 os: unstable
 environment:
   prebuild_upload:
-    secure: rQSHWdI3848Ciz0UuAi3L04DnHi0fAzhaI1xk2RiypD+6fS4TNsl0omKROpJcDRl0I0rFkT+C4CnwubSHKzjMQ==
+    secure: VTBdrNnSESUSm8qkQg41kcul5KV3sLDn+K1MyJpIKmo4BRvFY2FhzL6jAGklV3Cm
 
   matrix:
   - nodejs_version: "4"
