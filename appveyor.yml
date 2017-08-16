@@ -51,6 +51,7 @@ install:
 
 
 build_script:
+- npm run prepublish
 - npm install --build-from-source
 
 test_script:

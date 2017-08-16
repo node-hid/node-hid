@@ -97,6 +97,7 @@ before_install:
 install:
 # ensure source install works
 #- export V=1
+- npm run prepublish
 - npm install --build-from-source
 
 script:
