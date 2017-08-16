@@ -13,8 +13,8 @@
   },
   "scripts": {
     "test": "node src/test-ci.js",
-    "preinstall": "git submodule update --init",
-    "install": "prebuild-install || node-gyp rebuild",
+    "prepare": "git submodule update --init",
+    "install": "prebuild-install || npm run prepare && node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
     "prebuild-upload": "prebuild --all --strip --verbose",
     "rebuild": "prebuild --compile",
