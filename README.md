@@ -250,6 +250,7 @@ Return an array of numbers data. If an error occurs, an exception will be thrown
 
 ## Notes for Specific Devices
 
+- Mouse and keyboards on Windows -- does not work, the OS will not allow it
 - Xbox 360 Controller on Windows 10 -- does not work
 
 ## Linux-specific Notes
