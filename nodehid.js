@@ -9,6 +9,15 @@ function HID() {
     //Inherit from EventEmitter
     EventEmitter.call(this);
 
+    var options = {};
+    var argumentsLength = arguments.length;
+
+    if (typeof(arguments[argumentsLength - 1]) === "object") {
+        // last argument contains options
+        options = arguments[argumentsLength - 1];
+        argumentsLength--;
+    }
+
     /* We also want to inherit from `binding.HID`, but unfortunately,
         it's not so easy for native Objects. For example, the
         following won't work since `new` keyword isn't used:
@@ -17,9 +26,9 @@ function HID() {
 
         So... we do this craziness instead...
     */
-    var thisPlusArgs = new Array(arguments.length + 1);
+    var thisPlusArgs = new Array(argumentsLength + 1);
     thisPlusArgs[0] = null;
-    for(var i = 0; i < arguments.length; i++)
+    for(var i = 0; i < argumentsLength; i++)
         thisPlusArgs[i + 1] = arguments[i];
     this._raw = new (Function.prototype.bind.apply(binding.HID,
         thisPlusArgs) )();
@@ -30,15 +39,22 @@ function HID() {
         `this._raw`
     */
     for(var i in binding.HID.prototype)
-        if(i != "close" && i != "read")
+        if(i != "open" && i != "close" && i != "read")
             this[i] = binding.HID.prototype[i].bind(this._raw);
+
+    this._closed = true;
+    this._paused = true;
+
+    if (typeof(options.autoOpen) === "undefined" || options.autoOpen) {
+        // default auto open to true, if not provided
+        this.open();
+    }
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
 
         Now upon adding a new listener for "data" events, we start
         polling the HID device using `read(...)`
         See `resume()` for more details. */
-    this._paused = true;
     var self = this;
     self.on("newListener", function(eventName, listener) {
         if(eventName == "data")
@@ -48,6 +64,12 @@ function HID() {
 //Inherit prototype methods
 util.inherits(HID, EventEmitter);
 //Don't inherit from `binding.HID`; that's done above already!
+
+HID.prototype.open = function open() {
+    this._raw.open();
+    this._closed = false;
+    this.resume();
+};
 
 HID.prototype.close = function close() {
     this._closing = true;
@@ -70,7 +92,7 @@ HID.prototype.read = function read(callback) {
 
 HID.prototype.resume = function resume() {
     var self = this;
-    if(self._paused && self.listeners("data").length > 0)
+    if(!self._closed && self._paused && self.listeners("data").length > 0)
     {
         //Start polling & reading loop
         self._paused = false;
