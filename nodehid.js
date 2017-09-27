@@ -1,13 +1,21 @@
 var EventEmitter = require("events").EventEmitter,
     util = require("util");
 
-//Load C++ binding
-var binding = require('bindings')('HID.node');
+// lazy load the C++ binding
+var binding = null;
+function loadBinding() {
+    if( !binding ) {
+        //Load C++ binding
+        binding = require('bindings')('HID.node');
+    }
+}
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
     //Inherit from EventEmitter
     EventEmitter.call(this);
+
+    loadBinding();
 
     /* We also want to inherit from `binding.HID`, but unfortunately,
         it's not so easy for native Objects. For example, the
@@ -98,6 +106,12 @@ HID.prototype.resume = function resume() {
     }
 };
 
+function showdevices() {
+    loadBinding();
+    return binding.devices.apply(HID,arguments);
+}
+
 //Expose API
 exports.HID = HID;
-exports.devices = binding.devices;
+exports.devices = showdevices;
+// exports.devices = binding.devices;
