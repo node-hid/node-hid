@@ -4,14 +4,14 @@ environment:
     secure: VTBdrNnSESUSm8qkQg41kcul5KV3sLDn+K1MyJpIKmo4BRvFY2FhzL6jAGklV3Cm
 
   matrix:
-  - nodejs_version: "4"
-  - nodejs_version: "6"
   - binary_builder: "true"
     nodejs_version: "8"
+  - nodejs_version: "6"
+  - nodejs_version: "4"
 
 platform:
-- x86
 - x64
+- x86
 
 install:
 - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform;
