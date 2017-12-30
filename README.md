@@ -340,17 +340,20 @@ This is expected.
 
 
 ## Using `node-hid` in Electron projects
-In your electron project, add `electron-rebuild` and `electron-prebuilt` to your `devDependencies`.
+In your electron project, add `electron-rebuild` to your `devDependencies`.
 Then in your package.json `scripts` add:
 
 ```
   "postinstall": "electron-rebuild --force"
 ```
+This will cause `npm` to rebuild `node-hid` for the version of Node that is in Electron.
+If you get an error similar to `The module "HID.node" was compiled against a differnt version of Node.js`
+then `electron-rebuild` hasn't been run and Electron is trying to use `node-hid` not built for it.
 
 If you want a specific version of electron, do something like:
 
 ```
-electron-rebuild -v 0.36.5 --force -m . -w node-hid
+  "postinstall": "electron-rebuild -v 0.36.5 --force -m . -w node-hid"
 ```
 
 ## Using `node-hid` in NW.js projects
