@@ -63,7 +63,7 @@ public:
 
   typedef vector<unsigned char> databuf_t;
 
-  void write(const databuf_t& message)
+  int write(const databuf_t& message)
     throw(JSException);
   void close();
   void setNonBlocking(int message)
@@ -158,7 +158,7 @@ HID::setNonBlocking(int message)
   }
 }
 
-void
+int
 HID::write(const databuf_t& message)
   throw(JSException)
 {
@@ -174,6 +174,7 @@ HID::write(const databuf_t& message)
   if (res < 0) {
     throw JSException("Cannot write to HID device");
   }
+  return res;  // return actual number of bytes written
 }
 
 void
@@ -204,7 +205,8 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
     );
     //Construct a new Buffer
     Local<Value> nodeBufferArgs[1] = { Nan::New<Integer>((uint32_t)message.size()) };
-    Local<Object> buf = nodeBufConstructor->NewInstance(1, nodeBufferArgs);
+    Local<Object> buf = Nan::NewInstance(nodeBufConstructor, 1, nodeBufferArgs).ToLocalChecked();
+
     char* data = Buffer::Data(buf);
     int j = 0;
     for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++) {
@@ -470,9 +472,9 @@ NAN_METHOD(HID::write)
       }
       message.push_back((unsigned char) messageArray->Get(i)->Int32Value());
     }
-    hid->write(message);
+    int returnedLength = hid->write(message); // returns number of bytes written
 
-    return;
+    info.GetReturnValue().Set(Nan::New<Integer>(returnedLength));
   }
   catch (const JSException& e) {
     e.asV8Exception();
