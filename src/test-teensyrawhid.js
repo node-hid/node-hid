@@ -36,12 +36,12 @@ device.on('error', function(err) {
 
 var message = [];
 for(var i=0; i < 64; i++) {
-    message[i] = 120;
+    message[i] = 120 + i;
 }
-message[0] = 121;
-message[1] = 122;
 
-console.log('message : ', JSON.stringify(message));
-device.write(message);
+var numsent = device.write(message);
+console.log('message : ', JSON.stringify(message))
+console.log('sent len:', message.length, 'actual len:', numsent);
+
 
 device.close();
