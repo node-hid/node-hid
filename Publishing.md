@@ -1,16 +1,38 @@
 How to publish node-hid
 ========================
 
+### newer way (in short) ###
+
+On MacOSX, Windows, Linux, do:
+```
+git clone https://github.com/node-hid/node-hid.git
+cd node-hid     
+npm run prepublish                # get the hidapi submodule
+npm install --build-from-source   # rebuilds the C code
+node ./src/show-devices.js        # simple tests
+npm run prebuild                  # build all the versions
+npm run prebuild-upload <gh-token> # upload all the versions using github token
+```
+And then on master dev box:
+```
+npm publish  # update npmjs, be sure to have Authy app for OTP code
+```
+
+remember for Windows
+```
+$env:PYTHON = "$env:USERPROFILE\.windows-build-tools\python27\python.exe"
+```
+
+#### old way ###
 
 1. Merge all changes and new features into master
-2. Fill out `changelog.md`
-3. Bump up npm version in `package.json`
-4. Update the `README.md` to reference this current version
-5. Commit then generate new tags based on package.json version number with `git tag 0.5.4 -a` and include the change log in the tag's annotation.
-6. Push tags to Github with `git push --tags`
-7. Switch to node v4 and npm 2
-8. `rm -rf node_modules build && npm install`
-9. Publish to npm after builds finish. Builds can take half an hour and occasionally fail for seemingly no reason. Restart any failures in the travis or appeveyor ui. While you wait, remove the content of the Github release message so the tag's text shows. When the entire matrix succeeds and all binaries exist run `npm publish`.
+2. Bump up npm version in `package.json`
+3. Update the `README.md` to reference this current version (if needed)
+4. Commit then generate new tags based on package.json version number
+   with e.g. `git tag v0.5.4 -a` and include the change log in the tag's annotation.
+5. Push tags to Github with `git push --tags`
+6. Watch Travis and Appveyor CI builds
+7. Publish to npm after builds finish. Builds can take half an hour and occasionally fail for seemingly no reason. Restart any failures in the travis or appeveyor ui. While you wait, remove the content of the Github release message so the tag's text shows. When the entire matrix succeeds and all binaries exist run `npm publish`.
 
 
 ## Config Travis, AppVeyor and Github to generate all of the binaries.
