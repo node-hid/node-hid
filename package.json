@@ -13,12 +13,13 @@
   },
   "scripts": {
     "test": "node src/test-ci.js",
+    "showdevices": "node src/show-devices.js",
     "prepublish": "git submodule update --init",
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
     "prebuild-upload": "prebuild --all --strip --verbose --upload",
-    "rebuild": "prebuild --compile",
-    "cleanbuild": "rimraf hidapi build node_modules"
+    "build": "node-gyp build",
+    "clean": "rimraf hidapi build node_modules"
   },
   "bin": {
     "hid-showdevices": "./src/show-devices.js"
