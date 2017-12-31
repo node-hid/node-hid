@@ -45,20 +45,43 @@
 you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following.
 Those with checks we provide pre-built binaries, for the others you will need to compile.
 
-| Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Electron v1.0.2 | Electron v1.2.8 | Electron v1.3.13 | Electron v1.4.15 | Electron v1.5.0 | Electron v1.6.0 | Electron v1.7.0 |
-|       ---       | --- | --- | --- | --- | --- | --- |--- | --- | --- | --- | --- |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  | ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  | ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+* ☑ = full-support with pre-built binaries
+* ☐ = source-support only
+
+### Supported Node versions: ###
+
+| Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Node v9.x |
+|       ---       | --- | --- | --- | --- |
+| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
 
 ¹ ia32, ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
+
+### Supported Electron versions: ###
+
+| Platform / Arch |v1.0 |v1.2 |v1.3 |v1.4 |v1.5 |v1.6 |v1.7 |v1.8² |
+|       ---       | --- | --- | --- | --- | --- | --- | --- | --- |
+| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+
+² Electron v1.8 currently has issues but prebuilt binaries are provided.
+
 
 ## Installation
 
@@ -76,7 +99,6 @@ If `node-hid` doesn't have a pre-built binary for your system
 (e.g. Linux on Raspberry Pi),
 `node-gyp` is used to compile `node-hid` locally.  It will need the pre-requisites
 listed in [Compling from source](#compiling-from-source) below.
-
 
 
 ## Examples
