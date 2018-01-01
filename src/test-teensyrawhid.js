@@ -40,14 +40,32 @@ device.on('error', function(err) {
     console.log("error:",err);
 });
 
-var message = [];
+var messageA = [];
 for(var i=0; i < 64; i++) {
-    message[i] = 120 + i;
+    messageA[i] = 120 + i;
+}
+// for Windows, must prepend report number, even when there isn't one
+if( os.platform() == 'win32' ) {
+    messageA.unshift( 0x00 );
 }
 
-var numsent = device.write(message);
-console.log('message : ', JSON.stringify(message))
-console.log('sent len:', message.length, 'actual len:', numsent);
+var numsentA = device.write(messageA);
+console.log('message A: ', JSON.stringify(messageA))
+console.log('sent len:', messageA.length, 'actual len:', numsentA);
 
+var messageB = [];
+for(var i=0; i < 64; i++) {
+    messageB[i] = 0 + i;
+}
+// for Windows, must prepend report number, even when there isn't one
+if( os.platform() == 'win32' ) {
+    messageB.unshift( 0x00 );
+}
+var numsentB = device.write(messageB);
+console.log('message B: ', JSON.stringify(messageB))
+console.log('sent len:', messageB.length, 'actual len:', numsentB);
 
-device.close();
+console.log("waiting 5 seconds for data from Teensy");
+setTimeout( function() {
+    device.close();
+}, 5000);
