@@ -1,14 +1,34 @@
+
+var os = require('os')
+
 var EventEmitter = require("events").EventEmitter,
     util = require("util");
+
+var driverType = null;
+function setDriverType(type) {
+    driverType = type;
+}
 
 // lazy load the C++ binding
 var binding = null;
 function loadBinding() {
     if( !binding ) {
-        //Load C++ binding
-        binding = require('bindings')('HID.node');
+        //console.log('driverType:',driverType);
+        if( os.platform() == 'linux' ) {
+            // Linux defaults to hidraw
+            if( driverType && driverType === 'hidraw' ) {
+                binding = require('bindings')('HID-hidraw.node');
+            } else {
+                binding = require('bindings')('HID.node');
+            }
+        }
+        else {
+            binding = require('bindings')('HID.node');
+        }
+        //console.log("binding:",binding);
     }
 }
+
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
@@ -114,4 +134,5 @@ function showdevices() {
 //Expose API
 exports.HID = HID;
 exports.devices = showdevices;
+exports.setDriverType = setDriverType;
 // exports.devices = binding.devices;
