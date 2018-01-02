@@ -13,10 +13,10 @@ function setDriverType(type) {
 var binding = null;
 function loadBinding() {
     if( !binding ) {
-        //console.log('driverType:',driverType);
+        //console.log('driverType:',driverType, "os.platform:",os.platform());
         if( os.platform() === 'linux' ) {
             // Linux defaults to hidraw
-            if( driverType && driverType === 'hidraw' ) {
+            if( !driverType || driverType === 'hidraw' ) {
                 binding = require('bindings')('HID-hidraw.node');
             } else {
                 binding = require('bindings')('HID.node');
@@ -28,7 +28,6 @@ function loadBinding() {
         //console.log("binding:",binding);
     }
 }
-
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
