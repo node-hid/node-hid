@@ -35,6 +35,7 @@ var blink1_sendCommand = function( /* command [, args ...]*/ ) {
         featureReport[i + 1] = arguments[i];
     }
     var rc = hidDevice.sendFeatureReport(featureReport);
+    console.log("report sent:", featureReport);
     console.log("sent size:",featureReport.length," actual size:", rc);
 };
 var blink1_readResponse = function(callback) {
