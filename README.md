@@ -57,10 +57,13 @@ Those with checks we provide pre-built binaries, for the others you will need to
 * ☑ = full-support with pre-built binaries
 * ☐ = source-support only
 
+We strive to make `node-hid` cross-platform so there's a good chance any
+combination not listed here will compile and work.
+
 ### Supported Node versions ###
 
 | Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Node v9.x |
-|       ---       | --- | --- | --- | --- |
+|       ---       | --- | --- | --- | --- | --- |
 | Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
 | Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
 | Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
