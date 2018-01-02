@@ -4,41 +4,50 @@
 [![Build Status](https://travis-ci.org/node-hid/node-hid.svg?branch=master)](https://travis-ci.org/node-hid/node-hid)
 [![Build status](https://ci.appveyor.com/api/projects/status/sqgrud8yufx12dbt?svg=true)](https://ci.appveyor.com/project/todbot/node-hid/branch/master)
 
-  * [Platform Support](#platform-support)
-  * [Installation](#installation)
-     * [Installation Special Cases](#installation-special-cases)
-  * [Examples](#examples)
-  * [Usage](#usage)
-     * [List all HID devices connected](#list-all-hid-devices-connected)
-     * [Opening a device](#opening-a-device)
-     * [Reading from a device](#reading-from-a-device)
-     * [Writing to a device](#writing-to-a-device)
-  * [Complete API](#complete-api)
-     * [devices = HID.devices()](#devices--hiddevices)
-     * [device = new HID.HID(path)](#device--new-hidhidpath)
-     * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
-     * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-     * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
-     * [device.write(data)](#devicewritedata)
-     * [device.close()](#deviceclose)
-     * [device.pause()](#devicepause)
-     * [device.resume()](#deviceresume)
-     * [device.read(callback)](#devicereadcallback)
-     * [device.readSync()](#devicereadsync)
-     * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
-     * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
-     * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-  * [Notes for Specific Devices](#notes-for-specific-devices)
-  * [Linux-specific Notes](#linux-specific-notes)
-     * [usage and <code>usagePage</code> device info fields](#usage-and-usagepage-device-info-fields)
-     * [hidraw support](#hidraw-support)
-     * [udev device permissions](#udev-device-permissions)
-  * [Compiling from source](#compiling-from-source)
+
+* [Platform Support](#platform-support)
+   * [Supported Node versions](#supported-node-versions)
+   * [Supported Electron versions](#supported-electron-versions)
+* [Installation](#installation)
+   * [Installation Special Cases](#installation-special-cases)
+* [Examples](#examples)
+* [Usage](#usage)
+   * [List all HID devices connected](#list-all-hid-devices-connected)
+   * [Opening a device](#opening-a-device)
+   * [Picking a device from the device list](#picking-a-device-from-the-device-list)
+   * [Reading from a device](#reading-from-a-device)
+   * [Writing to a device](#writing-to-a-device)
+* [Complete API](#complete-api)
+   * [devices = HID.devices()](#devices--hiddevices)
+   * [HID.setDriverType(type)](#hidsetdrivertypetype)
+   * [device = new HID.HID(path)](#device--new-hidhidpath)
+   * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
+   * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
+   * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
+   * [device.write(data)](#devicewritedata)
+   * [device.close()](#deviceclose)
+   * [device.pause()](#devicepause)
+   * [device.resume()](#deviceresume)
+   * [device.read(callback)](#devicereadcallback)
+   * [device.readSync()](#devicereadsync)
+   * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
+   * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
+   * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
+* [Windows notes](#windows-notes)
+   * [Mice and keyboards](#mice-and-keyboards)
+   * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
+   * [Prepend byte to hid_write()](#prepend-byte-to-hid_write)
+* [Linux notes](#linux-notes)
+   * [Selecting driver type](#selecting-driver-type)
+   * [udev device permissions](#udev-device-permissions)
+* [Compiling from source](#compiling-from-source)
    * [To build node-hid from source for your project:](#to-build-node-hid-from-source-for-your-project)
    * [To build node-hid for development:](#to-build-node-hid-for-development)
-  * [Using node-hid in Electron projects](#using-node-hid-in-electron-projects)
-  * [Using node-hid in NW.js projects](#using-node-hid-in-nwjs-projects)
-  * [Support](#support)
+* [Using node-hid in Electron projects](#using-node-hid-in-electron-projects)
+* [Using node-hid in NW.js projects](#using-node-hid-in-nwjs-projects)
+* [Support](#support)
+
+
 
 ## Platform Support
 `node-hid` supports Node.js v4 and upwards. For versions 0.10 and 0.12,
@@ -48,7 +57,7 @@ Those with checks we provide pre-built binaries, for the others you will need to
 * ☑ = full-support with pre-built binaries
 * ☐ = source-support only
 
-### Supported Node versions: ###
+### Supported Node versions ###
 
 | Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Node v9.x |
 |       ---       | --- | --- | --- | --- |
@@ -65,7 +74,7 @@ Those with checks we provide pre-built binaries, for the others you will need to
 
 ¹ ia32, ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
 
-### Supported Electron versions: ###
+### Supported Electron versions ###
 
 | Platform / Arch |v1.0 |v1.2 |v1.3 |v1.4 |v1.5 |v1.6 |v1.7 |v1.8² |
 |       ---       | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -110,8 +119,11 @@ that talk to specific devices in some way.  Some interesting ones:
 - [`test-powermate.js`](./src/test-powermate.js) - Read Griffin PowerMate knob and change its LED
 - [`test-blink1.js`](./src/test-blink1.js) - Fade colors on blink(1) RGB LED
 - [`test-bigredbutton.js`](./src/test-bigredbutton.js) - Read Dreamcheeky Big Red Button
+- [`test-teensyrawhid.js`](./src/test-teensyrawhid.js) - Read/write Teensy running RawHID "Basic" Arduino sketch
 
-To try them out, call them like `node src/showdevices.js` from the node-hid directory.
+To try them out, run them like `node src/showdevices.js` from within the node-hid directory.
+
+----
 
 ## Usage
 
@@ -131,23 +143,27 @@ Sample output:
 
 ```js
 HID.devices();
-[ { vendorId: 1452,
-    productId: 595,
-    path: 'USB_05ac_0253_0x100a148e0',
-    serialNumber: '',
-    manufacturer: 'Apple Inc.',
-    product: 'Apple Internal Keyboard / Trackpad',
-    release: 280,
-    interface: -1 },
+{ vendorId: 10168,
+    productId: 493,
+    path: 'IOService:/AppleACPIPl...HIDDevice@14210000,0',
+    serialNumber: '20002E8C',
+    manufacturer: 'ThingM',
+    product: 'blink(1) mk2',
+    release: 2,
+    interface: -1,
+    usagePage: 65280,
+    usage: 1 },
   { vendorId: 1452,
-    productId: 595,
-    path: 'USB_05ac_0253_0x100a14e20',
+    productId: 610,
+    path: 'IOService:/AppleACPIPl...Keyboard@14400000,0',
     serialNumber: '',
     manufacturer: 'Apple Inc.',
     product: 'Apple Internal Keyboard / Trackpad',
-    release: 280,
-    interface: -1 },
-<and more>
+    release: 549,
+    interface: -1,
+    usagePage: 1,
+    usage: 6 },
+    <and more>
 ```
 
 ### Opening a device
@@ -169,8 +185,25 @@ var device = new HID.HID(vid,pid);
 The `device` variable will contain a handle to the device.
 If an error occurs opening the device, an exception will be thrown.
 
+### Picking a device from the device list
+If you need to filter down the `HID.devices()` list, you can use
+standard Javascript array techniques:
+```js
+var devices = HID.devices();
+var deviceInfo = devices.find( function(d) {
+    var isTeensy = d.vendorId===0x16C0 && d.productId===0x0486;
+    return isTeensy && d.usagePage===0xFFAB && d.usage===0x200;
+});
+if( deviceInfo ) {
+  var device = new HID.HID( deviceInfo.path );
+  // ... use device
+}
+```
+
 ### Reading from a device
 
+To receive FEATURE reports, use `device.getFeatureReport()`.
+To receive INPUT reports, use `device.on("data",...)`.
 A `node-hid` device is an EventEmitter.
 Reading from a device is performed by registering a "data" event handler:
 
@@ -183,27 +216,36 @@ You can also listen for errors like this:
 ```js
 device.on("error", function(err) {});
 ```
+For FEATURE reports:
+
+```js
+var buf = device.getFeatureReport(reportId, reportLength)
+```
+
+
 Notes:
-- All reading is asynchronous
-- The `data` event receives INPUT reports. To receive Feature reports,
-  see the `readFeatureReport()` method below.
+- Reads via `device.on("data")` are asynchronous
+- Reads via `device.getFeatureReport()` are synchronous
 - To remove an event handler, close the device with `device.close()`
 
 
 ### Writing to a device
 
-Writing to a device is performed using the write call in a device
-handle.  All writing is synchronous.
+To send FEATURE reports, use `device.sendFeatureReport()`.
+To send OUTPUT reports, use `device.write()`.
+All writing is synchronous.
 
-```
+```js
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 ```
+```js
+device.sendFeatureReport( [0x01, 'c', 0, 0xff,0x33,0x00, 70,0, 0] );
+```
 Notes:
-- The `write()` method sends OUTPUT reports. To send Feature reports,
-see the `sendFeatureReport()` method below.
-- Some devices use reportIds for OUTPUT reports.  If that is the case,
+- Both `device.write()` and `device.sendFeatureReport()` return number of bytes written
+- Some devices use reportIds for OUTPUT reports.  In that case,
 the first byte of the array to `write()` should be the reportId.
-- BUG: if the first byte of a `write()` is 0x00, you may need to prepend an extra 0x00 due to a bug in hidapi (see issue #187)
+- BUG: Windows requires the prepend of an extra byte due to a bug in hidapi (see issue #187 and Windows notes below)
 
 
 ## Complete API
@@ -212,13 +254,18 @@ the first byte of the array to `write()` should be the reportId.
 
 - Return array listing all connected HID devices
 
+### `HID.setDriverType(type)`
+  - Linux only
+  - Sets underlying HID driver type
+  - `type` can be `"hidraw"` or `"libusb"`, defaults to `"hidraw"`
+
 ### `device = new HID.HID(path)`
 
-- Open a HID device at the specifed platform-speific path
+- Open a HID device at the specified platform-specific path
 
 ### `device = new HID.HID(vid,pid)`
 
-- Open first HID device with speciic VendorId and ProductId
+- Open first HID device with specific VendorId and ProductId
 
 ### `device.on('data', function(data) {} )`
 
@@ -231,63 +278,83 @@ the first byte of the array to `write()` should be the reportId.
 ### `device.write(data)`
 
 - `data` - the data to be synchronously written to the device
+- Returns number of bytes actually written
 
 ### `device.close()`
 
-Closes the device. Subsequent reads will raise an error.
+- Closes the device. Subsequent reads will raise an error.
 
 ### `device.pause()`
 
-Pauses reading and the emission of `data` events.
+- Pauses reading and the emission of `data` events.
 
 ### `device.resume()`
 
-This method will cause the HID device to resume emmitting `data` events.
+- This method will cause the HID device to resume emmitting `data` events.
 If no listeners are registered for the `data` event, data will be lost.
 
-When a `data` event is registered for this HID device, this method will
+- When a `data` event is registered for this HID device, this method will
 be automatically called.
 
 ### `device.read(callback)`
 
-Low-level function call to initiate an asynchronous read from the device.
-`callback` is of the form `callback(err, data)`
+- Low-level function call to initiate an asynchronous read from the device.
+- `callback` is of the form `callback(err, data)`
 
 ### `device.readSync()`
 
-Return an array of numbers data. If an error occurs, an exception will be thrown.
+- Return an array of numbers data. If an error occurs, an exception will be thrown.
 
 ### `device.readTimeout(time_out)`
 
 - `time_out` - timeout in milliseconds
-Return an array of numbers data. If an error occurs, an exception will be thrown.
+- Return an array of numbers data. If an error occurs, an exception will be thrown.
 
 ### `device.sendFeatureReport(data)`
+
 - `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
+- Returns number of bytes actually written
 
 ### `device.getFeatureReport(report_id, report_length)`
+
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
 
+-----
 
-## Notes for Specific Devices
+## Windows notes
 
-- Mouse and keyboards on Windows -- does not work, the OS will not allow it
-- Xbox 360 Controller on Windows 10 -- does not work
+### Mice and keyboards
+In general you cannot access USB HID keyboards or mice.  
+The OS owns these devices.
 
-## Linux-specific Notes
+### Xbox 360 Controller on Windows 10
+For reasons similar to mice & keyboards it appears you can't access this controller on Windows 10.
 
-### `usage` and `usagePage` device info fields
-  These are not available on Linux, only Mac and Windows.
-  For reason why, and to ask for its addition, see:
-  https://github.com/signal11/hidapi/pull/6
+### Prepend byte to `hid_write()`
+Because of a limitation in the underlying `hidapi` library, if you are using `hid_write()` you should prepend a byte to any data buffer, e.g.
+```js
+var device = new HID.HID(vid,pid);
+var buffer = Array(64).fill(0x33); // device has 64-byte report
+if(os.platform === 'win32') {
+  buffer.unshift(0);  // prepend throwaway byte
+}
+```
 
-### hidraw support
-  To install node-hid with the `hidraw` driver instead of the default libusb one,
-  install the "libudev-dev" package and rebuild the library with:
-  ```
-  npm install node-hid --driver=hidraw
-  ```
+
+## Linux notes
+
+### Selecting driver type
+By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
+
+If your kernel does not support `hidraw`) or if you would like to be explicit, you can set the driverType by hand:
+```js
+var HID = require('node-hid');
+HID.setDriverType('libusb');  // or 'hidraw'
+console.log(HID.devices());
+```
+See [`show-devices.js`](./src/show-devices.js) for an example where you can
+choose driverType on the command-line.
 
 ### udev device permissions
 Most Linux distros use `udev` to manage access to physical devices,
@@ -360,6 +427,12 @@ You will see some warnings from the C compiler as it compiles
 [hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).  
 This is expected.
 
+For ease of development, there are also the scripts:
+```
+npm run gypclean      # "node-gyp clean" clean gyp build directory
+npm run gypconfigure  # "node-gyp configure" configure makefiles
+npm run gypcompile    # "node-gyp build" build native code
+```
 
 ## Using `node-hid` in Electron projects
 In your electron project, add `electron-rebuild` to your `devDependencies`.
