@@ -20,7 +20,7 @@
     "prebuild-upload": "prebuild --all --strip --verbose --upload",
     "gypclean": "node-gyp clean",
     "gypconfigure": "node-gyp configure",
-    "gypcompile": "node-gyp build",
+    "gypbuild": "node-gyp build",
     "clean": "rimraf hidapi build node_modules"
   },
   "bin": {
