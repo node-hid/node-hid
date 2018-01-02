@@ -19,9 +19,6 @@ var devices = HID.devices();
 // because Teensy RawHID sketch shows up as TWO devices to node-hid / hidapi
 var deviceInfo = devices.find( function(d) {
     var isTeensy = d.vendorId===0x16C0 && d.productId===0x0486;
-    if( os.type() == 'Linux' ) { // no usagePage on Linux
-        return isTeensy;
-    }
     return isTeensy && d.usagePage===0xFFAB && d.usage===0x200;
 });
 console.log("deviceInfo: ", deviceInfo);
