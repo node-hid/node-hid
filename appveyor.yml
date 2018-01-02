@@ -4,8 +4,9 @@ environment:
     secure: VTBdrNnSESUSm8qkQg41kcul5KV3sLDn+K1MyJpIKmo4BRvFY2FhzL6jAGklV3Cm
 
   matrix:
-  - binary_builder: "true"
-    nodejs_version: "8"
+#  - binary_builder: "true"
+#    nodejs_version: "8"
+  - nodejs_version: "8"
   - nodejs_version: "6"
   - nodejs_version: "4"
 
@@ -57,11 +58,11 @@ build_script:
 test_script:
 - ps: npm test
 
-- ps: >
-    if ($env:publish_binary -eq "true") {
-      npm run prebuild-upload
-    }
-    true;
+#- ps: >
+#    if ($env:publish_binary -eq "true") {
+#      npm run prebuild-upload
+#    }
+#    true;
 
 deploy: OFF
 
@@ -69,5 +70,5 @@ matrix:
   fast_finish: true
 
 # uncomment the below to have artifacts saved
-artifacts:
-- path: prebuilds
+#artifacts:
+#- path: prebuilds

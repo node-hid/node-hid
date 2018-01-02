@@ -33,7 +33,8 @@ env:
   matrix:
   - TRAVIS_NODE_VERSION="4"
   - TRAVIS_NODE_VERSION="6"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
+  - TRAVIS_NODE_VERSION="8"
+#  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
 #  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 # disable x86 for now because of weird errors with gyp under prebuild
 
@@ -114,9 +115,9 @@ script:
 
 # if publishing, do it
 - >
-  if [[ $PUBLISH_BINARY == true ]]; then
-    npm run prebuild-upload;
-  fi;
+#  if [[ $PUBLISH_BINARY == true ]]; then
+#    npm run prebuild-upload;
+#  fi;
 
 
 # after_success:
