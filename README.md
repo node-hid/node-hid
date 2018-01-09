@@ -349,7 +349,7 @@ if(os.platform === 'win32') {
 ## Linux notes
 
 ### Selecting driver type
-NOTE: The multi-driver feature is currently disabled. See issue #242. 
+NOTE: The multi-driver feature is currently disabled. See issue #242.
 By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
 
 If your kernel does not support `hidraw`) or if you would like to be explicit, you can set the driverType by hand:
@@ -367,15 +367,24 @@ and USB HID devices are normally owned by the `root` user.
 To allow non-root access, you must create a udev rule for the device,
 based on the devices vendorId and productId.
 
-This rule is a file, placed in `/etc/udev/rules.d`, with the lines:
+This rule is a text file placed in `/etc/udev/rules.d`.  
+
+For an example HID device (say a blink(1) light with vendorId = 0x27b8 and productId = 0x01ed,
+the rules file to support both `hidraw` and `libusb` would look like:
 ```
 SUBSYSTEM=="input", GROUP="input", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="27b8", ATTRS{idProduct}=="01ed", MODE:="666", GROUP="plugdev"
+KERNEL=="hidraw*", ATTRS{idVendor}=="27b8", ATTRS{idProduct}=="01ed", MODE="0666", GROUP="plugdev"
 ```
-(the above is for vendorId = 27b8, productId = 01ed)
+Note that the values for idVendor and idProduct must be in hex and lower-case.
 
-Then the udev service is reloaded with: `sudo udevadm control --reload-rules`
-For an example, see the
+Save this file as `/etc/udev/rules.d/51-blink1.rules`, unplug the HID device,
+and reload the rules with:
+```
+sudo udevadm control --reload-rules
+```
+
+For a complete example, see the
 [blink1 udev rules](https://github.com/todbot/blink1/blob/master/linux/51-blink1.rules).
 
 
