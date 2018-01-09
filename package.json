@@ -37,7 +37,7 @@
     "prebuild-install": "^2.2.2"
   },
   "devDependencies": {
-    "prebuild": "github:antoinepairet/prebuild#tmpvar-regex",
+    "prebuild": "^6.2.2",
     "rimraf": "^2.5.3"
   },
   "gypfile": true
