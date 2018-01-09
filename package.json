@@ -1,7 +1,7 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "contributors": [
     "Blake Miner <miner.blake@gmail.com>",
@@ -21,7 +21,8 @@
     "gypclean": "node-gyp clean",
     "gypconfigure": "node-gyp configure",
     "gypbuild": "node-gyp build",
-    "clean": "rimraf hidapi build node_modules"
+    "clean": "rimraf build node_modules prebuilds",
+    "distclean": "npm run clean && rimraf hidapi"
   },
   "bin": {
     "hid-showdevices": "./src/show-devices.js"
