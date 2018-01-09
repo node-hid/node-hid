@@ -261,6 +261,7 @@ the first byte of the array to `write()` should be the reportId.
   - Linux only
   - Sets underlying HID driver type
   - `type` can be `"hidraw"` or `"libusb"`, defaults to `"hidraw"`
+  - NOTE: this function is currently disabled in `node-hid@^0.7.1` due to incompatibilities with `prebuild`.
 
 ### `device = new HID.HID(path)`
 
@@ -348,6 +349,7 @@ if(os.platform === 'win32') {
 ## Linux notes
 
 ### Selecting driver type
+NOTE: The multi-driver feature is currently disabled. See issue #242. 
 By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
 
 If your kernel does not support `hidraw`) or if you would like to be explicit, you can set the driverType by hand:
