@@ -349,17 +349,18 @@ if(os.platform === 'win32') {
 ## Linux notes
 
 ### Selecting driver type
-NOTE: The multi-driver feature is currently disabled. See issue #242.
+NOTE: The multi-driver feature of `HID.setDriverType()` is currently disabled. See issue #242.
 By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
 
-If your kernel does not support `hidraw`) or if you would like to be explicit, you can set the driverType by hand:
-```js
-var HID = require('node-hid');
-HID.setDriverType('libusb');  // or 'hidraw'
-console.log(HID.devices());
+If you would still like to use the `libusb` driver, then you can do either:
 ```
-See [`show-devices.js`](./src/show-devices.js) for an example where you can
-choose driverType on the command-line.
+npm install node-hid@0.5.7
+```
+or:
+```
+npm install node-hid --build-from-source --driver=libusb
+```
+
 
 ### udev device permissions
 Most Linux distros use `udev` to manage access to physical devices,
@@ -464,6 +465,14 @@ If you want a specific version of electron, do something like:
 ```
   "postinstall": "electron-rebuild -v 0.36.5 --force -m . -w node-hid"
 ```
+
+If using `node-hid` with `webpack`, you may find it useful to list `node-hid` as an external in your `webpack-config.js`:
+```
+  externals: {
+    "node-hid": 'commonjs node-hid'
+  }
+```
+(You can see an example of this in [Blink1Control2](https://github.com/todbot/Blink1Control2/)'s [webpack-config.js](https://github.com/todbot/Blink1Control2/blob/master/webpack.config.js)
 
 ## Using `node-hid` in NW.js projects
 (TBD)
