@@ -447,7 +447,7 @@ For ease of development, there are also the scripts:
 ```
 npm run gypclean      # "node-gyp clean" clean gyp build directory
 npm run gypconfigure  # "node-gyp configure" configure makefiles
-npm run gypcompile    # "node-gyp build" build native code
+npm run gypbuild      # "node-gyp build" build native code
 ```
 
 ## Using `node-hid` in Electron projects
