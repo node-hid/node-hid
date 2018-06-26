@@ -230,8 +230,9 @@ HID::recvAsyncDone(uv_work_t* req)
   iocb->_hid->Unref();
 
   Nan::TryCatch tryCatch;
-  iocb->_callback->Call(2, argv);
-
+  //iocb->_callback->Call(2, argv);
+  Nan::AsyncResource resource("node-hid recvAsyncDone");
+  iocb->_callback->Call(2, argv, &resource);
   if (tryCatch.HasCaught()) {
       Nan::FatalException(tryCatch);
   }
@@ -406,11 +407,12 @@ NAN_METHOD(HID::New)
       int32_t vendorId = info[0]->Int32Value();
       int32_t productId = info[1]->Int32Value();
       Local<Value> serial;
-      wchar_t* serialPointer = 0;
+      wchar_t wserialstr[100]; // FIXME: is there a better way?
       if (info.Length() > 2) {
-        serialPointer = (wchar_t*) *v8::String::Value(info[2]);
+        char* serialstr = *Nan::Utf8String(info[2]);
+        mbstowcs( wserialstr, serialstr, 100);
       }
-      hid = new HID(vendorId, productId, serialPointer);
+      hid = new HID(vendorId, productId, wserialstr);
     }
     hid->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
