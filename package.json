@@ -21,6 +21,7 @@
     "gypclean": "node-gyp clean",
     "gypconfigure": "node-gyp configure",
     "gypbuild": "node-gyp build",
+    "gyprebuild": "node-gyp rebuild",
     "clean": "rimraf build node_modules prebuilds",
     "distclean": "npm run clean && rimraf hidapi"
   },
@@ -34,12 +35,12 @@
   "license": "(MIT OR X11)",
   "dependencies": {
     "bindings": "^1.3.0",
-    "nan": "^2.6.2",
-    "prebuild-install": "^2.2.2"
+    "nan": "^2.10.0",
+    "prebuild-install": "^4.0.0"
   },
   "devDependencies": {
-    "prebuild": "^6.2.2",
-    "rimraf": "^2.5.3"
+    "prebuild": "^7.6.0",
+    "rimraf": "^2.6.2"
   },
   "gypfile": true
 }
