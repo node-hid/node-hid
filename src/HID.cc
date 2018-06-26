@@ -199,15 +199,10 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
     argv[0] = Exception::Error(Nan::New<String>(iocb->_error->message().c_str()).ToLocalChecked());
   } else {
     const vector<unsigned char>& message = iocb->_data;
-    //Get "fast" node Buffer constructor
-    Local<Function> nodeBufConstructor = Local<Function>::Cast(
-      Nan::GetCurrentContext()->Global()->Get(Nan::New<String>("Buffer").ToLocalChecked() )
-    );
-    //Construct a new Buffer
-    Local<Value> nodeBufferArgs[1] = { Nan::New<Integer>((uint32_t)message.size()) };
-    Local<Object> buf = Nan::NewInstance(nodeBufConstructor, 1, nodeBufferArgs).ToLocalChecked();
 
+    Local<Object> buf = Nan::NewBuffer(message.size()).ToLocalChecked();
     char* data = Buffer::Data(buf);
+    
     int j = 0;
     for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++) {
       data[j++] = *k;
