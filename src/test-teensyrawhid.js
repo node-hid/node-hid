@@ -19,7 +19,7 @@ var devices = HID.devices();
 // because Teensy RawHID sketch shows up as TWO devices to node-hid / hidapi
 var deviceInfo = devices.find( function(d) {
     var isTeensy = d.vendorId===0x16C0 && d.productId===0x0486;
-    return isTeensy && d.usagePage===0xFFAB && d.usage===0x200;
+    return isTeensy && d.usagePage===0xFFAB && d.usage===0x2000;
 });
 console.log("deviceInfo: ", deviceInfo);
 if( !deviceInfo ) {
@@ -62,7 +62,7 @@ var numsentB = device.write(messageB);
 console.log('message B: ', JSON.stringify(messageB))
 console.log('sent len:', messageB.length, 'actual len:', numsentB);
 
-console.log("waiting 5 seconds for data from Teensy");
+console.log("waiting 10 seconds for data from Teensy");
 setTimeout( function() {
     device.close();
-}, 5000);
+}, 10000);
