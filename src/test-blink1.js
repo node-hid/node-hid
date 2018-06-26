@@ -10,6 +10,8 @@ var PRODUCT_ID = 0x01ED;
 var REPORT_ID = 1;
 var REPORT_LENGTH = 9;
 
+var serial_number = process.argv[2];
+
 var devices_found = HID.devices( VENDOR_ID, PRODUCT_ID );
 
 if( devices_found.length === 0 ) {
@@ -18,7 +20,9 @@ if( devices_found.length === 0 ) {
 }
 console.log("blink(1) devices found:", devices_found,'\n');
 
-var hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID );
+var hidDevice = (serial_number) ?
+    new HID.HID( VENDOR_ID, PRODUCT_ID, serial_number ) :
+    new HID.HID( VENDOR_ID, PRODUCT_ID );
 
 var deviceInfo = hidDevice.getDeviceInfo();
 console.log("deviceInfo.manufacturer:", deviceInfo.manufacturer);
