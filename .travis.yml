@@ -74,7 +74,7 @@ before_install:
 - $CXX --version
 
 # upgrade npm if on node 4 as npm2 doesn't like our dev peer deps
-- if [[ $TRAVIS_NODE_VERSION == "4" ]]; then npm install -g npm; fi
+- if [[ $TRAVIS_NODE_VERSION == "4" ]]; then npm install -g npm@5; fi
 
 # Cleanup the output of npm
 - npm config set progress false

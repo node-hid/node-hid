@@ -19,7 +19,7 @@ install:
 # upgrade npm if on node 4 as npm2 doesn't like our dev peer deps
 - ps: >
     if ($env:nodejs_version -eq "4") {
-      npm install -g npm | Write-Host;
+      npm install -g npm@5 | Write-Host;
     }
 # Cleanup the output of npm
 - ps: >
