@@ -63,7 +63,10 @@
           'sources': [ 'hidapi/mac/hid.c' ],
           'include_dirs+': [
             '/usr/include/libusb-1.0/'
-          ]
+          ],
+          'xcode_settings': {
+            'OTHER_CFLAGS': ['-Wno-sign-compare'],
+          }
         }],
         [ 'OS=="linux"', {
           'conditions': [
