@@ -401,13 +401,14 @@ NAN_METHOD(HID::New)
     } else {
       int32_t vendorId = info[0]->Int32Value();
       int32_t productId = info[1]->Int32Value();
-      Local<Value> serial;
       wchar_t wserialstr[100]; // FIXME: is there a better way?
+      wchar_t* wserialptr = NULL;
       if (info.Length() > 2) {
         char* serialstr = *Nan::Utf8String(info[2]);
         mbstowcs( wserialstr, serialstr, 100);
+        wserialptr = wserialstr;
       }
-      hid = new HID(vendorId, productId, wserialstr);
+      hid = new HID(vendorId, productId, wserialptr);
     }
     hid->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
