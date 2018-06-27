@@ -3,6 +3,8 @@
  * for a blink(1) USB LED by ThingM http://blink1.thingm.com/
  */
 
+'use strict';
+
 var HID = require('../');
 
 var VENDOR_ID = 0x27B8;
@@ -20,9 +22,19 @@ if( devices_found.length === 0 ) {
 }
 console.log("blink(1) devices found:", devices_found,'\n');
 
-var hidDevice = (serial_number) ?
-    new HID.HID( VENDOR_ID, PRODUCT_ID, serial_number ) :
-    new HID.HID( VENDOR_ID, PRODUCT_ID );
+var hidDevice;
+try { 
+    if( serial_number ) {
+        console.log("opening serial number "+serial_number);
+        hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID, serial_number );
+    } else { 
+        console.log("opening first device");
+        hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID );
+    }
+} catch(err) {
+    console.log(err);
+    process.exit(1);    
+}
 
 var deviceInfo = hidDevice.getDeviceInfo();
 console.log("deviceInfo.manufacturer:", deviceInfo.manufacturer);
