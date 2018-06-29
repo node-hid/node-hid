@@ -16,19 +16,34 @@ var HID = require('../');
 var devices = HID.devices();
 
 // We must filter devices by vendorId, productId, usagePage, and usage
-// because Teensy RawHID sketch shows up as TWO devices to node-hid / hidapi
-var deviceInfo = devices.find( function(d) {
-    var isTeensy = d.vendorId===0x16C0 && d.productId===0x0486;
-    return isTeensy && d.usagePage===0xFFAB && d.usage===0x2000;
-});
+// because Teensy RawHID sketch shows up as TWO devices to node-hid
+// Note this only works on Mac & Windows though as the underlying
+// hidapi C library doesn't support usagePage on libusb or hidraw
+
+var isTeensy = function(d) { return d.vendorId===0x16C0 && d.productId===0x0486;}
+var isRawHidUsage = function(d) { return d.usagePage===0xFFAB && d.usage===0x2000; }
+
+var device;
+if( os.platform() == 'linux' ) {
+    var deviceList = devices.filter(function(d) { return isTeensy(d) });
+    //console.log("deviceList:",deviceList); // should be two devices
+    if( deviceList.length == 2 ) { 
+	device = new HID.HID( deviceList[0].path ); // normally first device
+    }
+}
+else { // Mac & Windows
+    var deviceInfo = devices.find( function(d) {
+	return isTeensy(d) && isRawHidUsage(d);
+    });
+    device = new HID.HID( deviceInfo.path );
+}
+
 console.log("deviceInfo: ", deviceInfo);
-if( !deviceInfo ) {
+if( !device ) {
     console.log(devices);
     console.log("Could not find RawHID device in device list");
     process.exit(1);
 }
-
-var device = new HID.HID( deviceInfo.path );
 
 device.on('data', function(data) {
     console.log("got data:",data);
