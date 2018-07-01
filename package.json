@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "prebuild": "^7.6.0",
+    "prebuild-ci": "^2.2.3",
     "rimraf": "^2.6.2"
   },
   "gypfile": true
