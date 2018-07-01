@@ -4,11 +4,10 @@ environment:
     secure: VTBdrNnSESUSm8qkQg41kcul5KV3sLDn+K1MyJpIKmo4BRvFY2FhzL6jAGklV3Cm
 
   matrix:
-#  - binary_builder: "true"
-#    nodejs_version: "8"
+  - nodejs_version: "10"
+  - nodejs_version: "9"
   - nodejs_version: "8"
   - nodejs_version: "6"
-  - nodejs_version: "4"
 
 platform:
 - x64
@@ -17,11 +16,10 @@ platform:
 install:
 - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform;
 # upgrade npm if on node 4 as npm2 doesn't like our dev peer deps
-- ps: >
-    if ($env:nodejs_version -eq "4") {
-      npm install -g npm@5 | Write-Host;
-    }
-# Cleanup the output of npm
+#- ps: >
+#    if ($env:nodejs_version -eq "4") {
+#      npm install -g npm@5 | Write-Host;
+#    }
 - ps: >
     npm config set progress false
     npm config set spin false
@@ -41,7 +39,7 @@ install:
 # then we publish the binaries if tests pass.
 - ps: >
     if ($env:appveyor_repo_tag -match "true" -and ("$(git describe --tags --always HEAD)" -eq $env:appveyor_repo_tag_name)) {
-      $env:publish_binary = $env:binary_builder;
+      $env:publish_binary = "true";
     }
     if ($env:publish_binary -eq "true") {
       "We're publishing a binary!" | Write-Host
@@ -50,7 +48,6 @@ install:
     }
     true;
 
-
 build_script:
 - npm run prepublish
 - npm install --build-from-source
@@ -58,11 +55,12 @@ build_script:
 test_script:
 - ps: npm test
 
-#- ps: >
-#    if ($env:publish_binary -eq "true") {
-#      npm run prebuild-upload
-#    }
-#    true;
+- ps: >
+    if ($env:publish_binary -eq "true") {
+      "building and uploading binaries" | Write-Host;
+      npm run prebuild-ci;
+    }
+    true;
 
 deploy: OFF
 

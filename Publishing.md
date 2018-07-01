@@ -23,6 +23,12 @@ remember for Windows
 $env:PYTHON = "$env:USERPROFILE\.windows-build-tools\python27\python.exe"
 ```
 
+
+#### notes ####
+- As of Node v10 on Windows, may need to do:
+-- `$env:Path += ";C:\Program Files\Git\mingw64\libexec\git-core
+-- and install git with "make unix tools available to windows command prompt"
+
 #### old way ###
 
 1. Merge all changes and new features into master

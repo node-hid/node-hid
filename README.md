@@ -62,18 +62,18 @@ combination not listed here will compile and work.
 
 ### Supported Node versions ###
 
-| Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Node v9.x |
-|       ---       | --- | --- | --- | --- | --- |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Platform / Arch | Node v4.x | Node v6.x | Node v7.x | Node v8.x | Node v9.x | Node v10.x
+|       ---       | --- | --- | --- | --- | --- | --- |
+| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
+| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
 
 ¹ ia32, ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
 

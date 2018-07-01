@@ -8,18 +8,6 @@ addons:
     - g++-4.8
     - g++-4.8-multilib
     - gcc-multilib
-    - libgtk2.0-0
-    - libxtst6
-    - libnotify4
-    - libgconf2-4
-    - libgtk2.0-0:i386
-    - libxtst6:i386
-    - libnotify4:i386
-    - libgconf2-4:i386
-    - libnss3:i386
-    - libasound2:i386
-    - libxss1:i386
-    - socat
     - libusb-1.0-0-dev
     - libudev-dev
 
@@ -31,12 +19,9 @@ env:
   global:
     secure: "ULgQHud6rffcRBZrDk/a1jVnAfUm6CseQJ8j89S7As7gc/bQkD9fi0OAyr5qT5ymxtn4ujXACDEeFDF/BlGwsbFoOS4sApcP33sJ5rsGVgTqihA8Dzb6k2F5e0Cd80+VzPa+lDdtMuRQMaVctA9rWe7VcfJWUc7rei4/kYfAAL0="
   matrix:
-  - TRAVIS_NODE_VERSION="4"
   - TRAVIS_NODE_VERSION="6"
   - TRAVIS_NODE_VERSION="8"
-#  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
-#  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
-# disable x86 for now because of weird errors with gyp under prebuild
+  - TRAVIS_NODE_VERSION="10"
 
 matrix:
   exclude:
@@ -45,7 +30,7 @@ matrix:
   - os: osx
     env: TRAVIS_NODE_VERSION="6" ARCH="x86"
   - os: osx
-    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
+    env: TRAVIS_NODE_VERSION="8" ARCH="x86"
 
 before_install:
 
@@ -62,12 +47,6 @@ before_install:
   else
     nvm install $TRAVIS_NODE_VERSION
   fi;
-
-#- >
-#  if [[ $TRAVIS_OS_NAME == "linux" && "$ARCH" == "x86" ]]; then
-#    dpkg-query -L libusb-1.0-0-dev:i386
-#    dpkg-query -L libusb-1.0-0
-#  fi;
 
 # use g++-4.8 on Linux
 - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
@@ -92,7 +71,7 @@ before_install:
 - PUBLISH_BINARY=false
 - echo $TRAVIS_BRANCH
 - echo `git describe --tags --always HEAD`
-- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=$BINARY_BUILDER; fi;
+- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=true; fi;
 - echo "Publishing native platform Binary Package? ->" $PUBLISH_BINARY
 
 install:
@@ -102,7 +81,6 @@ install:
 - npm install --build-from-source
 
 script:
-
 - npm test
 
 # inspect library dependencies
@@ -115,9 +93,10 @@ script:
 
 # if publishing, do it
 - >
-#  if [[ $PUBLISH_BINARY == true ]]; then
-#    npm run prebuild-upload;
-#  fi;
+  if [[ $PUBLISH_BINARY == true ]]; then
+    echo "building and uploading binaries"
+    npm run prebuild-ci;
+  fi;
 
 
 # after_success:

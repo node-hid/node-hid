@@ -20,6 +20,7 @@
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --verbose",
     "prebuild-upload": "prebuild --all --strip --verbose --upload",
+    "prebuild-ci": "prebuild-ci",
     "gypclean": "node-gyp clean",
     "gypconfigure": "node-gyp configure",
     "gypbuild": "node-gyp build",
