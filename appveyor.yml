@@ -53,12 +53,13 @@ build_script:
 test_script:
 - ps: npm test
 
-- ps: >
-    if ($env:publish_binary -eq "true") {
-      "building and uploading binaries" | Write-Host;
-      npm run prebuild-ci;
-    }
-    true;
+# do it by hand on testing VMs
+#- ps: >
+#    if ($env:publish_binary -eq "true") {
+#      "building and uploading binaries" | Write-Host;
+#      npm run prebuild-ci;
+#    }
+#    true;
 
 deploy: OFF
 

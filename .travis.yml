@@ -91,12 +91,13 @@ script:
     otool -L ./build/Release/HID.node
   fi;
 
+# do it by hand on testing VMs
 # if publishing, do it
-- >
-  if [[ $PUBLISH_BINARY == true ]]; then
-    echo "building and uploading binaries"
-    npm run prebuild-ci;
-  fi;
+#- >
+#  if [[ $PUBLISH_BINARY == true ]]; then
+#    echo "building and uploading binaries"
+#    npm run prebuild-ci;
+#  fi;
 
 
 # after_success:
