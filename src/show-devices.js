@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 var HID = require('../');
 
 // choose driverType
