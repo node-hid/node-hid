@@ -188,6 +188,13 @@ var device = new HID.HID(vid,pid);
 The `device` variable will contain a handle to the device.
 If an error occurs opening the device, an exception will be thrown.
 
+A `node-hid` device is an `EventEmitter`.
+While it shares some method names and usage patterns with
+`Readable` and `Writable` streams, it is not a stream and the semantics vary.
+For example, `device.write` does not take encoding or callback args and
+`device.pause` does not do the same thing as `readable.pause`.
+There is also no `pipe` method.
+
 ### Picking a device from the device list
 If you need to filter down the `HID.devices()` list, you can use
 standard Javascript array techniques:
@@ -230,7 +237,8 @@ Notes:
 - Reads via `device.on("data")` are asynchronous
 - Reads via `device.getFeatureReport()` are synchronous
 - To remove an event handler, close the device with `device.close()`
-
+- When there is not yet a data handler or no data handler exists,
+   data is not read at all -- there is no buffer.
 
 ### Writing to a device
 
@@ -290,7 +298,9 @@ the first byte of the array to `write()` should be the reportId.
 
 ### `device.pause()`
 
-- Pauses reading and the emission of `data` events.
+- Pauses reading and the emission of `data` events.  
+This means the underlying device is _silenced_ until resumption --
+it is not like pausing a stream, where data continues to accumulate.
 
 ### `device.resume()`
 
