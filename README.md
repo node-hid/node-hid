@@ -13,7 +13,7 @@
 * [Examples](#examples)
 * [Usage](#usage)
    * [List all HID devices connected](#list-all-hid-devices-connected)
-    * [Cost of HID.devices() and new HID.HID()](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
+     * [Cost of HID.devices() and new HID.HID()](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
    * [Opening a device](#opening-a-device)
    * [Picking a device from the device list](#picking-a-device-from-the-device-list)
    * [Reading from a device](#reading-from-a-device)
