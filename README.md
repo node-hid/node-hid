@@ -355,6 +355,9 @@ if(os.platform === 'win32') {
 }
 ```
 
+### HID.devices() is slow
+
+Be very careful with usage of HID.devices() because it is slow and can slow down the read/write that you do in parallel with a device. If you do polling, make sure to not poll it too often and to pause your polling when you need to access a device.
 
 ## Linux notes
 
