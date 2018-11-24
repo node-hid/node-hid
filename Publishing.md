@@ -15,6 +15,7 @@ npm run prebuild-upload <gh-token> # upload all the versions using github token
 ```
 And then on master dev box:
 ```
+npm run clean # clean out directory
 npm publish  # update npmjs, be sure to have Authy app for OTP code
 ```
 
