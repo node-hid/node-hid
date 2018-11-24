@@ -3,7 +3,9 @@ How to publish node-hid
 
 ### newer way (in short) ###
 
-On MacOSX, Windows, Linux, do:
+First, make sure version is bumped to new version. (if code change)
+
+Then, on each of MacOSX, Windows, Linux, do:
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid     
