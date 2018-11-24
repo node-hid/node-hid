@@ -51,7 +51,7 @@
 
 
 ## Platform Support
-`node-hid` supports Node.js v4 and upwards. For versions 0.10 and 0.12,
+`node-hid` supports Node.js v6 and upwards. For versions 0.10 and 0.12 and v4,
 you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following.
 Those with checks we provide pre-built binaries, for the others you will need to compile.
 
