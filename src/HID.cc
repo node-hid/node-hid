@@ -162,6 +162,9 @@ int
 HID::write(const databuf_t& message)
   throw(JSException)
 {
+  if(!_hidHandle) { 
+    throw JSException("Cannot write to closed device");
+  }
   //unsigned char buf[message.size()];
   unsigned char* buf = new unsigned char[message.size()];
   unsigned char* p = buf;
