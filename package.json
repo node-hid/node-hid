@@ -31,6 +31,11 @@
   "bin": {
     "hid-showdevices": "./src/show-devices.js"
   },
+  "binary": {
+    "module_name": "node-hid",
+    "module_path": "./lib/node-hid/",
+    "host": "https://github.com/node-hid/node-hid/releases"
+  },
   "main": "./nodehid.js",
   "engines": {
     "node": ">=6.0.0"
