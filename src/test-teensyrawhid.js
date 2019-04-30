@@ -15,7 +15,7 @@ var HID = require('../');
 
 var devices = HID.devices();
 
-console.log("devices:",devices);
+console.log("HID devices:",devices);
 
 // We must filter devices by vendorId, productId, usagePage, and usage
 // because Teensy RawHID sketch shows up as TWO devices to node-hid
@@ -27,26 +27,22 @@ var isRawHidUsage = function(d) {
     return ((d.usagePage===0xFFAB && d.usage===0x2000) || (d.usagePage===0xFFAB && d.usage===0x0200));
 }
 
-var device;
+var device;  // to be filled out below
+var deviceInfo
 if( os.platform() == 'linux' ) {
     var deviceList = devices.filter(function(d) { return isTeensy(d) });
-    //console.log("deviceList:",deviceList); // should be two devices
     if( deviceList.length == 2 ) { 
-	device = new HID.HID( deviceList[0].path ); // normally first device
+        deviceInfo = deviceList[0]
+	    device = new HID.HID( deviceInfo.path ); // normally first device
     }
 }
 else { // Mac & Windows
     var deviceInfo = devices.find( function(d) {
-        console.log("d.vendorId:", d.vendorId);
-        console.log("d.productId:", d.productId);
 	    return isTeensy(d) && isRawHidUsage(d);
     });
-    console.log("deviceInfo:", deviceInfo);
-    if( !deviceInfo ) { 
-        console.log("No Teensy RawHID device found");
-        process.exit(1);
+    if( deviceInfo ) { 
+        device = new HID.HID( deviceInfo.path );
     }
-    device = new HID.HID( deviceInfo.path );
 }
 
 console.log("deviceInfo: ", deviceInfo);
@@ -56,8 +52,9 @@ if( !device ) {
     process.exit(1);
 }
 
+console.log("Attaching receive 'data' handler");
 device.on('data', function(data) {
-    console.log("got data:",data);
+    console.log("got data:", data.toString('hex') );
 });
 device.on('error', function(err) {
     console.log("error:",err);
@@ -72,23 +69,27 @@ if( os.platform() == 'win32' ) {
     messageA.unshift( 0x00 );
 }
 
+console.log("Sending messages to Teensy, watch Teensy Serial Montor for data");
+
+console.log('Sending message A: ', JSON.stringify(messageA))
 var numsentA = device.write(messageA);
-console.log('message A: ', JSON.stringify(messageA))
-console.log('sent len:', messageA.length, 'actual len:', numsentA);
+console.log('messageA len:', messageA.length, 'actual sent len:', numsentA);
 
 var messageB = [];
 for(var i=0; i < 64; i++) {
-    messageB[i] = 0 + i;
+    messageB[i] = 1 + i;
 }
 // for Windows, must prepend report number, even when there isn't one
 if( os.platform() == 'win32' ) {
     messageB.unshift( 0x00 );
 }
+console.log('Sending message B: ', JSON.stringify(messageB))
 var numsentB = device.write(messageB);
-console.log('message B: ', JSON.stringify(messageB))
-console.log('sent len:', messageB.length, 'actual len:', numsentB);
+console.log('messageB len:', messageB.length, 'actual sent len:', numsentB);
 
-console.log("waiting 10 seconds for data from Teensy");
+console.log("Waiting 10 seconds for data from Teensy");
 setTimeout( function() {
+    console.log("Done");
     device.close();
 }, 10000);
+
