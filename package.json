@@ -42,6 +42,7 @@
     "prebuild-install": "^5.3.0"
   },
   "devDependencies": {
+    "node-abi": "^2.8.0",
     "prebuild": "^8.2.1",
     "prebuild-ci": "^2.3.0",
     "rimraf": "^2.6.2"
