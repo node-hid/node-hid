@@ -18,6 +18,8 @@
             '-framework CoreFoundation'
           ],
           'xcode_settings': {
+            'CLANG_CXX_LIBRARY': 'libc++',
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
             'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
             'OTHER_LDFLAGS': [
               '-framework IOKit',
@@ -63,7 +65,10 @@
           'sources': [ 'hidapi/mac/hid.c' ],
           'include_dirs+': [
             '/usr/include/libusb-1.0/'
-          ]
+          ],
+          'xcode_settings': {
+            'OTHER_CFLAGS': ['-Wno-sign-compare'],
+          }
         }],
         [ 'OS=="linux"', {
           'conditions': [
