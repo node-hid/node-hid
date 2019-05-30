@@ -93,7 +93,7 @@ For most "standard" use cases (node v4.x on mac, linux, windows on a x86 or x64 
 npm install node-hid
 ```
 
-If you install globally, you get the program `hid-showdevices`. On Linux you can use it to try the difference between `hidraw` and `libusb` driverTypes:
+If you install globally, the test program `src/show-devices.js` is installed as `hid-showdevices`. On Linux you can use it to try the difference between `hidraw` and `libusb` driverTypes:
 ```
 $ npm install -g node-hid
 $ hid-showdevices libusb
