@@ -51,49 +51,38 @@
 
 
 ## Platform Support
-`node-hid` supports Node.js v6 and upwards. For versions 0.10 and 0.12 and v4,
+`node-hid` supports Node.js v6 and upwards. For versions before that,
 you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following.
-Those with checks we provide pre-built binaries, for the others you will need to compile.
-
-* ☑ = full-support with pre-built binaries
-* ☐ = source-support only
+In general we try to provide pre-built native library binaries for the most common platforms, Node and Electron versions.
 
 We strive to make `node-hid` cross-platform so there's a good chance any
 combination not listed here will compile and work.
 
+### Supported Platofrms ###
+- Windows x86 (32-bit) (¹)
+- Windows x64 (64-bit)
+- Mac OSX 10.9+
+- Linux x64 (²)
+- Linux x86 (¹)
+- Linux ARM / Raspberry Pi (¹)
+- Linux MIPSel (¹)
+- Linux PPC64 (¹)
+
+¹ prebuilt-binaries not provided for these platforms
+² prebuilt binary built on Ubuntu 16.04 x64
+
 ### Supported Node versions ###
 
-| Platform / Arch | Node v6.x | Node v7.x | Node v8.x | Node v9.x | Node v10.x
-|       ---       | --- | --- | --- | --- | --- |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-
-¹ ia32, ARM, MIPSel and PPC64 platforms are known to work but are not currently part of our test or build matrix.  ARM v4 and v5 was dropped from Node.js after Node v0.10.
+* Node v6 to
+* Node v12
 
 ### Supported Electron versions ###
 
-| Platform / Arch |v1.0 |v1.2 |v1.3 |v1.4 |v1.5 |v1.6 |v1.7 |v1.8² |
-|       ---       | --- | --- | --- | --- | --- | --- | --- | --- |
-| Windows / x86   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Windows / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Mac OSX / x64   |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / x64     |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |  ☑  |
-| Linux / ia32¹   |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v6¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v7¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / ARM v8¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / MIPSel¹ |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
-| Linux / PPC64¹  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |  ☐  |
+* Electron v1 to
+* Electron v5 (³)
 
-² Electron v1.8 currently has issues but prebuilt binaries are provided.
+
+³ Electron v1.8 currently has issues but prebuilt binaries are provided.
 
 
 ## Installation
@@ -102,6 +91,13 @@ For most "standard" use cases (node v4.x on mac, linux, windows on a x86 or x64 
 
 ```
 npm install node-hid
+```
+
+If you install globally, you get the program `hid-showdevices`. On Linux you can use it to try the difference between `hidraw` and `libusb` driverTypes:
+```
+$ npm install -g node-hid
+$ hid-showdevices libusb
+$ hid-showdevices hidraw
 ```
 
 ### Installation Special Cases
@@ -275,7 +271,6 @@ the first byte of the array to `write()` should be the reportId.
   - Linux only
   - Sets underlying HID driver type
   - `type` can be `"hidraw"` or `"libusb"`, defaults to `"hidraw"`
-  - NOTE: this function is currently disabled in `node-hid@^0.7.1` due to incompatibilities with `prebuild`.
 
 ### `device = new HID.HID(path)`
 
@@ -365,7 +360,6 @@ if(os.platform === 'win32') {
 ## Linux notes
 
 ### Selecting driver type
-(NOTE: The multi-driver feature of `HID.setDriverType()` is currently disabled. See issue #242 )
 
 By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
 
@@ -377,6 +371,14 @@ or:
 ```
 npm install node-hid --build-from-source --driver=libusb
 ```
+
+Or during runtime, you can use `HID.setDriverType('libusb')` immediately after require()-ing `node-hid`:
+```js
+var HID = require('node-hid');
+HID.setDriverType('libusb');
+```
+
+
 
 
 ### udev device permissions
