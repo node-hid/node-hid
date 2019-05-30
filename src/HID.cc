@@ -22,7 +22,7 @@
 
 // disable confusing compiler warnings on Windows
 // https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-3-c4290?view=vs-2019
-#pragma warning( disable : 4290 )
+//#pragma warning( disable : 4290 )
 
 #include <iostream>
 #include <iomanip>
@@ -166,7 +166,7 @@ int
 HID::write(const databuf_t& message)
   throw(JSException)
 {
-  if(!_hidHandle) { 
+  if(!_hidHandle) {
     throw JSException("Cannot write to closed device");
   }
   //unsigned char buf[message.size()];
@@ -209,7 +209,7 @@ HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
 
     Local<Object> buf = Nan::NewBuffer(message.size()).ToLocalChecked();
     char* data = Buffer::Data(buf);
-    
+
     int j = 0;
     for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++) {
       data[j++] = *k;
@@ -478,7 +478,7 @@ NAN_METHOD(HID::write)
       if (!v->IsNumber()) {
         throw JSException("unexpected array element in array to send, expecting only integers");
       }
-      uint32_t b = Nan::To<uint32_t>(v).FromJust(); 
+      uint32_t b = Nan::To<uint32_t>(v).FromJust();
       message.push_back((unsigned char) b);
     }
     int returnedLength = hid->write(message); // returns number of bytes written
@@ -586,7 +586,7 @@ NAN_METHOD(HID::devices)
     Nan::Set( retval, count++, deviceInfo);
   }
   hid_free_enumeration(devs);
-  info.GetReturnValue().Set(retval);  
+  info.GetReturnValue().Set(retval);
 }
 
 static void
@@ -625,11 +625,11 @@ HID::Initialize(Local<Object> target)
   Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
   Nan::SetPrototypeMethod(hidTemplate, "getDeviceInfo", getDeviceInfo);
 
-  Nan::Set( target, 
-            Nan::New<String>("HID").ToLocalChecked(), 
+  Nan::Set( target,
+            Nan::New<String>("HID").ToLocalChecked(),
             Nan::GetFunction( hidTemplate ).ToLocalChecked() );
-  Nan::Set( target, 
-            Nan::New<String>("devices").ToLocalChecked(), 
+  Nan::Set( target,
+            Nan::New<String>("devices").ToLocalChecked(),
             Nan::GetFunction( Nan::New<v8::FunctionTemplate>(HID::devices)).ToLocalChecked() );
 }
 
