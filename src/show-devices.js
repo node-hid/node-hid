@@ -2,16 +2,12 @@
 
 var HID = require('../');
 
-// choose driverType
-// default is 'libusb' for Mac OSX & Windows
-// default is 'hidraw', for Linux
-var type = null;
-
+// Linux: choose driverType
+// default is 'hidraw', can also be 'libusb'
 if( process.argv[2] ) {
-    type = process.argv[2];
+    var type = process.argv[2];
+    console.log("driverType:",type);
+    HID.setDriverType( type );
 }
-// disabled until prebuild gets multi-target, see issue node-hid#242
-// console.log('driverType:', (type) ? type : 'default');
-// HID.setDriverType( type );
 
 console.log('devices:', HID.devices());
