@@ -1,6 +1,6 @@
 {
    'variables': {
-      'driver%': 'hidraw'
+      'driver%': 'libusb'
   },
   'targets': [
       {
@@ -18,9 +18,9 @@
             '-framework CoreFoundation'
           ],
           'xcode_settings': {
-          'CLANG_CXX_LIBRARY': 'libc++',
-          'MACOSX_DEPLOYMENT_TARGET': '10.9',
-          'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+            'CLANG_CXX_LIBRARY': 'libc++',
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
             'OTHER_LDFLAGS': [
               '-framework IOKit',
               '-framework CoreFoundation'
@@ -111,6 +111,54 @@
       'cflags!': [
         '-ansi'
       ]
+    },
+
+    {
+      'target_name': 'hidapi-linux-hidraw',
+      'conditions': [
+        [ 'OS=="linux"', {
+          'type': 'static_library',
+          'sources': [ 'hidapi/linux/hid.c' ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'hidapi/hidapi',
+              "<!(node -e \"require('nan')\")"
+            ]
+          },
+          'include_dirs': [
+            'hidapi/hidapi'
+          ],
+          'defines': [
+            '_LARGEFILE_SOURCE',
+            '_FILE_OFFSET_BITS=64',
+          ],
+          'cflags': ['-g'],
+          'cflags!': [
+            '-ansi'
+          ]
+        }],
+      ],
+    },
+    {
+      'target_name': 'HID-hidraw',
+      'conditions': [
+        [ 'OS=="linux"', {
+          'sources': [ 'src/HID.cc' ],
+          'dependencies': ['hidapi-linux-hidraw'],
+          'defines': [
+            '_LARGEFILE_SOURCE',
+            '_FILE_OFFSET_BITS=64',
+          ],
+          'libraries': [
+            '-ludev',
+            '-lusb-1.0'
+          ],
+          'cflags!': ['-ansi', '-fno-exceptions' ],
+          'cflags_cc!': [ '-fno-exceptions' ],
+          'cflags': ['-g', '-exceptions'],
+          'cflags_cc': ['-g', '-exceptions']
+        }]
+      ],
     }
   ]
 }

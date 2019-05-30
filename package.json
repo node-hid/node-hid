@@ -1,7 +1,7 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "bugs": "https://github.com/node-hid/node-hid/issues",
   "homepage": "https://github.com/node-hid/node-hid#readme",
@@ -18,7 +18,7 @@
     "showdevices": "node src/show-devices.js",
     "prepublish": "git submodule update --init",
     "install": "prebuild-install || node-gyp rebuild",
-    "prebuild": "prebuild --all --verbose",
+    "prebuild": "prebuild --all --verbose --include-regex \"\\.node$\"",
     "prebuild-upload": "prebuild --all --strip --verbose --upload",
     "prebuild-ci": "prebuild-ci",
     "gypclean": "node-gyp clean",

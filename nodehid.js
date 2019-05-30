@@ -13,23 +13,18 @@ function setDriverType(type) {
 var binding = null;
 function loadBinding() {
     if( !binding ) {
-        binding = require('bindings')('HID.node');
+        if( os.platform() === 'linux' ) {
+            // Linux defaults to hidraw
+            if( !driverType || driverType === 'hidraw' ) {
+                binding = require('bindings')('HID-hidraw.node');
+            } else {
+                binding = require('bindings')('HID.node');
+            }
+        }
+        else {
+            binding = require('bindings')('HID.node');
+        }
     }
-
-    // disabled until prebuild gets multi-target support, see node-hid#242
-    // if( !binding ) {
-    //     if( os.platform() === 'linux' ) {
-    //         // Linux defaults to hidraw
-    //         if( !driverType || driverType === 'hidraw' ) {
-    //             binding = require('bindings')('HID-hidraw.node');
-    //         } else {
-    //             binding = require('bindings')('HID.node');
-    //         }
-    //     }
-    //     else {
-    //         binding = require('bindings')('HID.node');
-    //     }
-    // }
 }
 
 //This class is a wrapper for `binding.HID` class
