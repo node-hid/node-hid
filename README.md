@@ -78,11 +78,11 @@ combination not listed here will compile and work.
 
 ### Supported Electron versions ###
 
-* Electron v1 to
-* Electron v5 (³)
+* Electron v1 to (³)
+* Electron v5
 
 
-³ Electron v1.8 currently has issues but prebuilt binaries are provided.
+³ Electron v1.8 currently has issues, but prebuilt binaries are provided.
 
 
 ## Installation
@@ -215,6 +215,7 @@ if( deviceInfo ) {
 ### Reading from a device
 
 To receive FEATURE reports, use `device.getFeatureReport()`.
+
 To receive INPUT reports, use `device.on("data",...)`.
 A `node-hid` device is an EventEmitter.
 Reading from a device is performed by registering a "data" event handler:
@@ -245,6 +246,7 @@ Notes:
 ### Writing to a device
 
 To send FEATURE reports, use `device.sendFeatureReport()`.
+
 To send OUTPUT reports, use `device.write()`.
 All writing is synchronous.
 
