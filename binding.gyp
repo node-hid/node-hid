@@ -66,7 +66,7 @@
                     'conditions': [
                         [ 'driver=="libusb"', {
                             'sources': [ 'hidapi/libusb/hid.c' ],
-                            'include_dirs+': ['/usr/include/libusb-1.0/']
+                            'include_dirs+': ['<!@(pkg-config libusb-1.0 --cflags-only-I | sed s/-I//g)']
                         }],
                         [ 'driver=="hidraw"', {
                             'sources': [ 'hidapi/linux/hid.c' ]
