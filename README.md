@@ -415,16 +415,16 @@ For a complete example, see the
 To compile & develop locally or if `prebuild` cannot download a pre-built
 binary for you, you will need the following tools:
 
-* All OSes:
-    * `node-gyp` installed globally: `npm install -g node-gyp`
-
-* Linux (kernel 2.6+) : install examples shown for Ubuntu
+* Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
     * Compilation tools: `apt install build-essential git`
     * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-    * libusb-1.0-0 w/headers:`sudo apt install libusb-1.0-0 libusb-1.0-0-dev`
-    * libudev-dev: (Fedora only) `yum install libusbx-devel`
+    * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
+    * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
+      `yum install libusbx-devel` (Fedora)
+
 * Mac OS X 10.8+
     * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
+
 * Windows XP, 7, 8, 10
     * Visual C++ compiler and Python 2.7
         * either:
