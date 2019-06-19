@@ -34,6 +34,7 @@
    * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
    * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
    * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
+   * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
 * [Windows notes](#windows-notes)
    * [Mice and keyboards](#mice-and-keyboards)
    * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
@@ -336,6 +337,11 @@ be automatically called.
 
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
+
+### `device.setNonBlocking(no_block)`
+
+- `no_block` - boolean. Set to `true` to enable non-blocking reads
+- exactly mirrors `hid_set_nonblocking()` in [`hidapi`](https://github.com/libusb/hidapi)
 
 -----
 
