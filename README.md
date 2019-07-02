@@ -24,7 +24,7 @@
    * [device = new HID.HID(path)](#device--new-hidhidpath)
    * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
    * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-   * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
+   * [device.on('error', function(error) {} )](#deviceonerror-functionerror--)
    * [device.write(data)](#devicewritedata)
    * [device.close()](#deviceclose)
    * [device.pause()](#devicepause)
