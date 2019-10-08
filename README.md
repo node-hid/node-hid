@@ -59,7 +59,7 @@ In general we try to provide pre-built native library binaries for the most comm
 We strive to make `node-hid` cross-platform so there's a good chance any
 combination not listed here will compile and work.
 
-### Supported Platofrms ###
+### Supported Platforms ###
 - Windows x86 (32-bit) (¹)
 - Windows x64 (64-bit)
 - Mac OSX 10.9+
