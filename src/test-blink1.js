@@ -10,9 +10,21 @@ var HID = require('../');
 var VENDOR_ID = 0x27B8;
 var PRODUCT_ID = 0x01ED;
 var REPORT_ID = 1;
-var REPORT_LENGTH = 9;
+var REPORT2_ID = 2;
+var REPORT_LENGTH = 8;
+var REPORT2_LENGTH = 60;
 
 var serial_number = process.argv[2];
+
+var JSONstringifyHex = function(arr) {
+  var str='[';
+  for (var i = 1; i < arr.length; i++) {
+      str += '0x' + arr[i].toString(16)
+      if(i<arr.length-1) { str+=','; }
+  }
+  str += ']';
+  return str;
+};
 
 var devices_found = HID.devices( VENDOR_ID, PRODUCT_ID );
 
@@ -23,17 +35,17 @@ if( devices_found.length === 0 ) {
 console.log("blink(1) devices found:", devices_found,'\n');
 
 var hidDevice;
-try { 
+try {
     if( serial_number ) {
         console.log("opening serial number "+serial_number);
         hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID, serial_number );
-    } else { 
+    } else {
         console.log("opening first device");
         hidDevice = new HID.HID( VENDOR_ID, PRODUCT_ID );
     }
 } catch(err) {
     console.log(err);
-    process.exit(1);    
+    process.exit(1);
 }
 
 var deviceInfo = hidDevice.getDeviceInfo();
@@ -43,26 +55,59 @@ console.log("deviceInfo.serialNumber:", deviceInfo.serialNumber);
 
 // shamelessly stolen from node-blink1
 var blink1_sendCommand = function( /* command [, args ...]*/ ) {
-    var featureReport = [REPORT_ID, 0, 0, 0, 0, 0, 0, 0, 0];
-
+    var featureReport = new Array(REPORT_LENGTH + 1).fill(0);  // + 1 for reportId
+    featureReport[0] = REPORT_ID;
     featureReport[1] = arguments[0].charCodeAt(0);
-
     for (var i = 1; i < arguments.length; i++) {
         featureReport[i + 1] = arguments[i];
     }
     var rc = hidDevice.sendFeatureReport(featureReport);
-    console.log("report sent:", featureReport);
+    console.log("report sent:", JSONstringifyHex(featureReport));
     console.log("sent size:",featureReport.length," actual size:", rc);
 };
+var blink1_sendCommand2 = function(/*command, args...*/) {
+  var featureReport = new Array(REPORT2_LENGTH + 1).fill(0);
+  featureReport[0] = REPORT2_ID;
+  featureReport[1] = arguments[0].charCodeAt(0);
+  for (var i = 1; i < arguments.length; i++) {
+      featureReport[i + 1] = arguments[i];
+  }
+  var rc = hidDevice.sendFeatureReport(featureReport);
+  console.log("report2 sent:"+ JSONstringifyHex(featureReport));
+  console.log("sent size:",featureReport.length," actual size:", rc);
+};
 var blink1_readResponse = function(callback) {
-    callback.apply(null, [hidDevice.getFeatureReport(REPORT_ID, REPORT_LENGTH)]);
+    callback.apply(null, [hidDevice.getFeatureReport(REPORT_ID, REPORT_LENGTH+1)]);
+};
+var blink1_readResponse2 = function(callback) {
+    callback.apply(null, [hidDevice.getFeatureReport(REPORT2_ID, REPORT2_LENGTH+1)]);
 };
 
 var blink1_getVersion = function(callback) {
     blink1_sendCommand('v');
     blink1_readResponse(function(response) {
-        var version = String.fromCharCode(response[3]) + '.' + String.fromCharCode(response[4]);
+        console.log('getVersion response: ',JSONstringifyHex(response))
+        // var version = String.fromCharCode(response[3])  + '.' + String.fromCharCode(response[4]);
+        // NOTE: as of node-hid@1.0, response contains reportId as first element of array
+        var version = Number.parseInt(String.fromCharCode(response[4]))*100 + Number.parseInt(String.fromCharCode(response[5]))
         callback(version);
+  });
+};
+
+// var blink1_getStartupParams = function(callback) {
+//   blink1_sendCommand('b');
+//   blink1_readResponse(function(response) {})
+// });
+
+var blink1_getChipId = function(callback) {
+    blink1_sendCommand2('U');
+    blink1_readResponse2(function(response) {
+        console.log('getChipId response: ',JSONstringifyHex(response))
+        // var version = String.fromCharCode(response[3])  + '.' + String.fromCharCode(response[4]);
+        // NOTE: as of node-hid@1.0, response contains reportId as first element of array
+        // var version = Number.parseInt(String.fromCharCode(response[4]))*100 + Number.parseInt(String.fromCharCode(response[5]))
+        var chipId = response;
+        callback(chipId);
   });
 };
 
@@ -86,7 +131,14 @@ setTimeout( function() {
 }, 1000);
 
 setTimeout( function() {
+  console.log("Getting chipId (mk3 only)");
+  blink1_getChipId(function(response) {
+    // do something here
+  });
+}, 2000);
+
+setTimeout( function() {
     console.log("Setting blink(1) to #000000 over 1000 millisecs, and closing");
     blink1_fadeToColor( 1000, 0x00,0x00,0x00, 0);
     hidDevice.close();
-}, 2000 );
+}, 3000 );

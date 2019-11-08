@@ -347,9 +347,9 @@ be automatically called.
 
 ## Windows notes
 
-### Mice and keyboards
-In general you cannot access USB HID keyboards or mice.  
-The OS owns these devices.
+### Keyboards and mice
+The OS will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS (such as some barcode readers or RFID scanners).  This is a security precaution. Otherwise, it would be trivial to build keyloggers.
+There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.
 
 ### Xbox 360 Controller on Windows 10
 For reasons similar to mice & keyboards it appears you can't access this controller on Windows 10.

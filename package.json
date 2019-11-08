@@ -1,7 +1,7 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "bugs": "https://github.com/node-hid/node-hid/issues",
   "homepage": "https://github.com/node-hid/node-hid#readme",
@@ -38,11 +38,11 @@
   "license": "(MIT OR X11)",
   "dependencies": {
     "bindings": "^1.5.0",
-    "nan": "^2.13.2",
-    "prebuild-install": "^5.3.0"
+    "nan": "^2.14.0",
+    "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
-    "prebuild": "^9.0.0",
+    "prebuild": "^9.1.1",
     "rimraf": "^2.6.2"
   },
   "gypfile": true
