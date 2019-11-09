@@ -14,6 +14,8 @@ var REPORT2_ID = 2;
 var REPORT_LENGTH = 8;
 var REPORT2_LENGTH = 60;
 
+var blink1Version = 0; // to be filled in later
+
 var serial_number = process.argv[2];
 
 var JSONstringifyHex = function(arr) {
@@ -120,6 +122,7 @@ var blink1_fadeToColor = function( fadeMillis, r,g,b, ledn ) {
 };
 
 blink1_getVersion( function(version) {
+    blink1Version = version;
     console.log("\nblink(1) version: ", version);
 });
 
@@ -134,10 +137,12 @@ setTimeout( function() {
 }, 1000);
 
 setTimeout( function() {
-  console.log("\nGetting chipId (mk3 only)");
-  blink1_getChipId(function(response) {
+  if( blink1Version > 300 ) {
+    console.log("\nGetting chipId (mk3 only)");
+    blink1_getChipId(function(response) {
     // do something here
-  });
+    });
+  }
 }, 2000);
 
 setTimeout( function() {
