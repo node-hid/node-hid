@@ -461,13 +461,13 @@ For example:
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid                                        # must change into node-hid directory
 npm install -g rimraf                              # just so it doesn't get 'clean'ed
-npm run prepublish                                 # get the needed hidapi submodule
+npm run prepublishOnly                             # get the needed hidapi submodule
 npm install --build-from-source                    # rebuilds the module with C code
 node ./src/show-devices.js
 ```
 
-You will see some warnings from the C compiler as it compiles
-[hidapi](https://github.com/signal11/hidapi) (the underlying C library `node-hid` uses).  
+You may see some warnings from the C compiler as it compiles
+[hidapi](https://github.com/libusb/hidapi) (the underlying C library `node-hid` uses).  
 This is expected.
 
 For ease of development, there are also the scripts:
