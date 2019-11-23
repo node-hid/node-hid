@@ -460,6 +460,7 @@ For example:
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid                                        # must change into node-hid directory
+npm install -g rimraf                              # just so it doesn't get 'clean'ed
 npm run prepublish                                 # get the needed hidapi submodule
 npm install --build-from-source                    # rebuilds the module with C code
 node ./src/show-devices.js
