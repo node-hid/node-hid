@@ -20,10 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-// disable confusing compiler warnings on Windows
-// https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-3-c4290?view=vs-2019
-//#pragma warning( disable : 4290 )
-
 #include <iostream>
 #include <iomanip>
 #include <sstream>

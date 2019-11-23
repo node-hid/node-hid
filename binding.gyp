@@ -39,6 +39,10 @@
                 }], # OS==linux
                 [ 'OS=="win"', {
                     'msvs_settings': {
+                        'VCCLCompilerTool': {
+                            'ExceptionHandling': '2', # /EHsc
+                            'DisableSpecificWarnings': [ '4290', '4530' ],
+                        },
                         'VCLinkerTool': {
                             'AdditionalDependencies': ['setupapi.lib']
                         }
@@ -77,6 +81,10 @@
                 [ 'OS=="win"', {
                     'sources': [ 'hidapi/windows/hid.c' ],
                     'msvs_settings': {
+                        'VCCLCompilerTool': {
+                            'ExceptionHandling': '2', # /EHsc
+                            'DisableSpecificWarnings': [ '4290', '4530' ],
+                        },
                         'VCLinkerTool': {
                             'AdditionalDependencies': ['setupapi.lib']
                         }
