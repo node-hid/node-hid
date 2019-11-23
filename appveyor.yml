@@ -47,7 +47,7 @@ install:
     true;
 
 build_script:
-- npm run prepublish
+- npm run prepublishOnly
 - npm install --build-from-source
 
 test_script:
