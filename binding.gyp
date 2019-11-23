@@ -50,7 +50,7 @@
             'cflags': ['-g', '-exceptions'],
             'cflags_cc': ['-g', '-exceptions']
         }, # target HID
-        
+
         {
             'target_name': 'hidapi',
             'type': 'static_library',
@@ -60,6 +60,7 @@
                     'include_dirs+': ['/usr/include/libusb-1.0/'],
                     'xcode_settings': {
                         'OTHER_CFLAGS': ['-Wno-sign-compare'],
+                        'MACOSX_DEPLOYMENT_TARGET': '10.9',
                     }
                 }],
                 [ 'OS=="linux"', {
@@ -96,9 +97,9 @@
             'cflags': ['-g'],
             'cflags!': ['-ansi']
         }, # target hidapi
-        
+
     ],
-    'conditions': [ 
+    'conditions': [
         [ 'OS=="linux"', {
             'targets': [
                 {
@@ -139,8 +140,8 @@
                 }, # target 'hidapi-linux-hidraw'
 
             ] # targets linux
-            
+
         }], # OS==linux
 
-    ] # conditions    
+    ] # conditions
 }
