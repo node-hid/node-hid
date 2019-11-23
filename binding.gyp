@@ -41,7 +41,7 @@
                     'msvs_settings': {
                         'VCCLCompilerTool': {
                             'ExceptionHandling': '2', # /EHsc
-                            'DisableSpecificWarnings': [ '4290', '4530' ],
+                            'DisableSpecificWarnings': [ '4290', '4530', '4267' ],
                         },
                         'VCLinkerTool': {
                             'AdditionalDependencies': ['setupapi.lib']
@@ -83,7 +83,7 @@
                     'msvs_settings': {
                         'VCCLCompilerTool': {
                             'ExceptionHandling': '2', # /EHsc
-                            'DisableSpecificWarnings': [ '4290', '4530' ],
+                            'DisableSpecificWarnings': [ '4290', '4530', '4267' ],
                         },
                         'VCLinkerTool': {
                             'AdditionalDependencies': ['setupapi.lib']
