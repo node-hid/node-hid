@@ -5,50 +5,55 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/sqgrud8yufx12dbt?svg=true)](https://ci.appveyor.com/project/todbot/node-hid/branch/master)
 
 
-* [Platform Support](#platform-support)
-   * [Supported Node versions](#supported-node-versions)
-   * [Supported Electron versions](#supported-electron-versions)
-* [Installation](#installation)
-   * [Installation Special Cases](#installation-special-cases)
-* [Examples](#examples)
-* [Usage](#usage)
-   * [List all HID devices connected](#list-all-hid-devices-connected)
-     * [Cost of HID.devices() and new HID.HID()](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
-   * [Opening a device](#opening-a-device)
-   * [Picking a device from the device list](#picking-a-device-from-the-device-list)
-   * [Reading from a device](#reading-from-a-device)
-   * [Writing to a device](#writing-to-a-device)
-* [Complete API](#complete-api)
-   * [devices = HID.devices()](#devices--hiddevices)
-   * [HID.setDriverType(type)](#hidsetdrivertypetype)
-   * [device = new HID.HID(path)](#device--new-hidhidpath)
-   * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
-   * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-   * [device.on('error', function(error) {} )](#deviceonerror-functionerror--)
-   * [device.write(data)](#devicewritedata)
-   * [device.close()](#deviceclose)
-   * [device.pause()](#devicepause)
-   * [device.resume()](#deviceresume)
-   * [device.read(callback)](#devicereadcallback)
-   * [device.readSync()](#devicereadsync)
-   * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
-   * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
-   * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-   * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
-* [Windows notes](#windows-notes)
-   * [Mice and keyboards](#mice-and-keyboards)
-   * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
-   * [Prepend byte to hid_write()](#prepend-byte-to-hid_write)
-* [Linux notes](#linux-notes)
-   * [Selecting driver type](#selecting-driver-type)
-   * [udev device permissions](#udev-device-permissions)
-* [Compiling from source](#compiling-from-source)
-   * [To build node-hid from source for your project:](#to-build-node-hid-from-source-for-your-project)
-   * [To build node-hid for development:](#to-build-node-hid-for-development)
-* [Using node-hid in Electron projects](#using-node-hid-in-electron-projects)
-* [Using node-hid in NW.js projects](#using-node-hid-in-nwjs-projects)
-* [Support](#support)
-
+   * [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)
+      * [Platform Support](#platform-support)
+         * [Supported Platforms](#supported-platforms)
+         * [Supported Node versions](#supported-node-versions)
+         * [Supported Electron versions](#supported-electron-versions)
+      * [Installation](#installation)
+         * [Installation Special Cases](#installation-special-cases)
+      * [Examples](#examples)
+      * [Usage](#usage)
+         * [List all HID devices connected](#list-all-hid-devices-connected)
+            * [Cost of HID.devices() and <code>new HID.HID()</code> for detecting device plug/unplug](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
+         * [Opening a device](#opening-a-device)
+         * [Picking a device from the device list](#picking-a-device-from-the-device-list)
+         * [Reading from a device](#reading-from-a-device)
+         * [Writing to a device](#writing-to-a-device)
+      * [Complete API](#complete-api)
+         * [devices = HID.devices()](#devices--hiddevices)
+         * [HID.setDriverType(type)](#hidsetdrivertypetype)
+         * [device = new HID.HID(path)](#device--new-hidhidpath)
+         * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
+         * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
+         * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
+         * [device.write(data)](#devicewritedata)
+         * [device.close()](#deviceclose)
+         * [device.pause()](#devicepause)
+         * [device.resume()](#deviceresume)
+         * [device.read(callback)](#devicereadcallback)
+         * [device.readSync()](#devicereadsync)
+         * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
+         * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
+         * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
+         * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
+      * [Mac notes](#mac-notes)
+         * [Keyboards and Mice](#keyboards-and-mice)
+      * [Windows notes](#windows-notes)
+         * [Keyboards and Mice](#keyboards-and-mice-1)
+         * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
+      * [Linux notes](#linux-notes)
+         * [Selecting driver type](#selecting-driver-type)
+         * [udev device permissions](#udev-device-permissions)
+      * [Compiling from source](#compiling-from-source)
+         * [Linux (kernel 2.6 ) : (install examples shown for Debian/Ubuntu)](#linux-kernel-26--install-examples-shown-for-debianubuntu)
+         * [Mac OS X 10.8 ](#mac-os-x-108)
+         * [Windows 7, 8, 10](#windows-7-8-10)
+         * [Building node-hid from source, for your projects](#building-node-hid-from-source-for-your-projects)
+         * [Build node-hid for <code>node-hid</code> development:](#build-node-hid-for-node-hid-development)
+      * [Electron projects using node-hid](#electron-projects-using-node-hid)
+      * [NW.js projects using node-hid](#nwjs-projects-using-node-hid)
+      * [Support](#support)
 
 
 ## Platform Support
@@ -79,11 +84,8 @@ combination not listed here will compile and work.
 
 ### Supported Electron versions ###
 
-* Electron v1 to (³)
-* Electron v5
-
-
-³ Electron v1.8 currently has issues, but prebuilt binaries are provided.
+* Electron v1 to
+* Electron v7
 
 
 ## Installation
@@ -246,10 +248,15 @@ Notes:
 
 ### Writing to a device
 
-To send FEATURE reports, use `device.sendFeatureReport()`.
+To send FEATURE reports, use `device.sendFeatureReport()`.  
 
 To send OUTPUT reports, use `device.write()`.
+
 All writing is synchronous.
+
+The ReportId is the first byte of the array sent to `device.sendFeatureReport()` or `device.write()`, meaning the array should be one byte bigger than your report.
+If your device does NOT use numbered reports, set the first byte of the 0x00.
+
 
 ```js
 device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
@@ -258,10 +265,11 @@ device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
 device.sendFeatureReport( [0x01, 'c', 0, 0xff,0x33,0x00, 70,0, 0] );
 ```
 Notes:
-- Both `device.write()` and `device.sendFeatureReport()` return number of bytes written
-- Some devices use reportIds for OUTPUT reports.  In that case,
-the first byte of the array to `write()` should be the reportId.
-- BUG: Windows requires the prepend of an extra byte due to a bug in hidapi (see issue #187 and Windows notes below)
+- You must send the exact number of bytes for your chosen OUTPUT or FEATURE report.
+- Both `device.write()` and `device.sendFeatureReport()` return
+number of bytes written + 1.
+- For devices using Report Ids, the first byte of the array to `write()` or
+`sendFeatureReport()` must be the Report Id.
 
 
 ## Complete API
@@ -293,7 +301,8 @@ the first byte of the array to `write()` should be the reportId.
 
 ### `device.write(data)`
 
-- `data` - the data to be synchronously written to the device
+- `data` - the data to be synchronously written to the device,
+first byte is Report Id or 0x00 if not using numbered reports.
 - Returns number of bytes actually written
 
 ### `device.close()`
@@ -345,24 +354,22 @@ be automatically called.
 
 -----
 
+## Mac notes
+
+### Keyboards and Mice
+The OS will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS (such as some barcode readers or RFID scanners).  This is a security precaution. Otherwise, it would be trivial to build keyloggers.
+There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.
+
+
 ## Windows notes
 
-### Keyboards and mice
+### Keyboards and Mice
 The OS will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS (such as some barcode readers or RFID scanners).  This is a security precaution. Otherwise, it would be trivial to build keyloggers.
 There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.
 
 ### Xbox 360 Controller on Windows 10
 For reasons similar to mice & keyboards it appears you can't access this controller on Windows 10.
 
-### Prepend byte to `hid_write()`
-Because of a limitation in the underlying `hidapi` library, if you are using `hid_write()` you should prepend a byte to any data buffer, e.g.
-```js
-var device = new HID.HID(vid,pid);
-var buffer = Array(64).fill(0x33); // device has 64-byte report
-if(os.platform === 'win32') {
-  buffer.unshift(0);  // prepend throwaway byte
-}
-```
 
 
 ## Linux notes
@@ -385,8 +392,6 @@ Or during runtime, you can use `HID.setDriverType('libusb')` immediately after r
 var HID = require('node-hid');
 HID.setDriverType('libusb');
 ```
-
-
 
 
 ### udev device permissions
@@ -421,34 +426,34 @@ For a complete example, see the
 To compile & develop locally or if `prebuild` cannot download a pre-built
 binary for you, you will need the following tools:
 
-* Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
-    * Compilation tools: `apt install build-essential git`
-    * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-    * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
-    * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
-      `yum install libusbx-devel` (Fedora)
+### Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
+  * Compilation tools: `apt install build-essential git`
+  * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
+  * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
+  * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
+    `yum install libusbx-devel` (Fedora)
 
-* Mac OS X 10.8+
-    * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
+### Mac OS X 10.8+
+  * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 
-* Windows XP, 7, 8, 10
-    * Visual C++ compiler and Python 2.7
-        * either:
-            * `npm install --global windows-build-tools`
-            * add `%USERPROFILE%\.windows-build-tools\python27` to `PATH`,
-           like PowerShell: `$env:Path += ";$env:USERPROFILE\.windows-build-tools\python27"`
-        * or:
-          * [Python 2.7](https://www.python.org/downloads/windows/)
-          * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
+### Windows 7, 8, 10
+  * Visual C++ compiler and Python 2.7
+      * either:
+        * `npm install --global windows-build-tools`
+        * add `%USERPROFILE%\.windows-build-tools\python27` to `PATH`,
+         like PowerShell: `$env:Path += ";$env:USERPROFILE\.windows-build-tools\python27"`
+      * or:
+        * [Python 2.7](https://www.python.org/downloads/windows/)
+        * [Visual Studio Express 2013 for Desktop](https://www.visualstudio.com/downloads/download-visual-studio-vs#d-2013-express)
 
 
-### To build `node-hid` from source for your project:
+### Building `node-hid` from source, for your projects
 
 ```
 npm install node-hid --build-from-source
 ```
 
-### To build `node-hid` for development:
+### Build `node-hid` for `node-hid` development:
 
 * check out a copy of this repo
 * change into its directory
@@ -477,7 +482,7 @@ npm run gypconfigure  # "node-gyp configure" configure makefiles
 npm run gypbuild      # "node-gyp build" build native code
 ```
 
-## Using `node-hid` in Electron projects
+## Electron projects using `node-hid`
 In your electron project, add `electron-rebuild` to your `devDependencies`.
 Then in your package.json `scripts` add:
 
@@ -485,27 +490,39 @@ Then in your package.json `scripts` add:
   "postinstall": "electron-rebuild --force"
 ```
 This will cause `npm` to rebuild `node-hid` for the version of Node that is in Electron.
-If you get an error similar to `The module "HID.node" was compiled against a differnt version of Node.js`
-then `electron-rebuild` hasn't been run and Electron is trying to use `node-hid` not built for it.
+If you get an error similar to `The module "HID.node" was compiled against a different version of Node.js`
+then `electron-rebuild` hasn't been run and Electron is trying to use `node-hid`
+compiled for Node.js and not for Electron.
 
-If you want a specific version of electron, do something like:
 
-```
-  "postinstall": "electron-rebuild -v 0.36.5 --force -m . -w node-hid"
-```
-
-If using `node-hid` with `webpack`, you may find it useful to list `node-hid` as an external in your `webpack-config.js`:
+If using `node-hid` with `webpack` or similar bundler, you may need to exclude
+`node-hid` and other libraries with native code.  In webpack, you say which
+`externals` you have in your `webpack-config.js`:
 ```
   externals: {
     "node-hid": 'commonjs node-hid'
   }
 ```
+
 Examples of `node-hid` in Electron:
 * [electron-hid-toy](https://github.com/todbot/electron-hid-toy) - a simple example of using `node-hid`, that will hopefully always track the latest Electron release
 * [Blink1Control2](https://github.com/todbot/Blink1Control2/) - a complete application, using webpack (e.g. see its [webpack-config.js](https://github.com/todbot/Blink1Control2/blob/master/webpack.config.js))
 
-## Using `node-hid` in NW.js projects
-(TBD)
+
+## NW.js projects using `node-hid`
+
+Without knowing much about NW.js, a quick hacky solution that works is:
+
+```
+cd my-nwjs-app
+npm install node-hid --save
+npm install -g nw-gyp
+cd node_modules/node-hid
+nw-gyp rebuild --target=0.42.3 --arch=x64  // or whatever NW.js version you have
+cd ../..
+nwjs .
+```
+
 
 ## Support
 
