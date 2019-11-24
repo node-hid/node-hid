@@ -379,18 +379,21 @@ For reasons similar to mice & keyboards it appears you can't access this control
 By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
 
 If you would still like to use the `libusb` driver, then you can do either:
+
+During runtime, you can use `HID.setDriverType('libusb')` immediately after require()-ing `node-hid`:
+```js
+var HID = require('node-hid');
+HID.setDriverType('libusb');
+```
+
+If you must have the libusb version and cannot use `setDriverType()`,
+you can install older node-hid or build from source:
 ```
 npm install node-hid@0.5.7
 ```
 or:
 ```
 npm install node-hid --build-from-source --driver=libusb
-```
-
-Or during runtime, you can use `HID.setDriverType('libusb')` immediately after require()-ing `node-hid`:
-```js
-var HID = require('node-hid');
-HID.setDriverType('libusb');
 ```
 
 
