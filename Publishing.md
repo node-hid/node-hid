@@ -9,7 +9,7 @@ Then, on each of MacOSX, Windows, Linux, do:
 ```
 git clone https://github.com/node-hid/node-hid.git
 cd node-hid     
-npm run prepublish                # get the hidapi submodule
+npm run prepublishOnly            # get the hidapi submodule
 npm install --build-from-source   # rebuilds the C code
 node ./src/show-devices.js        # simple tests
 npm run prebuild                  # build all the versions
