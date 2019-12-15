@@ -165,15 +165,7 @@ HID::write(const databuf_t& message)
   if(!_hidHandle) {
     throw JSException("Cannot write to closed device");
   }
-  //unsigned char buf[message.size()];
-  unsigned char* buf = new unsigned char[message.size()];
-  unsigned char* p = buf;
-  int res;
-  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
-    *p++ = *i;
-  }
-  res = hid_write(_hidHandle, buf, message.size());
-  delete[] buf;
+  int res = hid_write(_hidHandle, message.data(), message.size());
   if (res < 0) {
     throw JSException("Cannot write to HID device");
   }
@@ -356,26 +348,25 @@ NAN_METHOD(HID::sendFeatureReport)
   HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
   vector<unsigned char> message;
-  Local<Array> messageArray = Local<Array>::Cast(info[0]);
-  for (unsigned i = 0; i < messageArray->Length(); i++) {
-    Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
-    if (!v->IsNumber()) {
-      throw JSException("unexpected array element in array to send, expecting only integers");
+  if (Buffer::HasInstance(info[0])) {
+    uint32_t len = Buffer::Length(info[0]);
+    unsigned char* data = (unsigned char *)Buffer::Data(info[0]);
+    message.assign(data, data + len);
+  } else {
+    Local<Array> messageArray = Local<Array>::Cast(info[0]);
+    message.reserve(messageArray->Length());
+
+    for (unsigned i = 0; i < messageArray->Length(); i++) {
+      Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
+      if (!v->IsNumber()) {
+        throw JSException("unexpected array element in array to send, expecting only integers");
+      }
+      int32_t b = Nan::To<int32_t>(v).FromJust();
+      message.push_back((unsigned char) b);
     }
-    int32_t b = Nan::To<int32_t>(v).FromJust();
-    message.push_back((unsigned char) b);
   }
 
-  // Convert vector to char array
-  //unsigned char buf[message.size()];
-  unsigned char* buf = new unsigned char[message.size()];
-  unsigned char* p = buf;
-  for (vector<unsigned char>::const_iterator i = message.begin(); i != message.end(); i++) {
-    *p++ = *i;
-  }
-
-  int returnedLength = hid_send_feature_report(hid->_hidHandle, buf, message.size());
-  delete[] buf;
+  int returnedLength = hid_send_feature_report(hid->_hidHandle, message.data(), message.size());
   if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0.
     return Nan::ThrowError("could not send feature report to device");
   }
@@ -468,14 +459,22 @@ NAN_METHOD(HID::write)
     HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
     vector<unsigned char> message;
-    Local<Array> messageArray = Local<Array>::Cast(info[0]);
-    for (unsigned i = 0; i < messageArray->Length(); i++) {
-      Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
-      if (!v->IsNumber()) {
-        throw JSException("unexpected array element in array to send, expecting only integers");
+    if (Buffer::HasInstance(info[0])) {
+      uint32_t len = Buffer::Length(info[0]);
+      unsigned char* data = (unsigned char *)Buffer::Data(info[0]);
+      message.assign(data, data + len);
+    } else {
+      Local<Array> messageArray = Local<Array>::Cast(info[0]);
+      message.reserve(messageArray->Length());
+      
+      for (unsigned i = 0; i < messageArray->Length(); i++) {
+        Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
+        if (!v->IsNumber()) {
+          throw JSException("unexpected array element in array to send, expecting only integers");
+        }
+        uint32_t b = Nan::To<uint32_t>(v).FromJust();
+        message.push_back((unsigned char) b);
       }
-      uint32_t b = Nan::To<uint32_t>(v).FromJust();
-      message.push_back((unsigned char) b);
     }
     int returnedLength = hid->write(message); // returns number of bytes written
 
