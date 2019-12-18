@@ -180,6 +180,7 @@ HID::write(const databuf_t& message)
   return res;  // return actual number of bytes written
 }
 
+
 void
 HID::recvAsync(uv_work_t* req)
 {
@@ -187,7 +188,11 @@ HID::recvAsync(uv_work_t* req)
   HID* hid = iocb->_hid;
 
   unsigned char buf[READ_BUFF_MAXSIZE];
-  int len = hid_read(hid->_hidHandle, buf, sizeof buf);
+  int mswait = 50;
+  int len = 0;
+  while (len == 0 && hid->_hidHandle) {
+    len = hid_read_timeout(hid->_hidHandle, buf, sizeof buf, mswait);
+  }
   if (len < 0) {
     iocb->_error = new JSException("could not read from HID device");
   } else {
