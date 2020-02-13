@@ -80,12 +80,12 @@ combination not listed here will compile and work.
 ### Supported Node versions ###
 
 * Node v6 to
-* Node v12
+* Node v13
 
 ### Supported Electron versions ###
 
 * Electron v1 to
-* Electron v7
+* Electron v8
 
 
 ## Installation
@@ -490,7 +490,7 @@ In your electron project, add `electron-rebuild` to your `devDependencies`.
 Then in your package.json `scripts` add:
 
 ```
-  "postinstall": "electron-rebuild --force"
+  "postinstall": "electron-rebuild"
 ```
 This will cause `npm` to rebuild `node-hid` for the version of Node that is in Electron.
 If you get an error similar to `The module "HID.node" was compiled against a different version of Node.js`
