@@ -471,7 +471,7 @@ NAN_METHOD(HID::write)
     } else {
       Local<Array> messageArray = Local<Array>::Cast(info[0]);
       message.reserve(messageArray->Length());
-      
+
       for (unsigned i = 0; i < messageArray->Length(); i++) {
         Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
         if (!v->IsNumber()) {
@@ -609,7 +609,15 @@ HID::Initialize(Local<Object> target)
     //abort();
   }
 
-  node::AtExit(deinitialize, 0);
+  // node::AtExit(deinitialize, 0);
+
+  #if NODE_MAJOR_VERSION <= 8
+    node::AtExit(deinitialize, 0);
+  #else
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    node::Environment* env = node::GetCurrentEnvironment(context);
+    node::AtExit(env, deinitialize, NULL);
+  #endif
 
   Local<FunctionTemplate> hidTemplate = Nan::New<FunctionTemplate>(HID::New);
   hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
