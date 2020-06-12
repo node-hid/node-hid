@@ -643,5 +643,10 @@ extern "C" {
     HID::Initialize(target);
   }
 
-  NODE_MODULE(HID, init);
+#if NODE_MAJOR_VERSION >= 10
+  NAN_MODULE_WORKER_ENABLED(HID, init)
+#else
+  NODE_MODULE(HID, Init)
+#endif
+  //NODE_MODULE(HID, init);
 }
