@@ -39,6 +39,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "nan": "^2.14.0",
+    "node-abi": "^2.18.0",
     "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
