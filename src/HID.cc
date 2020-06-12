@@ -610,8 +610,7 @@ HID::Initialize(Local<Object> target)
   }
 
   // node::AtExit(deinitialize, 0);
-
-  #if NODE_MAJOR_VERSION <= 8
+  #if NODE_MAJOR_VERSION <= 9
     node::AtExit(deinitialize, 0);
   #else
     v8::Local<v8::Context> context = Nan::GetCurrentContext();
@@ -647,14 +646,13 @@ extern "C" {
   static void init (Local<Object> target)
   {
     Nan::HandleScope scope;
-
     HID::Initialize(target);
   }
 
 #if NODE_MAJOR_VERSION >= 10
   NAN_MODULE_WORKER_ENABLED(HID, init)
 #else
-  NODE_MODULE(HID, Init)
+  NODE_MODULE(HID, init)
 #endif
   //NODE_MODULE(HID, init);
 }
