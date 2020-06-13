@@ -610,7 +610,7 @@ HID::Initialize(Local<Object> target)
   }
 
   // node::AtExit(deinitialize, 0);
-  #if NODE_MAJOR_VERSION <= 9
+  #if NODE_MAJOR_VERSION <= 10
     node::AtExit(deinitialize, 0);
   #else
     v8::Local<v8::Context> context = Nan::GetCurrentContext();
