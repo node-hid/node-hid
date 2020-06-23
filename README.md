@@ -4,56 +4,56 @@
 [![Build Status](https://travis-ci.org/node-hid/node-hid.svg?branch=master)](https://travis-ci.org/node-hid/node-hid)
 [![Build status](https://ci.appveyor.com/api/projects/status/sqgrud8yufx12dbt?svg=true)](https://ci.appveyor.com/project/todbot/node-hid/branch/master)
 
-
-   * [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)
-      * [Platform Support](#platform-support)
-         * [Supported Platforms](#supported-platforms)
-         * [Supported Node versions](#supported-node-versions)
-         * [Supported Electron versions](#supported-electron-versions)
-      * [Installation](#installation)
-         * [Installation Special Cases](#installation-special-cases)
-      * [Examples](#examples)
-      * [Usage](#usage)
-         * [List all HID devices connected](#list-all-hid-devices-connected)
-            * [Cost of HID.devices() and <code>new HID.HID()</code> for detecting device plug/unplug](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
-         * [Opening a device](#opening-a-device)
-         * [Picking a device from the device list](#picking-a-device-from-the-device-list)
-         * [Reading from a device](#reading-from-a-device)
-         * [Writing to a device](#writing-to-a-device)
-      * [Complete API](#complete-api)
-         * [devices = HID.devices()](#devices--hiddevices)
-         * [HID.setDriverType(type)](#hidsetdrivertypetype)
-         * [device = new HID.HID(path)](#device--new-hidhidpath)
-         * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
-         * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-         * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
-         * [device.write(data)](#devicewritedata)
-         * [device.close()](#deviceclose)
-         * [device.pause()](#devicepause)
-         * [device.resume()](#deviceresume)
-         * [device.read(callback)](#devicereadcallback)
-         * [device.readSync()](#devicereadsync)
-         * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
-         * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
-         * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-         * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
-      * [Mac notes](#mac-notes)
-         * [Keyboards and Mice](#keyboards-and-mice)
-      * [Windows notes](#windows-notes)
-         * [Keyboards and Mice](#keyboards-and-mice-1)
-         * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
-      * [Linux notes](#linux-notes)
-         * [Selecting driver type](#selecting-driver-type)
-         * [udev device permissions](#udev-device-permissions)
-      * [Compiling from source](#compiling-from-source)
-         * [Linux (kernel 2.6 ) : (install examples shown for Debian/Ubuntu)](#linux-kernel-26--install-examples-shown-for-debianubuntu)
-         * [Mac OS X 10.8 ](#mac-os-x-108)
-         * [Windows 7, 8, 10](#windows-7-8-10)
-         * [Building node-hid from source, for your projects](#building-node-hid-from-source-for-your-projects)
-         * [Build node-hid for <code>node-hid</code> development:](#build-node-hid-for-node-hid-development)
-      * [Electron projects using node-hid](#electron-projects-using-node-hid)
-      * [NW.js projects using node-hid](#nwjs-projects-using-node-hid)
-      * [Support](#support)
+* [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)
+  * [Platform Support](#platform-support)
+     * [Supported Platforms](#supported-platforms)
+     * [Supported Node versions](#supported-node-versions)
+     * [Supported Electron versions](#supported-electron-versions)
+  * [Installation](#installation)
+     * [Installation Special Cases](#installation-special-cases)
+  * [Examples](#examples)
+  * [Usage](#usage)
+     * [List all HID devices connected](#list-all-hid-devices-connected)
+        * [Cost of HID.devices() and <code>new HID.HID()</code> for detecting device plug/unplug](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
+     * [Opening a device](#opening-a-device)
+     * [Picking a device from the device list](#picking-a-device-from-the-device-list)
+     * [Reading from a device](#reading-from-a-device)
+     * [Writing to a device](#writing-to-a-device)
+  * [Complete API](#complete-api)
+     * [devices = HID.devices()](#devices--hiddevices)
+     * [HID.setDriverType(type)](#hidsetdrivertypetype)
+     * [device = new HID.HID(path)](#device--new-hidhidpath)
+     * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
+     * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
+     * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
+     * [device.write(data)](#devicewritedata)
+     * [device.close()](#deviceclose)
+     * [device.pause()](#devicepause)
+     * [device.resume()](#deviceresume)
+     * [device.read(callback)](#devicereadcallback)
+     * [device.readSync()](#devicereadsync)
+     * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
+     * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
+     * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
+     * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
+  * [General notes:](#general-notes)
+     * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
+     * [Keyboards and Mice](#keyboards-and-mice)
+  * [Mac notes](#mac-notes)
+  * [Windows notes](#windows-notes)
+     * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
+  * [Linux notes](#linux-notes)
+     * [Selecting driver type](#selecting-driver-type)
+     * [udev device permissions](#udev-device-permissions)
+  * [Compiling from source](#compiling-from-source)
+     * [Linux (kernel 2.6 ) : (install examples shown for Debian/Ubuntu)](#linux-kernel-26--install-examples-shown-for-debianubuntu)
+     * [Mac OS X 10.8 ](#mac-os-x-108)
+     * [Windows 7, 8, 10](#windows-7-8-10)
+     * [Building node-hid from source, for your projects](#building-node-hid-from-source-for-your-projects)
+     * [Build node-hid for <code>node-hid</code> development:](#build-node-hid-for-node-hid-development)
+  * [Electron projects using node-hid](#electron-projects-using-node-hid)
+  * [NW.js projects using node-hid](#nwjs-projects-using-node-hid)
+  * [Support](#support)
 
 
 ## Platform Support
@@ -85,7 +85,7 @@ combination not listed here will compile and work.
 ### Supported Electron versions ###
 
 * Electron v1 to
-* Electron v8
+* Electron v9
 
 
 ## Installation
@@ -354,18 +354,24 @@ be automatically called.
 
 -----
 
-## Mac notes
+## General notes:
+
+### Thread safety, Worker threads, Context-aware modules
+In general `node-hid` is not thread-safe because the underlying C-library it wraps (`hidapi`) is not thread-safe.
+However, `node-hid` is now reporting as minimally Context Aware to allow use in Electron v9+.
+Until `node-hid` (or `hidapi`) is rewritten to be thread-safe, please constrain all accesses to it via a single thread.
 
 ### Keyboards and Mice
-The OS will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS (such as some barcode readers or RFID scanners).  This is a security precaution. Otherwise, it would be trivial to build keyloggers.
-There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.
+Most OSes will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS.
+This includes many RFID scanners, barcode readers, USB HID scales, and many other devices.
+This is a security precaution. Otherwise, it would be trivial to build keyloggers.
+There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.  
 
+## Mac notes
+See General notes above Keyboards
 
 ## Windows notes
-
-### Keyboards and Mice
-The OS will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS (such as some barcode readers or RFID scanners).  This is a security precaution. Otherwise, it would be trivial to build keyloggers.
-There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.
+See General notes above about Keyboards
 
 ### Xbox 360 Controller on Windows 10
 For reasons similar to mice & keyboards it appears you can't access this controller on Windows 10.
@@ -373,6 +379,7 @@ For reasons similar to mice & keyboards it appears you can't access this control
 
 
 ## Linux notes
+See General notes above about Keyboards
 
 ### Selecting driver type
 
