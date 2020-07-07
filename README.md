@@ -74,7 +74,7 @@ combination not listed here will compile and work.
 - Linux MIPSel (¹)
 - Linux PPC64 (¹)
 
-¹ prebuilt-binaries not provided for these platforms
+¹ prebuilt-binaries not provided for these platforms  
 ² prebuilt binary built on Ubuntu 16.04 x64
 
 ### Supported Node versions ###
