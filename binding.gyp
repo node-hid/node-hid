@@ -1,6 +1,7 @@
 {
     'variables': {
-        'driver%': 'libusb'
+        'driver%': 'libusb',
+        'node_hid_no_pkg_config%': '0'
     },
     'targets': [
         {
@@ -71,7 +72,11 @@
                     'conditions': [
                         [ 'driver=="libusb"', {
                             'sources': [ 'hidapi/libusb/hid.c' ],
-                            'include_dirs+': ['<!@(pkg-config libusb-1.0 --cflags-only-I | sed s/-I//g)']
+                            'conditions': [
+                                ['node_hid_no_pkg_config != 1', {
+                                    'include_dirs+': ['<!@(pkg-config libusb-1.0 --cflags-only-I | sed s/-I//g)']
+                                }]
+                            ]
                         }],
                         [ 'driver=="hidraw"', {
                             'sources': [ 'hidapi/linux/hid.c' ]
