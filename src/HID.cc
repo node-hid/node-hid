@@ -252,8 +252,11 @@ NAN_METHOD(HID::read)
 
   uv_work_t* req = new uv_work_t;
   req->data = new ReceiveIOCB(hid, new Nan::Callback(Local<Function>::Cast(info[0])));;
+#if NODE_MAJOR_VERSION >= 10
   uv_queue_work(Nan::GetCurrentEventLoop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
-
+#else
+  uv_queue_work(uv_default_loop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
+#endif
   return;
 }
 
