@@ -37,6 +37,9 @@
                         }]
                     ],
                 }], # OS==linux
+                [ 'OS=="freebsd"', {
+                  'libraries': ['-lusb']
+                }], # OS==freebsd
                 [ 'OS=="win"', {
                     'msvs_settings': {
                         'VCCLCompilerTool': {
@@ -66,6 +69,9 @@
                         'OTHER_CFLAGS': ['-Wno-sign-compare'],
                         'MACOSX_DEPLOYMENT_TARGET': '10.9',
                     }
+                }],
+                [ 'OS=="freebsd"', {
+                    'sources': [ 'hidapi/libusb/hid.c' ],
                 }],
                 [ 'OS=="linux"', {
                     'conditions': [
