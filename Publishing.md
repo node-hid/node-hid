@@ -11,7 +11,8 @@ git clone https://github.com/node-hid/node-hid.git
 cd node-hid     
 npm run prepublishOnly            # get the hidapi submodule
 npm install --build-from-source   # rebuilds the C code
-node ./src/show-devices.js        # simple tests
+npm run showdevices               # simple test
+node ./src/test-blink1.js         # simple test
 npm run prebuild                  # build all the versions
 npm run prebuild-upload <gh-token> # upload all the versions using github token
 ```
