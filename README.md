@@ -47,10 +47,12 @@
      * [udev device permissions](#udev-device-permissions)
   * [Compiling from source](#compiling-from-source)
      * [Linux (kernel 2.6 ) : (install examples shown for Debian/Ubuntu)](#linux-kernel-26--install-examples-shown-for-debianubuntu)
+     * [FreeBSD](#freebsd)
      * [Mac OS X 10.8 ](#mac-os-x-108)
      * [Windows 7, 8, 10](#windows-7-8-10)
      * [Building node-hid from source, for your projects](#building-node-hid-from-source-for-your-projects)
-     * [Build node-hid for <code>node-hid</code> development:](#build-node-hid-for-node-hid-development)
+     * [Build node-hid for <code>node-hid</code> development](#build-node-hid-for-node-hid-development)
+     * [Building node-hid for cross-compiling](#building-node-hid-for-cross-compiling)
   * [Electron projects using node-hid](#electron-projects-using-node-hid)
   * [NW.js projects using node-hid](#nwjs-projects-using-node-hid)
   * [Support](#support)
@@ -86,6 +88,9 @@ combination not listed here will compile and work.
 
 * Electron v1 to
 * Electron v9
+
+#### Any newer version of Electron or Node WILL NOT WORK
+Native modules like `node-hid` require upstream dependencies to be updated to work with newer Node and Electron versions. Unless you need the features in the most recent Electron or Node, use a supported version.
 
 
 ## Installation
@@ -403,7 +408,6 @@ or:
 npm install node-hid --build-from-source --driver=libusb
 ```
 
-
 ### udev device permissions
 Most Linux distros use `udev` to manage access to physical devices,
 and USB HID devices are normally owned by the `root` user.
@@ -443,6 +447,9 @@ binary for you, you will need the following tools:
   * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
     `yum install libusbx-devel` (Fedora)
 
+### FreeBSD
+  * Compilation tools: `pkg install git gcc gmake libiconv node npm`
+
 ### Mac OS X 10.8+
   * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 
@@ -463,7 +470,7 @@ binary for you, you will need the following tools:
 npm install node-hid --build-from-source
 ```
 
-### Build `node-hid` for `node-hid` development:
+### Build `node-hid` for `node-hid` development
 
 * check out a copy of this repo
 * change into its directory
@@ -491,6 +498,20 @@ npm run gypclean      # "node-gyp clean" clean gyp build directory
 npm run gypconfigure  # "node-gyp configure" configure makefiles
 npm run gypbuild      # "node-gyp build" build native code
 ```
+
+### Building `node-hid` for cross-compiling
+When cross-compiling you need to override `node-hid`'s normal behavior
+of using Linux `pkg-config` to determine CLFAGS and LDFLAGS for `libusb`.
+To do this, you can use the `node-gyp` variable `node_hid_no_pkg_config`
+and then invoke a `node-hid` rebuild with either:
+```
+  node-gyp rebuild --node_hid_no_pkg_config=1
+```
+or
+```
+  npm gyprebuild --node_hid_no_pkg_config=1
+```
+
 
 ## Electron projects using `node-hid`
 In your electron project, add `electron-rebuild` to your `devDependencies`.
