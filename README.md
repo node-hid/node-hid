@@ -82,12 +82,12 @@ combination not listed here will compile and work.
 ### Supported Node versions ###
 
 * Node v6 to
-* Node v13
+* Node v14
 
 ### Supported Electron versions ###
 
 * Electron v1 to
-* Electron v9
+* Electron v10
 
 #### Any newer version of Electron or Node WILL NOT WORK
 Native modules like `node-hid` require upstream dependencies to be updated to work with newer Node and Electron versions. Unless you need the features in the most recent Electron or Node, use a supported version.
@@ -485,7 +485,8 @@ cd node-hid                                        # must change into node-hid d
 npm install -g rimraf                              # just so it doesn't get 'clean'ed
 npm run prepublishOnly                             # get the needed hidapi submodule
 npm install --build-from-source                    # rebuilds the module with C code
-node ./src/show-devices.js
+npm run showdevices                                # list connected HID devices
+node ./src/show-devices.js                         # same as above
 ```
 
 You may see some warnings from the C compiler as it compiles

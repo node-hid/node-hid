@@ -14,7 +14,7 @@ npm install --build-from-source   # rebuilds the C code
 npm run showdevices               # simple test
 node ./src/test-blink1.js         # simple test
 npm run prebuild                  # build all the versions
-npm run prebuild-upload <gh-token> # upload all the versions using github token
+npm run prebuild-upload <GH_TOKEN> # upload all the versions using github token
 ```
 And then on master dev box:
 ```
