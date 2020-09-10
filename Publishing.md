@@ -29,6 +29,12 @@ $env:PYTHON = "$env:USERPROFILE\.windows-build-tools\python27\python.exe"
 
 
 #### notes ####
+- To check node ABI version (used by `node-abi`), check the NODE_MODULE_VERSION
+on this page:
+    https://nodejs.org/en/download/releases/
+If a prebuild is not generated for a particular version of Node or Electron,
+then `node-abi` needs to be updated 
+
 - As of Node v10 on Windows, may need to do:
 -- `$env:Path += ";C:\Program Files\Git\mingw64\libexec\git-core
 -- and install git with "make unix tools available to windows command prompt"

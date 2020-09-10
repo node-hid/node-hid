@@ -82,12 +82,12 @@ combination not listed here will compile and work.
 ### Supported Node versions ###
 
 * Node v6 to
-* Node v14
+* Node v14 (but no v14 prebuilds yet due to `node-abi` bug)
 
 ### Supported Electron versions ###
 
 * Electron v1 to
-* Electron v10
+* Electron v10 (but no v10 prebuilds yet due to `node-abi` bug)
 
 #### Any newer version of Electron or Node WILL NOT WORK
 Native modules like `node-hid` require upstream dependencies to be updated to work with newer Node and Electron versions. Unless you need the features in the most recent Electron or Node, use a supported version.
