@@ -27,14 +27,15 @@
 
 #include <stdlib.h>
 
-#include <node.h>
-#include <nan.h>
+#define NAPI_VERSION 3
+#include <napi.h>
 
 #include <hidapi.h>
 
 using namespace std;
-using namespace v8;
-using namespace node;
+// using namespace v8;
+// using namespace node;
+using namespace Napi;
 
 #define READ_BUFF_MAXSIZE 2048
 
@@ -45,39 +46,42 @@ using namespace node;
 class JSException
 {
 public:
-  JSException(const string& text) : _message(text) {}
+  JSException(const string &text) : _message(text) {}
   virtual ~JSException() {}
   virtual const string message() const { return _message; }
-  virtual void asV8Exception() const { Nan::ThrowError(message().c_str()); }
+  virtual void asV8Exception(const Napi::Env &env) const
+  {
+    TypeError::New(env, message()).ThrowAsJavaScriptException();
+  }
 
 protected:
   string _message;
 };
 
 class HID
-  : public Nan::ObjectWrap
+    : public Napi::ObjectWrap<HID>
 {
 public:
-  static void Initialize(Local<Object> target);
-  static NAN_METHOD(devices);
+  static void Initialize(Napi::Env &env);
+  //static NAN_METHOD(devices);
 
   typedef vector<unsigned char> databuf_t;
 
-  int write(const databuf_t& message)
-    throw(JSException);
+  int write(const databuf_t &message);
   void close();
-  void setNonBlocking(int message)
-    throw(JSException);
+  void setNonBlocking(int message);
 
-private:
-  HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber = 0);
-  HID(const char* path);
+  HID(const Napi::CallbackInfo &info);
   ~HID() { close(); }
 
-  static NAN_METHOD(New);
+private:
+  static Napi::FunctionReference constructor;
+
+  static Napi::Value New(const Napi::CallbackInfo &info);
+  Napi::Value Close(const Napi::CallbackInfo &info);
+  /*
   static NAN_METHOD(read);
   static NAN_METHOD(write);
-  static NAN_METHOD(close);
   static NAN_METHOD(setNonBlocking);
   static NAN_METHOD(getFeatureReport);
   static NAN_METHOD(readSync);
@@ -86,136 +90,125 @@ private:
   static NAN_METHOD(sendFeatureReport);
   static NAN_METHOD(getDeviceInfo);
 
+  static void recvAsync(uv_work_t *req);
+  static void recvAsyncDone(uv_work_t *req);
 
-  static void recvAsync(uv_work_t* req);
-  static void recvAsyncDone(uv_work_t* req);
-
-
-  struct ReceiveIOCB {
-    ReceiveIOCB(HID* hid, Nan::Callback *callback)
-      : _hid(hid),
-        _callback(callback),
-        _error(0)
-    {}
+  */
+  struct ReceiveIOCB
+  {
+    ReceiveIOCB(HID *hid, Napi::Function *callback)
+        : _hid(hid),
+          _callback(callback),
+          _error(0)
+    {
+    }
 
     ~ReceiveIOCB()
     {
-      if (_error) {
+      if (_error)
+      {
         delete _error;
       }
     }
 
-    HID* _hid;
-    Nan::Callback *_callback;
-    JSException* _error;
+    HID *_hid;
+    Napi::Function *_callback;
+    JSException *_error;
     vector<unsigned char> _data;
   };
 
-  void readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[]);
+  //void readResultsToJSCallbackArguments(ReceiveIOCB *iocb, Local<Value> argv[]);
 
-  hid_device* _hidHandle;
+  hid_device *_hidHandle;
 };
 
-HID::HID(unsigned short vendorId, unsigned short productId, wchar_t* serialNumber)
+HID::HID(const Napi::CallbackInfo &info)
+    : Napi::ObjectWrap<HID>(info)
 {
-  _hidHandle = hid_open(vendorId, productId, serialNumber);
-
-  if (!_hidHandle) {
-    ostringstream os;
-    os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
-    throw JSException(os.str());
-  }
 }
 
-HID::HID(const char* path)
+void HID::close()
 {
-  _hidHandle = hid_open_path(path);
-
-  if (!_hidHandle) {
-    ostringstream os;
-    os << "cannot open device with path " << path;
-    throw JSException(os.str());
-  }
-}
-
-void
-HID::close()
-{
-  if (_hidHandle) {
+  if (_hidHandle)
+  {
     hid_close(_hidHandle);
     _hidHandle = 0;
   }
 }
 
-void
-HID::setNonBlocking(int message)
-  throw(JSException)
+void HID::setNonBlocking(int message)
 {
   int res;
   res = hid_set_nonblocking(_hidHandle, message);
-  if (res < 0) {
+  if (res < 0)
+  {
     throw JSException("Error setting non-blocking mode.");
   }
 }
 
-int
-HID::write(const databuf_t& message)
-  throw(JSException)
+/*
+int HID::write(const databuf_t &message) 
 {
-  if(!_hidHandle) {
+  if (!_hidHandle)
+  {
     throw JSException("Cannot write to closed device");
   }
   int res = hid_write(_hidHandle, message.data(), message.size());
-  if (res < 0) {
+  if (res < 0)
+  {
     throw JSException("Cannot write to HID device");
   }
-  return res;  // return actual number of bytes written
+  return res; // return actual number of bytes written
 }
 
-
-void
-HID::recvAsync(uv_work_t* req)
+void HID::recvAsync(uv_work_t *req)
 {
-  ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
-  HID* hid = iocb->_hid;
+  ReceiveIOCB *iocb = static_cast<ReceiveIOCB *>(req->data);
+  HID *hid = iocb->_hid;
 
   unsigned char buf[READ_BUFF_MAXSIZE];
   int mswait = 50;
   int len = 0;
-  while (len == 0 && hid->_hidHandle) {
+  while (len == 0 && hid->_hidHandle)
+  {
     len = hid_read_timeout(hid->_hidHandle, buf, sizeof buf, mswait);
   }
-  if (len < 0) {
+  if (len < 0)
+  {
     iocb->_error = new JSException("could not read from HID device");
-  } else {
+  }
+  else
+  {
     iocb->_data = vector<unsigned char>(buf, buf + len);
   }
 }
 
-void
-HID::readResultsToJSCallbackArguments(ReceiveIOCB* iocb, Local<Value> argv[])
+void HID::readResultsToJSCallbackArguments(ReceiveIOCB *iocb, Local<Value> argv[])
 {
-  if (iocb->_error) {
+  if (iocb->_error)
+  {
     argv[0] = Exception::Error(Nan::New<String>(iocb->_error->message().c_str()).ToLocalChecked());
-  } else {
-    const vector<unsigned char>& message = iocb->_data;
+  }
+  else
+  {
+    const vector<unsigned char> &message = iocb->_data;
 
     Local<Object> buf = Nan::NewBuffer(message.size()).ToLocalChecked();
-    char* data = Buffer::Data(buf);
+    char *data = Buffer::Data(buf);
 
     int j = 0;
-    for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++) {
+    for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++)
+    {
       data[j++] = *k;
     }
     argv[1] = buf;
   }
 }
 
-void
-HID::recvAsyncDone(uv_work_t* req)
+void HID::recvAsyncDone(uv_work_t *req)
 {
   Nan::HandleScope scope;
-  ReceiveIOCB* iocb = static_cast<ReceiveIOCB*>(req->data);
+  ReceiveIOCB *iocb = static_cast<ReceiveIOCB *>(req->data);
 
   Local<Value> argv[2];
   argv[0] = Nan::Undefined();
@@ -228,8 +221,9 @@ HID::recvAsyncDone(uv_work_t* req)
   //iocb->_callback->Call(2, argv);
   Nan::AsyncResource resource("node-hid recvAsyncDone");
   iocb->_callback->Call(2, argv, &resource);
-  if (tryCatch.HasCaught()) {
-      Nan::FatalException(tryCatch);
+  if (tryCatch.HasCaught())
+  {
+    Nan::FatalException(tryCatch);
   }
 
   delete req;
@@ -242,16 +236,17 @@ NAN_METHOD(HID::read)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 1
-      || !info[0]->IsFunction()) {
+  if (info.Length() != 1 || !info[0]->IsFunction())
+  {
     return Nan::ThrowError("need one callback function argument in read");
   }
 
-  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   hid->Ref();
 
-  uv_work_t* req = new uv_work_t;
-  req->data = new ReceiveIOCB(hid, new Nan::Callback(Local<Function>::Cast(info[0])));;
+  uv_work_t *req = new uv_work_t;
+  req->data = new ReceiveIOCB(hid, new Nan::Callback(Local<Function>::Cast(info[0])));
+  ;
 #if NODE_MAJOR_VERSION >= 10
   uv_queue_work(Nan::GetCurrentEventLoop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
 #else
@@ -264,21 +259,24 @@ NAN_METHOD(HID::readSync)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 0) {
+  if (info.Length() != 0)
+  {
     return Nan::ThrowError("readSync need zero length parameter");
   }
 
-  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read(hid->_hidHandle, buff_read, sizeof buff_read);
 
-  if (returnedLength == -1) {
+  if (returnedLength == -1)
+  {
     return Nan::ThrowError("could not read data from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
-  for (int i = 0; i < returnedLength; i++) {
-    Nan::Set( retval, i, Nan::New<Integer>(buff_read[i]) );
+  for (int i = 0; i < returnedLength; i++)
+  {
+    Nan::Set(retval, i, Nan::New<Integer>(buff_read[i]));
   }
   info.GetReturnValue().Set(retval);
 }
@@ -287,23 +285,26 @@ NAN_METHOD(HID::readTimeout)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 1 || !info[0]->IsUint32()) {
+  if (info.Length() != 1 || !info[0]->IsUint32())
+  {
     return Nan::ThrowError("readTimeout needs time out parameter");
   }
 
-  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   // const int timeout = info[0]->ToUint32()->Value();
   const int timeout = Nan::To<uint32_t>(info[0]).FromJust();
   unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
 
-  if (returnedLength == -1) {
+  if (returnedLength == -1)
+  {
     return Nan::ThrowError("could not read data from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
-  for (int i = 0; i < returnedLength; i++) {
-    Nan::Set( retval, i, Nan::New<Integer>(buff_read[i]) );
+  for (int i = 0; i < returnedLength; i++)
+  {
+    Nan::Set(retval, i, Nan::New<Integer>(buff_read[i]));
   }
   info.GetReturnValue().Set(retval);
 }
@@ -312,145 +313,191 @@ NAN_METHOD(HID::getFeatureReport)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 2 || !info[1]->IsUint32() ) {
+  if (info.Length() != 2 || !info[1]->IsUint32())
+  {
     return Nan::ThrowError("need report ID and length parameters in getFeatureReport");
   }
 
   const uint8_t reportId = Nan::To<uint32_t>(info[0]).FromJust();
   const int bufSize = Nan::To<uint32_t>(info[1]).FromJust();
-  if( bufSize == 0 ) {
+  if (bufSize == 0)
+  {
     return Nan::ThrowError("Length parameter cannot be zero in getFeatureReport");
   }
 
-  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
   //unsigned char buf[bufSize];
-  unsigned char* buf = new unsigned char[bufSize];
+  unsigned char *buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
   int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
 
-  if (returnedLength == -1) {
+  if (returnedLength == -1)
+  {
     delete[] buf;
     return Nan::ThrowError("could not get feature report from device");
   }
   Local<Array> retval = Nan::New<Array>();
 
-  for (int i = 0; i < returnedLength; i++) {
-    Nan::Set( retval, i, Nan::New<Integer>(buf[i]) );
+  for (int i = 0; i < returnedLength; i++)
+  {
+    Nan::Set(retval, i, Nan::New<Integer>(buf[i]));
   }
   delete[] buf;
   info.GetReturnValue().Set(retval);
 }
 
-
 NAN_METHOD(HID::sendFeatureReport)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 1){
+  if (info.Length() != 1)
+  {
     return Nan::ThrowError("need report (including id in first byte) only in sendFeatureReport");
   }
 
-
-  HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
   vector<unsigned char> message;
-  if (Buffer::HasInstance(info[0])) {
+  if (Buffer::HasInstance(info[0]))
+  {
     uint32_t len = Buffer::Length(info[0]);
-    unsigned char* data = (unsigned char *)Buffer::Data(info[0]);
+    unsigned char *data = (unsigned char *)Buffer::Data(info[0]);
     message.assign(data, data + len);
-  } else {
+  }
+  else
+  {
     Local<Array> messageArray = Local<Array>::Cast(info[0]);
     message.reserve(messageArray->Length());
 
-    for (unsigned i = 0; i < messageArray->Length(); i++) {
+    for (unsigned i = 0; i < messageArray->Length(); i++)
+    {
       Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
-      if (!v->IsNumber()) {
+      if (!v->IsNumber())
+      {
         throw JSException("unexpected array element in array to send, expecting only integers");
       }
       int32_t b = Nan::To<int32_t>(v).FromJust();
-      message.push_back((unsigned char) b);
+      message.push_back((unsigned char)b);
     }
   }
 
   int returnedLength = hid_send_feature_report(hid->_hidHandle, message.data(), message.size());
-  if (returnedLength == -1) { // Not sure if there would ever be a valid return value of 0.
+  if (returnedLength == -1)
+  { // Not sure if there would ever be a valid return value of 0.
     return Nan::ThrowError("could not send feature report to device");
   }
 
   info.GetReturnValue().Set(Nan::New<Integer>(returnedLength));
 }
-
-
-
-
-NAN_METHOD(HID::New)
+*/
+Napi::Value HID::New(const Napi::CallbackInfo &info)
 {
-  Nan::HandleScope scope;
-
-  if (!info.IsConstructCall()) {
-    return Nan::ThrowError("HID function can only be used as a constructor");
+  Napi::Env env = info.Env();
+  if (!info.IsConstructCall())
+  {
+    TypeError::New(env, "HID function can only be used as a constructor").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  if (info.Length() < 1) {
-    return Nan::ThrowError("HID constructor requires at least one argument");
+  if (info.Length() < 1)
+  {
+    TypeError::New(env, "HID constructor requires at least one argument").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  try {
-    HID* hid;
-    if (info.Length() == 1) {
+  try
+  {
+    hid_device *hidHandle;
+    if (info.Length() == 1)
+    {
       // open by path
-      hid = new HID(*Nan::Utf8String(info[0]));
-    } else {
-      int32_t vendorId = Nan::To<int32_t>(info[0]).FromJust();
-      int32_t productId = Nan::To<int32_t>(info[1]).FromJust();
+      if (!info[0].IsString())
+      {
+        throw JSException("Device path must be a string");
+      }
+
+      std::string path = info[0].As<Napi::String>().Utf8Value();
+      hidHandle = hid_open_path(path.c_str());
+      if (!hidHandle)
+      {
+        ostringstream os;
+        os << "cannot open device with path " << path;
+        throw JSException(os.str());
+      }
+    }
+    else
+    {
+      // TODO: are these safe with invalid data?
+      int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
+      int32_t productId = info[1].As<Napi::Number>().Int32Value();
       wchar_t wserialstr[100]; // FIXME: is there a better way?
-      wchar_t* wserialptr = NULL;
-      if (info.Length() > 2) {
-        char* serialstr = *Nan::Utf8String(info[2]);
-        mbstowcs( wserialstr, serialstr, 100);
+      wchar_t *wserialptr = NULL;
+      if (info.Length() > 2)
+      {
+        std::string serialstr = info[2].As<Napi::String>().Utf8Value();
+        mbstowcs(wserialstr, serialstr.c_str(), 100);
         wserialptr = wserialstr;
       }
-      hid = new HID(vendorId, productId, wserialptr);
+
+      hidHandle = hid_open(vendorId, productId, wserialptr);
+      if (!hidHandle)
+      {
+        ostringstream os;
+        os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
+        throw JSException(os.str());
+      }
     }
-    hid->Wrap(info.This());
-    info.GetReturnValue().Set(info.This());
+
+    Napi::Object hid = HID::constructor.New({});
+    HID *hidInner = HID::Unwrap(hid);
+    hidInner->_hidHandle = hidHandle;
+
+    return hid;
   }
-  catch (const JSException& e) {
-    e.asV8Exception();
+  catch (const JSException &e)
+  {
+    e.asV8Exception(env);
+    return env.Null();
   }
 }
 
-NAN_METHOD(HID::close)
+Napi::Value HID::Close(const Napi::CallbackInfo &info)
 {
-  Nan::HandleScope scope;
+  Napi::Env env = info.Env();
 
-  try {
-    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-    hid->close();
-    return;
+  try
+  {
+    this->close();
+    return env.Null();
   }
-  catch (const JSException& e) {
-    e.asV8Exception();
+  catch (const JSException &e)
+  {
+    e.asV8Exception(env);
+    return env.Null();
   }
 }
 
+/*
 NAN_METHOD(HID::setNonBlocking)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 1) {
+  if (info.Length() != 1)
+  {
     return Nan::ThrowError("Expecting a 1 to enable, 0 to disable as the first argument.");
   }
   int blockStatus = 0;
   blockStatus = Nan::To<int32_t>(info[0]).FromJust();
-  try {
-    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  try
+  {
+    HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
     hid->setNonBlocking(blockStatus);
     return;
   }
-  catch (const JSException& e) {
+  catch (const JSException &e)
+  {
     e.asV8Exception();
   }
 }
@@ -459,46 +506,55 @@ NAN_METHOD(HID::write)
 {
   Nan::HandleScope scope;
 
-  if (info.Length() != 1) {
+  if (info.Length() != 1)
+  {
     return Nan::ThrowError("HID write requires one argument");
   }
 
-  try {
-    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  try
+  {
+    HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
     vector<unsigned char> message;
-    if (Buffer::HasInstance(info[0])) {
+    if (Buffer::HasInstance(info[0]))
+    {
       uint32_t len = Buffer::Length(info[0]);
-      unsigned char* data = (unsigned char *)Buffer::Data(info[0]);
+      unsigned char *data = (unsigned char *)Buffer::Data(info[0]);
       message.assign(data, data + len);
-    } else {
+    }
+    else
+    {
       Local<Array> messageArray = Local<Array>::Cast(info[0]);
       message.reserve(messageArray->Length());
 
-      for (unsigned i = 0; i < messageArray->Length(); i++) {
+      for (unsigned i = 0; i < messageArray->Length(); i++)
+      {
         Local<Value> v = Nan::Get(messageArray, i).ToLocalChecked();
-        if (!v->IsNumber()) {
+        if (!v->IsNumber())
+        {
           throw JSException("unexpected array element in array to send, expecting only integers");
         }
         uint32_t b = Nan::To<uint32_t>(v).FromJust();
-        message.push_back((unsigned char) b);
+        message.push_back((unsigned char)b);
       }
     }
     int returnedLength = hid->write(message); // returns number of bytes written
 
     info.GetReturnValue().Set(Nan::New<Integer>(returnedLength));
   }
-  catch (const JSException& e) {
+  catch (const JSException &e)
+  {
     e.asV8Exception();
   }
 }
 
 static string
-narrow(wchar_t* wide)
+narrow(wchar_t *wide)
 {
   wstring ws(wide);
   ostringstream os;
-  for (size_t i = 0; i < ws.size(); i++) {
+  for (size_t i = 0; i < ws.size(); i++)
+  {
     os << os.narrow(ws[i], '?');
   }
   return os.str();
@@ -511,23 +567,24 @@ NAN_METHOD(HID::getDeviceInfo)
   const int maxlen = 256;
   wchar_t wstr[maxlen]; // FIXME: use new & delete
 
-  try {
-    HID* hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
+  try
+  {
+    HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
 
     hid_get_manufacturer_string(hid->_hidHandle, wstr, maxlen);
     Nan::Set(deviceInfo, Nan::New<String>("manufacturer").ToLocalChecked(),
-      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
+             Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
 
     hid_get_product_string(hid->_hidHandle, wstr, maxlen);
     Nan::Set(deviceInfo, Nan::New<String>("product").ToLocalChecked(),
-      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
+             Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
 
     hid_get_serial_number_string(hid->_hidHandle, wstr, maxlen);
     Nan::Set(deviceInfo, Nan::New<String>("serialNumber").ToLocalChecked(),
-      Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
-
+             Nan::New<String>(narrow(wstr).c_str()).ToLocalChecked());
   }
-  catch (const JSException& e) {
+  catch (const JSException &e)
+  {
     e.asV8Exception();
   }
 
@@ -541,8 +598,10 @@ NAN_METHOD(HID::devices)
   int vendorId = 0;
   int productId = 0;
 
-  try {
-    switch (info.Length()) {
+  try
+  {
+    switch (info.Length())
+    {
     case 0:
       break;
     case 2:
@@ -553,74 +612,98 @@ NAN_METHOD(HID::devices)
       throw JSException("unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID");
     }
   }
-  catch (JSException& e) {
+  catch (JSException &e)
+  {
     e.asV8Exception();
   }
 
-  hid_device_info* devs = hid_enumerate(vendorId, productId);
+  hid_device_info *devs = hid_enumerate(vendorId, productId);
   Local<Array> retval = Nan::New<Array>();
   int count = 0;
-  for (hid_device_info* dev = devs; dev; dev = dev->next) {
+  for (hid_device_info *dev = devs; dev; dev = dev->next)
+  {
     Local<Object> deviceInfo = Nan::New<Object>();
     Nan::Set(deviceInfo, Nan::New<String>("vendorId").ToLocalChecked(), Nan::New<Integer>(dev->vendor_id));
     Nan::Set(deviceInfo, Nan::New<String>("productId").ToLocalChecked(), Nan::New<Integer>(dev->product_id));
-    if (dev->path) {
+    if (dev->path)
+    {
       Nan::Set(deviceInfo, Nan::New<String>("path").ToLocalChecked(), Nan::New<String>(dev->path).ToLocalChecked());
     }
-    if (dev->serial_number) {
+    if (dev->serial_number)
+    {
       Nan::Set(deviceInfo, Nan::New<String>("serialNumber").ToLocalChecked(), Nan::New<String>(narrow(dev->serial_number).c_str()).ToLocalChecked());
     }
-    if (dev->manufacturer_string) {
+    if (dev->manufacturer_string)
+    {
       Nan::Set(deviceInfo, Nan::New<String>("manufacturer").ToLocalChecked(), Nan::New<String>(narrow(dev->manufacturer_string).c_str()).ToLocalChecked());
     }
-    if (dev->product_string) {
+    if (dev->product_string)
+    {
       Nan::Set(deviceInfo, Nan::New<String>("product").ToLocalChecked(), Nan::New<String>(narrow(dev->product_string).c_str()).ToLocalChecked());
     }
     Nan::Set(deviceInfo, Nan::New<String>("release").ToLocalChecked(), Nan::New<Integer>(dev->release_number));
     Nan::Set(deviceInfo, Nan::New<String>("interface").ToLocalChecked(), Nan::New<Integer>(dev->interface_number));
-    if( dev->usage_page ) {
-        Nan::Set(deviceInfo, Nan::New<String>("usagePage").ToLocalChecked(), Nan::New<Integer>(dev->usage_page));
+    if (dev->usage_page)
+    {
+      Nan::Set(deviceInfo, Nan::New<String>("usagePage").ToLocalChecked(), Nan::New<Integer>(dev->usage_page));
     }
-    if( dev->usage ) {
+    if (dev->usage)
+    {
       //deviceInfo->Set(Nan::New<String>("usage").ToLocalChecked(), Nan::New<Integer>(dev->usage));
       Nan::Set(deviceInfo, Nan::New<String>("usage").ToLocalChecked(), Nan::New<Integer>(dev->usage));
     }
     // retval->Set(count++, deviceInfo);
-    Nan::Set( retval, count++, deviceInfo);
+    Nan::Set(retval, count++, deviceInfo);
   }
   hid_free_enumeration(devs);
   info.GetReturnValue().Set(retval);
 }
 
+*/
 static void
-deinitialize(void*)
+deinitialize(void *)
 {
-  if (hid_exit()) {
-    return Nan::ThrowError("cannot uninitialize hidapi (hid_exit failed)");
-    // abort();
+  if (hid_exit())
+  {
+    // Process is exiting, no need to log?
+    // TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
+    return;
   }
 }
-
-
-void
-HID::Initialize(Local<Object> target)
+void HID::Initialize(Napi::Env &env)
 {
-  Nan::HandleScope scope;
-
-  if (hid_init()) {
-    return Nan::ThrowError("cannot initialize hidapi (hid_init failed)");
-    //abort();
+  if (hid_init())
+  {
+    TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
+    return;
   }
 
-  // node::AtExit(deinitialize, 0);
-  #if NODE_MAJOR_VERSION <= 10
-    node::AtExit(deinitialize, 0);
-  #else
-    v8::Local<v8::Context> context = Nan::GetCurrentContext();
-    node::Environment* env = node::GetCurrentEnvironment(context);
-    node::AtExit(env, deinitialize, NULL);
-  #endif
+  napi_add_env_cleanup_hook(env, deinitialize, nullptr);
 
+  Napi::HandleScope scope(env);
+
+  Napi::Function ctor = DefineClass(env, "HID", {
+                                                    // InstanceMethod("properties", &FontFace::GetProperties),
+                                                    // InstanceMethod("setCharSize", &FontFace::SetCharSize), InstanceMethod("setPixelSizes", &FontFace::SetPixelSizes),
+                                                    // InstanceMethod("requestSize", &FontFace::RequestSize),
+                                                    // InstanceMethod("selectSize", &FontFace::SelectSize), InstanceMethod("setTransform", &FontFace::SetTransform), InstanceMethod("loadGlyph", &FontFace::LoadGlyph), InstanceMethod("getCharIndex", &FontFace::GetCharIndex), InstanceMethod("getFirstChar", &FontFace::GetFirstChar), InstanceMethod("getNextChar", &FontFace::GetNextChar),
+                                                    // InstanceMethod("getNameIndex", &FontFace::GetGetNameIndex),
+                                                    // InstanceMethod("loadChar", &FontFace::LoadChar), InstanceMethod("renderGlyph", &FontFace::RenderGlyph), InstanceMethod("getKerning", &FontFace::GetKerning),
+                                                    // InstanceMethod("getTrackKerning", &FontFace::GetTrackKerning),
+                                                    // InstanceMethod("getGlyphName", &FontFace::GetGlyphName),
+                                                    // InstanceMethod("getPostscriptName", &FontFace::GetPostscriptName),
+                                                    // InstanceMethod("selectCharmap", &FontFace::SelectCharmap),
+                                                    // InstanceMethod("setCharmap", &FontFace::SetCharmap),
+                                                    // InstanceMethod("getCharmapIndex", &FontFace::GetCharmapIndex),
+                                                    // InstanceMethod("getFSTypeFlags", &FontFace::GetFSTypeFlags),
+                                                    // InstanceMethod("getSubGlyphInfo", &FontFace::GetSubGlyphInfo),
+
+                                                });
+
+  constructor = Napi::Persistent(ctor);
+  constructor.SuppressDestruct();
+
+  /*
   Local<FunctionTemplate> hidTemplate = Nan::New<FunctionTemplate>(HID::New);
   hidTemplate->InstanceTemplate()->SetInternalFieldCount(1);
   hidTemplate->SetClassName(Nan::New<String>("HID").ToLocalChecked());
@@ -635,27 +718,24 @@ HID::Initialize(Local<Object> target)
   Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
   Nan::SetPrototypeMethod(hidTemplate, "getDeviceInfo", getDeviceInfo);
 
-  Nan::Set( target,
-            Nan::New<String>("HID").ToLocalChecked(),
-            Nan::GetFunction( hidTemplate ).ToLocalChecked() );
-  Nan::Set( target,
-            Nan::New<String>("devices").ToLocalChecked(),
-            Nan::GetFunction( Nan::New<v8::FunctionTemplate>(HID::devices)).ToLocalChecked() );
+  Nan::Set(target,
+           Nan::New<String>("HID").ToLocalChecked(),
+           Nan::GetFunction(hidTemplate).ToLocalChecked());
+  Nan::Set(target,
+           Nan::New<String>("devices").ToLocalChecked(),
+           Nan::GetFunction(Nan::New<v8::FunctionTemplate>(HID::devices)).ToLocalChecked());
+           */
 }
 
+Napi::Object Init(Napi::Env env, Napi::Object exports)
+{
+  // exports.Set("NewFace", Napi::Function::New(env, NewFace));
+  // exports.Set("NewMemoryFace", Napi::Function::New(env, NewMemoryFace));
 
-extern "C" {
+  HID::Initialize(env);
+  // InitializeEnums(env, exports);
 
-  static void init (Local<Object> target)
-  {
-    Nan::HandleScope scope;
-    HID::Initialize(target);
-  }
-
-#if NODE_MAJOR_VERSION >= 10
-  NAN_MODULE_WORKER_ENABLED(HID, init)
-#else
-  NODE_MODULE(HID, init)
-#endif
-  //NODE_MODULE(HID, init);
+  return exports;
 }
+
+NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init)

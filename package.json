@@ -32,15 +32,19 @@
     "hid-showdevices": "./src/show-devices.js"
   },
   "main": "./nodehid.js",
+  "binary": {
+    "napi_versions": [
+      3
+    ]
+  },
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=10"
   },
   "license": "(MIT OR X11)",
   "dependencies": {
     "bindings": "^1.5.0",
-    "nan": "^2.14.0",
-    "node-abi": "^2.19.1",
-    "prebuild-install": "^5.3.5"
+    "node-addon-api": "^3.0.2",
+    "prebuild-install": "^6.0.0"
   },
   "devDependencies": {
     "prebuild": "^10.0.1",

@@ -16,7 +16,7 @@ function loadBinding() {
         if( os.platform() === 'linux' ) {
             // Linux defaults to hidraw
             if( !driverType || driverType === 'hidraw' ) {
-                binding = require('bindings')('HID-hidraw.node');
+                binding = require('bindings')('HID_hidraw.node');
             } else {
                 binding = require('bindings')('HID.node');
             }
