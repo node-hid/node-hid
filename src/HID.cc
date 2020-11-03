@@ -32,9 +32,6 @@
 
 #include <hidapi.h>
 
-using namespace std;
-using namespace Napi;
-
 #define READ_BUFF_MAXSIZE 2048
 
 class HID : public Napi::ObjectWrap<HID>
@@ -70,13 +67,13 @@ HID::HID(const Napi::CallbackInfo &info)
 
   if (!info.IsConstructCall())
   {
-    TypeError::New(env, "HID function can only be used as a constructor").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "HID function can only be used as a constructor").ThrowAsJavaScriptException();
     return;
   }
 
   if (info.Length() < 1)
   {
-    TypeError::New(env, "HID constructor requires at least one argument").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "HID constructor requires at least one argument").ThrowAsJavaScriptException();
     return;
   }
 
@@ -85,7 +82,7 @@ HID::HID(const Napi::CallbackInfo &info)
     // open by path
     if (!info[0].IsString())
     {
-      TypeError::New(env, "Device path must be a string").ThrowAsJavaScriptException();
+      Napi::TypeError::New(env, "Device path must be a string").ThrowAsJavaScriptException();
       return;
     }
 
@@ -93,9 +90,9 @@ HID::HID(const Napi::CallbackInfo &info)
     _hidHandle = hid_open_path(path.c_str());
     if (!_hidHandle)
     {
-      ostringstream os;
+      std::ostringstream os;
       os << "cannot open device with path " << path;
-      TypeError::New(env, os.str()).ThrowAsJavaScriptException();
+      Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
       return;
     }
   }
@@ -115,9 +112,9 @@ HID::HID(const Napi::CallbackInfo &info)
     _hidHandle = hid_open(vendorId, productId, wserialptr);
     if (!_hidHandle)
     {
-      ostringstream os;
-      os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
-      TypeError::New(env, os.str()).ThrowAsJavaScriptException();
+      std::ostringstream os;
+      os << "cannot open device with vendor id 0x" << std::hex << vendorId << " and product id 0x" << productId;
+      Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
       return;
     }
   }
@@ -158,14 +155,13 @@ public:
     {
       len = hid_read_timeout(_hid->_hidHandle, buf, READ_BUFF_MAXSIZE, mswait);
     }
-    if (len < 0)
+    if (len <= 0)
     {
       SetError("could not read from HID device");
     }
   }
 
-  void
-  OnOK() override
+  void OnOK() override
   {
     auto buffer = Napi::Buffer<unsigned char>::New(Env(), buf, len, deleteArray);
     buf = nullptr; // It is now owned by the buffer
@@ -184,7 +180,7 @@ Napi::Value HID::read(const Napi::CallbackInfo &info)
 
   if (info.Length() != 1 || !info[0].IsFunction())
   {
-    TypeError::New(env, "need one callback function argument in read").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "need one callback function argument in read").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -201,7 +197,7 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 
   if (info.Length() != 0)
   {
-    TypeError::New(env, "readSync needs zero length parameter").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "readSync needs zero length parameter").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -210,7 +206,7 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 
   if (returnedLength == -1)
   {
-    TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -228,7 +224,7 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
 
   if (info.Length() != 1 || !info[0].IsNumber())
   {
-    TypeError::New(env, "readTimeout needs time out parameter").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "readTimeout needs time out parameter").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -237,7 +233,7 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
   int returnedLength = hid_read_timeout(_hidHandle, buff_read, sizeof buff_read, timeout);
   if (returnedLength == -1)
   {
-    TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -255,15 +251,15 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
 
   if (info.Length() != 2 || !info[0].IsNumber() || !info[1].IsNumber())
   {
-    TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  const uint8_t reportId = info[0].As<Number>().Uint32Value();
-  const int bufSize = info[1].As<Number>().Uint32Value();
+  const uint8_t reportId = info[0].As<Napi::Number>().Uint32Value();
+  const int bufSize = info[1].As<Napi::Number>().Uint32Value();
   if (bufSize == 0)
   {
-    TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -273,7 +269,7 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
   int returnedLength = hid_get_feature_report(_hidHandle, buf.data(), bufSize);
   if (returnedLength == -1)
   {
-    TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -291,11 +287,11 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
 
   if (info.Length() != 1)
   {
-    TypeError::New(env, "need report (including id in first byte) only in sendFeatureReport").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "need report (including id in first byte) only in sendFeatureReport").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  vector<unsigned char> message;
+  std::vector<unsigned char> message;
   if (info[0].IsBuffer())
   {
     Napi::Buffer<unsigned char> buffer = info[0].As<Napi::Buffer<unsigned char>>();
@@ -313,7 +309,7 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
       Napi::Value v = messageArray.Get(i);
       if (!v.IsNumber())
       {
-        TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
+        Napi::TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
         return env.Null();
       }
       uint32_t b = v.As<Napi::Number>().Uint32Value();
@@ -322,14 +318,14 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
   }
   else
   {
-    TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
     return env.Null();
   }
 
   int returnedLength = hid_send_feature_report(_hidHandle, message.data(), message.size());
   if (returnedLength == -1)
   { // Not sure if there would ever be a valid return value of 0.
-    TypeError::New(env, "could not send feature report to device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "could not send feature report to device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -350,7 +346,7 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
 
   if (info.Length() != 1)
   {
-    TypeError::New(env, "Expecting a 1 to enable, 0 to disable as the first argument.").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Expecting a 1 to enable, 0 to disable as the first argument.").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -358,7 +354,7 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
   int res = hid_set_nonblocking(_hidHandle, blockStatus);
   if (res < 0)
   {
-    TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -371,11 +367,11 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
 
   if (info.Length() != 1)
   {
-    TypeError::New(env, "HID write requires one argument").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "HID write requires one argument").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  vector<unsigned char> message;
+  std::vector<unsigned char> message;
   if (info[0].IsBuffer())
   {
     Napi::Buffer<unsigned char> buffer = info[0].As<Napi::Buffer<unsigned char>>();
@@ -383,7 +379,7 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
     unsigned char *data = buffer.Data();
     message.assign(data, data + len);
   }
-  else
+  else if (info[0].IsArray())
   {
     Napi::Array messageArray = info[0].As<Napi::Array>();
     message.reserve(messageArray.Length());
@@ -393,35 +389,39 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
       Napi::Value v = messageArray.Get(i);
       if (!v.IsNumber())
       {
-        TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
+        Napi::TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
         return env.Null();
       }
       uint32_t b = v.As<Napi::Number>().Uint32Value();
       message.push_back((unsigned char)b);
     }
   }
+  else
+  {
+    Napi::TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   if (!_hidHandle)
   {
-    TypeError::New(env, "Cannot write to closed device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Cannot write to closed device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
   int returnedLength = hid_write(_hidHandle, message.data(), message.size());
   if (returnedLength < 0)
   {
-    TypeError::New(env, "Cannot write to hid device").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Cannot write to hid device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
   return Napi::Number::New(env, returnedLength);
 }
 
-static string
-narrow(wchar_t *wide)
+static std::string narrow(wchar_t *wide)
 {
-  wstring ws(wide);
-  ostringstream os;
+  std::wstring ws(wide);
+  std::ostringstream os;
   for (size_t i = 0; i < ws.size(); i++)
   {
     os << os.narrow(ws[i], '?');
@@ -466,7 +466,7 @@ Napi::Value HID::devices(const Napi::CallbackInfo &info)
     productId = info[1].As<Napi::Number>().Int32Value();
     break;
   default:
-    TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -516,7 +516,7 @@ deinitialize(void *)
   if (hid_exit())
   {
     // Process is exiting, no need to log? TODO
-    // TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
+    // Napi::TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
     return;
   }
 }
@@ -524,7 +524,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
 {
   if (hid_init())
   {
-    TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
     return;
   }
 
