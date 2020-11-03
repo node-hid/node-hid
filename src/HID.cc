@@ -203,7 +203,6 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 
   unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read(_hidHandle, buff_read, sizeof buff_read);
-
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
@@ -533,13 +532,13 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
   Napi::Function ctor = DefineClass(env, "HID", {
                                                     InstanceMethod("close", &HID::close),
                                                     InstanceMethod("read", &HID::read),
-                                                    InstanceMethod("write", &HID::write),
-                                                    InstanceMethod("getFeatureReport", &HID::getFeatureReport),
-                                                    InstanceMethod("sendFeatureReport", &HID::sendFeatureReport),
-                                                    InstanceMethod("setNonBlocking", &HID::setNonBlocking),
-                                                    InstanceMethod("readSync", &HID::readSync),
-                                                    InstanceMethod("readTimeout", &HID::readTimeout),
-                                                    InstanceMethod("getDeviceInfo", &HID::getDeviceInfo),
+                                                    InstanceMethod("write", &HID::write, napi_enumerable),
+                                                    InstanceMethod("getFeatureReport", &HID::getFeatureReport, napi_enumerable),
+                                                    InstanceMethod("sendFeatureReport", &HID::sendFeatureReport, napi_enumerable),
+                                                    InstanceMethod("setNonBlocking", &HID::setNonBlocking, napi_enumerable),
+                                                    InstanceMethod("readSync", &HID::readSync, napi_enumerable),
+                                                    InstanceMethod("readTimeout", &HID::readTimeout, napi_enumerable),
+                                                    InstanceMethod("getDeviceInfo", &HID::getDeviceInfo, napi_enumerable),
                                                 });
 
   exports.Set("HID", ctor);
