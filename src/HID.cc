@@ -74,9 +74,6 @@ public:
   ~HID() { close(); }
 
 private:
-  // static Napi::FunctionReference constructor;
-
-  // static Napi::Value New(const Napi::CallbackInfo &info);
   Napi::Value Close(const Napi::CallbackInfo &info);
   static Napi::Value Devices(const Napi::CallbackInfo &info);
 
@@ -90,7 +87,10 @@ private:
   static NAN_METHOD(readSync);
   static NAN_METHOD(readTimeout);
   */
+  Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info);
+  Napi::Value readSync(const Napi::CallbackInfo &info);
+  Napi::Value readTimeout(const Napi::CallbackInfo &info);
   Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);
 
   /*
@@ -295,100 +295,97 @@ NAN_METHOD(HID::read)
   return;
 }
 
-NAN_METHOD(HID::readSync)
+*/
+Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 {
-  Nan::HandleScope scope;
+  Napi::Env env = info.Env();
 
   if (info.Length() != 0)
   {
-    return Nan::ThrowError("readSync need zero length parameter");
+    TypeError::New(env, "readSync needs zero length parameter").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
   unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read(hid->_hidHandle, buff_read, sizeof buff_read);
+  int returnedLength = hid_read(_hidHandle, buff_read, sizeof buff_read);
 
   if (returnedLength == -1)
   {
-    return Nan::ThrowError("could not read data from device");
+    TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
+    return env.Null();
   }
-  Local<Array> retval = Nan::New<Array>();
 
+  Napi::Array retval = Napi::Array::New(env, returnedLength);
   for (int i = 0; i < returnedLength; i++)
   {
-    Nan::Set(retval, i, Nan::New<Integer>(buff_read[i]));
+    retval.Set(i, Napi::Number::New(env, buff_read[i]));
   }
-  info.GetReturnValue().Set(retval);
+  return retval;
 }
 
-NAN_METHOD(HID::readTimeout)
+Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
 {
-  Nan::HandleScope scope;
+  Napi::Env env = info.Env();
 
-  if (info.Length() != 1 || !info[0]->IsUint32())
+  if (info.Length() != 1 || !info[0].IsNumber())
   {
-    return Nan::ThrowError("readTimeout needs time out parameter");
+    TypeError::New(env, "readTimeout needs time out parameter").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  // const int timeout = info[0]->ToUint32()->Value();
-  const int timeout = Nan::To<uint32_t>(info[0]).FromJust();
+  const int timeout = info[0].As<Napi::Number>().Uint32Value();
   unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read_timeout(hid->_hidHandle, buff_read, sizeof buff_read, timeout);
-
+  int returnedLength = hid_read_timeout(_hidHandle, buff_read, sizeof buff_read, timeout);
   if (returnedLength == -1)
   {
-    return Nan::ThrowError("could not read data from device");
+    TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
+    return env.Null();
   }
-  Local<Array> retval = Nan::New<Array>();
 
+  Napi::Array retval = Napi::Array::New(env, returnedLength);
   for (int i = 0; i < returnedLength; i++)
   {
-    Nan::Set(retval, i, Nan::New<Integer>(buff_read[i]));
+    retval.Set(i, Napi::Number::New(env, buff_read[i]));
   }
-  info.GetReturnValue().Set(retval);
+  return retval;
 }
 
-NAN_METHOD(HID::getFeatureReport)
+Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
 {
-  Nan::HandleScope scope;
+  Napi::Env env = info.Env();
 
-  if (info.Length() != 2 || !info[1]->IsUint32())
+  if (info.Length() != 2 || !info[0].IsNumber() || !info[1].IsNumber())
   {
-    return Nan::ThrowError("need report ID and length parameters in getFeatureReport");
+    TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  const uint8_t reportId = Nan::To<uint32_t>(info[0]).FromJust();
-  const int bufSize = Nan::To<uint32_t>(info[1]).FromJust();
+  const uint8_t reportId = info[0].As<Number>().Uint32Value();
+  const int bufSize = info[1].As<Number>().Uint32Value();
   if (bufSize == 0)
   {
-    return Nan::ThrowError("Length parameter cannot be zero in getFeatureReport");
+    TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
-  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-
-  //unsigned char buf[bufSize];
-  unsigned char *buf = new unsigned char[bufSize];
+  std::vector<unsigned char> buf(bufSize);
   buf[0] = reportId;
 
-  int returnedLength = hid_get_feature_report(hid->_hidHandle, buf, bufSize);
-
+  int returnedLength = hid_get_feature_report(_hidHandle, buf.data(), bufSize);
   if (returnedLength == -1)
   {
-    delete[] buf;
-    return Nan::ThrowError("could not get feature report from device");
+    TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
+    return env.Null();
   }
-  Local<Array> retval = Nan::New<Array>();
 
+  Napi::Array retval = Napi::Array::New(env, returnedLength);
   for (int i = 0; i < returnedLength; i++)
   {
-    Nan::Set(retval, i, Nan::New<Integer>(buf[i]));
+    retval.Set(i, Napi::Number::New(env, buf[i]));
   }
-  delete[] buf;
-  info.GetReturnValue().Set(retval);
+  return retval;
 }
 
-*/
 Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -407,7 +404,7 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
     unsigned char *data = buffer.Data();
     message.assign(data, data + len);
   }
-  else
+  else if (info[0].IsArray())
   {
     Napi::Array messageArray = info[0].As<Napi::Array>();
     message.reserve(messageArray.Length());
@@ -423,6 +420,11 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
       uint32_t b = v.As<Napi::Number>().Uint32Value();
       message.push_back((unsigned char)b);
     }
+  }
+  else
+  {
+    TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
+    return env.Null();
   }
 
   int returnedLength = hid_send_feature_report(_hidHandle, message.data(), message.size());
@@ -547,13 +549,13 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   {
     Napi::Object deviceInfo = Napi::Object::New(env);
 
-    hid_get_manufacturer_string(this->_hidHandle, wstr, maxlen);
+    hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
     deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_product_string(this->_hidHandle, wstr, maxlen);
+    hid_get_product_string(_hidHandle, wstr, maxlen);
     deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_serial_number_string(this->_hidHandle, wstr, maxlen);
+    hid_get_serial_number_string(_hidHandle, wstr, maxlen);
     deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
 
     return deviceInfo;
@@ -638,7 +640,7 @@ deinitialize(void *)
 {
   if (hid_exit())
   {
-    // Process is exiting, no need to log?
+    // Process is exiting, no need to log? TODO
     // TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
     return;
   }
@@ -656,6 +658,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
   Napi::Function ctor = DefineClass(env, "HID", {
                                                     InstanceMethod("close", &HID::Close),
                                                     InstanceMethod("write", &HID::write),
+                                                    InstanceMethod("getFeatureReport", &HID::getFeatureReport),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport),
                                                     InstanceMethod("setNonBlocking", &HID::setNonBlocking),
                                                     /*
@@ -667,6 +670,8 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
   Nan::SetPrototypeMethod(hidTemplate, "readSync", readSync);
   Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
 */
+                                                    InstanceMethod("readSync", &HID::readSync),
+                                                    InstanceMethod("readTimeout", &HID::readTimeout),
                                                     InstanceMethod("getDeviceInfo", &HID::getDeviceInfo),
                                                 });
 
@@ -676,11 +681,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-  // exports.Set("NewFace", Napi::Function::New(env, NewFace));
-  // exports.Set("NewMemoryFace", Napi::Function::New(env, NewMemoryFace));
-
   HID::Initialize(env, exports);
-  // InitializeEnums(env, exports);
 
   return exports;
 }
