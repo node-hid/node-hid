@@ -63,67 +63,28 @@ class HID
 {
 public:
   static void Initialize(Napi::Env &env, Napi::Object &exports);
-  //static NAN_METHOD(devices);
 
   typedef vector<unsigned char> databuf_t;
 
-  // int write(const databuf_t &message);
   void close();
 
   HID(const Napi::CallbackInfo &info);
   ~HID() { close(); }
 
+  hid_device *_hidHandle;
+
 private:
-  Napi::Value Close(const Napi::CallbackInfo &info);
   static Napi::Value Devices(const Napi::CallbackInfo &info);
 
+  Napi::Value Close(const Napi::CallbackInfo &info);
+  Napi::Value read(const Napi::CallbackInfo &info);
   Napi::Value write(const Napi::CallbackInfo &info);
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
-  /*
-  static NAN_METHOD(read);
-  static NAN_METHOD(write);
-  static NAN_METHOD(setNonBlocking);
-  static NAN_METHOD(getFeatureReport);
-  static NAN_METHOD(readSync);
-  static NAN_METHOD(readTimeout);
-  */
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value readSync(const Napi::CallbackInfo &info);
   Napi::Value readTimeout(const Napi::CallbackInfo &info);
   Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);
-
-  /*
-  static void recvAsync(uv_work_t *req);
-  static void recvAsyncDone(uv_work_t *req);
-
-  */
-  struct ReceiveIOCB
-  {
-    ReceiveIOCB(HID *hid, Napi::Function *callback)
-        : _hid(hid),
-          _callback(callback),
-          _error(0)
-    {
-    }
-
-    ~ReceiveIOCB()
-    {
-      if (_error)
-      {
-        delete _error;
-      }
-    }
-
-    HID *_hid;
-    Napi::Function *_callback;
-    JSException *_error;
-    vector<unsigned char> _data;
-  };
-
-  //void readResultsToJSCallbackArguments(ReceiveIOCB *iocb, Local<Value> argv[]);
-
-  hid_device *_hidHandle;
 };
 
 HID::HID(const Napi::CallbackInfo &info)
@@ -200,102 +161,69 @@ void HID::close()
   }
 }
 
-/*
-void HID::recvAsync(uv_work_t *req)
+void deleteArray(const Napi::Env &env, unsigned char *ptr)
 {
-  ReceiveIOCB *iocb = static_cast<ReceiveIOCB *>(req->data);
-  HID *hid = iocb->_hid;
-
-  unsigned char buf[READ_BUFF_MAXSIZE];
-  int mswait = 50;
-  int len = 0;
-  while (len == 0 && hid->_hidHandle)
-  {
-    len = hid_read_timeout(hid->_hidHandle, buf, sizeof buf, mswait);
-  }
-  if (len < 0)
-  {
-    iocb->_error = new JSException("could not read from HID device");
-  }
-  else
-  {
-    iocb->_data = vector<unsigned char>(buf, buf + len);
-  }
+  delete[] ptr;
 }
 
-void HID::readResultsToJSCallbackArguments(ReceiveIOCB *iocb, Local<Value> argv[])
+class ReadWorker : public Napi::AsyncWorker
 {
-  if (iocb->_error)
-  {
-    argv[0] = Exception::Error(Nan::New<String>(iocb->_error->message().c_str()).ToLocalChecked());
-  }
-  else
-  {
-    const vector<unsigned char> &message = iocb->_data;
+public:
+  ReadWorker(HID *hid, Napi::Function &callback)
+      : Napi::AsyncWorker(hid->Value(), callback), _hid(hid) {}
 
-    Local<Object> buf = Nan::NewBuffer(message.size()).ToLocalChecked();
-    char *data = Buffer::Data(buf);
-
-    int j = 0;
-    for (vector<unsigned char>::const_iterator k = message.begin(); k != message.end(); k++)
+  ~ReadWorker()
+  {
+    if (buf != nullptr)
     {
-      data[j++] = *k;
+      delete[] buf;
     }
-    argv[1] = buf;
   }
-}
-
-void HID::recvAsyncDone(uv_work_t *req)
-{
-  Nan::HandleScope scope;
-  ReceiveIOCB *iocb = static_cast<ReceiveIOCB *>(req->data);
-
-  Local<Value> argv[2];
-  argv[0] = Nan::Undefined();
-  argv[1] = Nan::Undefined();
-
-  iocb->_hid->readResultsToJSCallbackArguments(iocb, argv);
-  iocb->_hid->Unref();
-
-  Nan::TryCatch tryCatch;
-  //iocb->_callback->Call(2, argv);
-  Nan::AsyncResource resource("node-hid recvAsyncDone");
-  iocb->_callback->Call(2, argv, &resource);
-  if (tryCatch.HasCaught())
+  // This code will be executed on the worker thread
+  void Execute() override
   {
-    Nan::FatalException(tryCatch);
+    int mswait = 50;
+    while (len == 0 && _hid->_hidHandle)
+    {
+      len = hid_read_timeout(_hid->_hidHandle, buf, READ_BUFF_MAXSIZE, mswait);
+    }
+    if (len < 0)
+    {
+      SetError("could not read from HID device");
+    }
   }
 
-  delete req;
-  delete iocb->_callback;
-
-  delete iocb;
-}
-
-NAN_METHOD(HID::read)
-{
-  Nan::HandleScope scope;
-
-  if (info.Length() != 1 || !info[0]->IsFunction())
+  void
+  OnOK() override
   {
-    return Nan::ThrowError("need one callback function argument in read");
+    auto buffer = Napi::Buffer<unsigned char>::New(Env(), buf, len, deleteArray);
+    buf = nullptr; // It is now owned by the buffer
+    Callback().Call({Env().Null(), buffer});
   }
 
-  HID *hid = Nan::ObjectWrap::Unwrap<HID>(info.This());
-  hid->Ref();
+private:
+  HID *_hid;
+  unsigned char *buf = new unsigned char[READ_BUFF_MAXSIZE];
+  int len = 0;
+};
 
-  uv_work_t *req = new uv_work_t;
-  req->data = new ReceiveIOCB(hid, new Nan::Callback(Local<Function>::Cast(info[0])));
-  ;
-#if NODE_MAJOR_VERSION >= 10
-  uv_queue_work(Nan::GetCurrentEventLoop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
-#else
-  uv_queue_work(uv_default_loop(), req, recvAsync, (uv_after_work_cb)recvAsyncDone);
-#endif
-  return;
+Napi::Value HID::read(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  if (info.Length() != 1 || !info[0].IsFunction())
+  {
+    TypeError::New(env, "need one callback function argument in read").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  auto callback = info[0].As<Napi::Function>();
+  auto job = new ReadWorker(this, callback);
+  job->Queue();
+
+  return env.Null();
 }
 
-*/
 Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -545,26 +473,18 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   const int maxlen = 256;
   wchar_t wstr[maxlen]; // FIXME: use new & delete
 
-  try
-  {
-    Napi::Object deviceInfo = Napi::Object::New(env);
+  Napi::Object deviceInfo = Napi::Object::New(env);
 
-    hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
-    deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
+  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_product_string(_hidHandle, wstr, maxlen);
-    deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+  hid_get_product_string(_hidHandle, wstr, maxlen);
+  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_serial_number_string(_hidHandle, wstr, maxlen);
-    deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+  hid_get_serial_number_string(_hidHandle, wstr, maxlen);
+  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
 
-    return deviceInfo;
-  }
-  catch (const JSException &e)
-  {
-    e.asV8Exception(env);
-    return env.Null();
-  }
+  return deviceInfo;
 }
 
 Napi::Value HID::Devices(const Napi::CallbackInfo &info)
@@ -657,19 +577,11 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
 
   Napi::Function ctor = DefineClass(env, "HID", {
                                                     InstanceMethod("close", &HID::Close),
+                                                    InstanceMethod("read", &HID::read),
                                                     InstanceMethod("write", &HID::write),
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport),
                                                     InstanceMethod("setNonBlocking", &HID::setNonBlocking),
-                                                    /*
-  Nan::SetPrototypeMethod(hidTemplate, "read", read);
-  Nan::SetPrototypeMethod(hidTemplate, "write", write);
-  Nan::SetPrototypeMethod(hidTemplate, "getFeatureReport", getFeatureReport);
-  Nan::SetPrototypeMethod(hidTemplate, "sendFeatureReport", sendFeatureReport);
-  Nan::SetPrototypeMethod(hidTemplate, "setNonBlocking", setNonBlocking);
-  Nan::SetPrototypeMethod(hidTemplate, "readSync", readSync);
-  Nan::SetPrototypeMethod(hidTemplate, "readTimeout", readTimeout);
-*/
                                                     InstanceMethod("readSync", &HID::readSync),
                                                     InstanceMethod("readTimeout", &HID::readTimeout),
                                                     InstanceMethod("getDeviceInfo", &HID::getDeviceInfo),
