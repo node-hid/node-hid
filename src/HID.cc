@@ -33,50 +33,26 @@
 #include <hidapi.h>
 
 using namespace std;
-// using namespace v8;
-// using namespace node;
 using namespace Napi;
 
 #define READ_BUFF_MAXSIZE 2048
 
-// //////////////////////////////////////////////////////////////////
-// Throwable error class that can be converted to a JavaScript
-// exception
-// //////////////////////////////////////////////////////////////////
-class JSException
-{
-public:
-  JSException(const string &text) : _message(text) {}
-  virtual ~JSException() {}
-  virtual const string message() const { return _message; }
-  virtual void asV8Exception(const Napi::Env &env) const
-  {
-    TypeError::New(env, message()).ThrowAsJavaScriptException();
-  }
-
-protected:
-  string _message;
-};
-
-class HID
-    : public Napi::ObjectWrap<HID>
+class HID : public Napi::ObjectWrap<HID>
 {
 public:
   static void Initialize(Napi::Env &env, Napi::Object &exports);
 
-  typedef vector<unsigned char> databuf_t;
-
-  void close();
+  void closeHandle();
 
   HID(const Napi::CallbackInfo &info);
-  ~HID() { close(); }
+  ~HID() { closeHandle(); }
 
   hid_device *_hidHandle;
 
 private:
-  static Napi::Value Devices(const Napi::CallbackInfo &info);
+  static Napi::Value devices(const Napi::CallbackInfo &info);
 
-  Napi::Value Close(const Napi::CallbackInfo &info);
+  Napi::Value close(const Napi::CallbackInfo &info);
   Napi::Value read(const Napi::CallbackInfo &info);
   Napi::Value write(const Napi::CallbackInfo &info);
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
@@ -104,55 +80,50 @@ HID::HID(const Napi::CallbackInfo &info)
     return;
   }
 
-  try
+  if (info.Length() == 1)
   {
-    if (info.Length() == 1)
+    // open by path
+    if (!info[0].IsString())
     {
-      // open by path
-      if (!info[0].IsString())
-      {
-        throw JSException("Device path must be a string");
-      }
-
-      std::string path = info[0].As<Napi::String>().Utf8Value();
-      _hidHandle = hid_open_path(path.c_str());
-      if (!_hidHandle)
-      {
-        ostringstream os;
-        os << "cannot open device with path " << path;
-        throw JSException(os.str());
-      }
+      TypeError::New(env, "Device path must be a string").ThrowAsJavaScriptException();
+      return;
     }
-    else
-    {
-      // TODO: are these safe with invalid data?
-      int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
-      int32_t productId = info[1].As<Napi::Number>().Int32Value();
-      wchar_t wserialstr[100]; // FIXME: is there a better way?
-      wchar_t *wserialptr = NULL;
-      if (info.Length() > 2)
-      {
-        std::string serialstr = info[2].As<Napi::String>().Utf8Value();
-        mbstowcs(wserialstr, serialstr.c_str(), 100);
-        wserialptr = wserialstr;
-      }
 
-      _hidHandle = hid_open(vendorId, productId, wserialptr);
-      if (!_hidHandle)
-      {
-        ostringstream os;
-        os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
-        throw JSException(os.str());
-      }
+    std::string path = info[0].As<Napi::String>().Utf8Value();
+    _hidHandle = hid_open_path(path.c_str());
+    if (!_hidHandle)
+    {
+      ostringstream os;
+      os << "cannot open device with path " << path;
+      TypeError::New(env, os.str()).ThrowAsJavaScriptException();
+      return;
     }
   }
-  catch (const JSException &e)
+  else
   {
-    e.asV8Exception(env);
+    int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
+    int32_t productId = info[1].As<Napi::Number>().Int32Value();
+    wchar_t wserialstr[100]; // FIXME: is there a better way?
+    wchar_t *wserialptr = NULL;
+    if (info.Length() > 2)
+    {
+      std::string serialstr = info[2].As<Napi::String>().Utf8Value();
+      mbstowcs(wserialstr, serialstr.c_str(), 100);
+      wserialptr = wserialstr;
+    }
+
+    _hidHandle = hid_open(vendorId, productId, wserialptr);
+    if (!_hidHandle)
+    {
+      ostringstream os;
+      os << "cannot open device with vendor id 0x" << hex << vendorId << " and product id 0x" << productId;
+      TypeError::New(env, os.str()).ThrowAsJavaScriptException();
+      return;
+    }
   }
 }
 
-void HID::close()
+void HID::closeHandle()
 {
   if (_hidHandle)
   {
@@ -365,20 +336,12 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
   return Napi::Number::New(env, returnedLength);
 }
 
-Napi::Value HID::Close(const Napi::CallbackInfo &info)
+Napi::Value HID::close(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  try
-  {
-    this->close();
-    return env.Null();
-  }
-  catch (const JSException &e)
-  {
-    e.asV8Exception(env);
-    return env.Null();
-  }
+  this->closeHandle();
+  return env.Null();
 }
 
 Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
@@ -487,31 +450,23 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   return deviceInfo;
 }
 
-Napi::Value HID::Devices(const Napi::CallbackInfo &info)
+Napi::Value HID::devices(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
   int vendorId = 0;
   int productId = 0;
 
-  try
+  switch (info.Length())
   {
-    switch (info.Length())
-    {
-    case 0:
-      break;
-    case 2:
-      // TODO: are these safe with invalid data?
-      vendorId = info[0].As<Napi::Number>().Int32Value();
-      productId = info[1].As<Napi::Number>().Int32Value();
-      break;
-    default:
-      throw JSException("unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID");
-    }
-  }
-  catch (JSException &e)
-  {
-    e.asV8Exception(env);
+  case 0:
+    break;
+  case 2:
+    vendorId = info[0].As<Napi::Number>().Int32Value();
+    productId = info[1].As<Napi::Number>().Int32Value();
+    break;
+  default:
+    TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -576,7 +531,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
   napi_add_env_cleanup_hook(env, deinitialize, nullptr);
 
   Napi::Function ctor = DefineClass(env, "HID", {
-                                                    InstanceMethod("close", &HID::Close),
+                                                    InstanceMethod("close", &HID::close),
                                                     InstanceMethod("read", &HID::read),
                                                     InstanceMethod("write", &HID::write),
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport),
@@ -588,7 +543,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
                                                 });
 
   exports.Set("HID", ctor);
-  exports.Set("devices", Napi::Function::New(env, &HID::Devices));
+  exports.Set("devices", Napi::Function::New(env, &HID::devices));
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
