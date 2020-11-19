@@ -33,7 +33,13 @@ $env:PYTHON = "$env:USERPROFILE\.windows-build-tools\python27\python.exe"
 on this page:
     https://nodejs.org/en/download/releases/
 If a prebuild is not generated for a particular version of Node or Electron,
-then `node-abi` needs to be updated 
+then `node-abi` needs to be updated
+
+- You can also grep for NODE_MODULE_VERSION in `node_version.h` in any version
+of Node and Electron you've installed node-hid with:
+`grep NODE_MODULE_VERSION ~/.node-gyp/*/include/node/node_version.h`
+and
+`grep NODE_MODULE_VERSION ~/.electron-gyp/*/include/node/node_version.h |grep define`
 
 - As of Node v10 on Windows, may need to do:
 -- `$env:Path += ";C:\Program Files\Git\mingw64\libexec\git-core
