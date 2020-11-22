@@ -22,7 +22,9 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: setup prerequisites (linux)
-      run: sudo apt install pkg-config libudev-dev libusb-1.0-0-dev
+      run: |
+        sudo apt update 
+        sudo apt install pkg-config libudev-dev libusb-1.0-0-dev
   
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
