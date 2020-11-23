@@ -78,25 +78,25 @@ combination not listed here will compile and work.
 - Linux PPC64 (¹)
 
 ¹ prebuilt-binaries not provided for these platforms  
-² prebuilt binary built on Ubuntu 16.04 x64
+² prebuilt binary built on Ubuntu 18.04 x64
 
 ### Supported Node versions ###
 
-* Node v6 to
-* Node v14 (but no v14 prebuilds yet due to `node-abi` bug)
+* Node v8 to
+* Node v14
 
 ### Supported Electron versions ###
 
-* Electron v1 to
-* Electron v10 (but no v10 prebuilds yet due to `node-abi` bug)
+* Electron v3 to
+* Electron v10
 
-#### Any newer version of Electron or Node WILL NOT WORK
+#### Any newer version of Electron or Node MAY NOT WORK
 Native modules like `node-hid` require upstream dependencies to be updated to work with newer Node and Electron versions. Unless you need the features in the most recent Electron or Node, use a supported version.
 
 
 ## Installation
 
-For most "standard" use cases (node v4.x on mac, linux, windows on a x86 or x64 processor), `node-hid` will install nice and easy with a standard:
+For most "standard" use cases (node v4.x on mac, linux, windows on a x86 or x64 processor), `node-hid` will install like a standard npm package:
 
 ```
 npm install node-hid
@@ -111,13 +111,7 @@ $ hid-showdevices hidraw
 
 ### Installation Special Cases
 
-We are using [prebuild](https://github.com/mafintosh/prebuild) to compile and post binaries of the library for most common use cases (linux, mac, windows on standard processor platforms). If you are on a special case, `node-hid` will work, but it will compile the binary when you install.
-
-If `node-hid` doesn't have a pre-built binary for your system
-(e.g. Linux on Raspberry Pi),
-`node-gyp` is used to compile `node-hid` locally.  It will need the pre-requisites
-listed in [Compling from source](#compiling-from-source) below.
-
+We are using [prebuild](https://github.com/mafintosh/prebuild) to compile and post binaries of the library for most common use cases (Linux, MacOS, Windows on standard processor platforms). If a prebuild is not available, `node-hid` will work, but `npm install node-hid` will compile the binary when you install.  For more details on compiler setup, see  [Compling from source](#compiling-from-source) below.
 
 ## Examples
 
@@ -130,7 +124,7 @@ that talk to specific devices in some way.  Some interesting ones:
 - [`test-bigredbutton.js`](./src/test-bigredbutton.js) - Read Dreamcheeky Big Red Button
 - [`test-teensyrawhid.js`](./src/test-teensyrawhid.js) - Read/write Teensy running RawHID "Basic" Arduino sketch
 
-To try them out, run them like `node src/showdevices.js` from within the node-hid directory.
+To try them out, run them with `node src/showdevices.js` from within the node-hid directory.
 
 ----
 
@@ -387,28 +381,6 @@ For reasons similar to mice & keyboards it appears you can't access this control
 ## Linux notes
 See General notes above about Keyboards
 
-### Selecting driver type
-
-By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
-
-If you would still like to use the `libusb` driver, then you can do either:
-
-During runtime, you can use `HID.setDriverType('libusb')` immediately after require()-ing `node-hid`:
-```js
-var HID = require('node-hid');
-HID.setDriverType('libusb');
-```
-
-If you must have the libusb version and cannot use `setDriverType()`,
-you can install older node-hid or build from source:
-```
-npm install node-hid@0.5.7
-```
-or:
-```
-npm install node-hid --build-from-source --driver=libusb
-```
-
 ### udev device permissions
 Most Linux distros use `udev` to manage access to physical devices,
 and USB HID devices are normally owned by the `root` user.
@@ -436,10 +408,33 @@ For a complete example, see the
 [blink1 udev rules](https://github.com/todbot/blink1/blob/master/linux/51-blink1.rules).
 
 
+### Selecting driver type
+
+By default as of `node-hid@0.7.0`, the [hidraw](https://www.kernel.org/doc/Documentation/hid/hidraw.txt) driver is used to talk to HID devices. Before `node-hid@0.7.0`, the more older but less capable [libusb](http://libusb.info/) driver was used.  With `hidraw` Linux apps can now see `usage` and `usagePage` attributes of devices.
+
+If you would still like to use the `libusb` driver, then you can do either:
+
+During runtime, you can use `HID.setDriverType('libusb')` immediately after require()-ing `node-hid`:
+```js
+var HID = require('node-hid');
+HID.setDriverType('libusb');
+```
+
+If you must have the libusb version and cannot use `setDriverType()`,
+you can install older node-hid or build from source:
+```
+npm install node-hid@0.5.7
+```
+or:
+```
+npm install node-hid --build-from-source --driver=libusb
+```
+
+
 ## Compiling from source
 
 To compile & develop locally or if `prebuild` cannot download a pre-built
-binary for you, you will need the following tools:
+binary for you, you will need the following compiler tools and libraries:
 
 ### Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
   * Compilation tools: `apt install build-essential git`
@@ -538,8 +533,8 @@ If using `node-hid` with `webpack` or similar bundler, you may need to exclude
 ```
 
 Examples of `node-hid` in Electron:
-* [electron-hid-toy](https://github.com/todbot/electron-hid-toy) - a simple example of using `node-hid`, that will hopefully always track the latest Electron release
-* [electron-hid-test](https://github.com/todbot/electron-hid-test) - even simpler example of using `node-hid`
+* [electron-hid-test](https://github.com/todbot/electron-hid-test) - Simple example of using `node-hid`, should track latest Electron release
+* [electron-hid-toy](https://github.com/todbot/electron-hid-toy) - Simple example of using `node-hid`, showing packaging and signing
 * [Blink1Control2](https://github.com/todbot/Blink1Control2/) - a complete application, using webpack (e.g. see its [webpack-config.js](https://github.com/todbot/Blink1Control2/blob/master/webpack.config.js))
 
 
