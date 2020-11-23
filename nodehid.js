@@ -16,7 +16,7 @@ function loadBinding() {
         if( os.platform() === 'linux' ) {
             // Linux defaults to hidraw
             if( !driverType || driverType === 'hidraw' ) {
-                binding = require('bindings')('HID-hidraw.node');
+                binding = require('bindings')('HID_hidraw.node');
             } else {
                 binding = require('bindings')('HID.node');
             }
@@ -55,8 +55,7 @@ function HID() {
         `this._raw`
     */
     for(var i in binding.HID.prototype)
-        if(i != "close" && i != "read")
-            this[i] = binding.HID.prototype[i].bind(this._raw);
+        this[i] = binding.HID.prototype[i].bind(this._raw);
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
 
@@ -132,4 +131,3 @@ function showdevices() {
 exports.HID = HID;
 exports.devices = showdevices;
 exports.setDriverType = setDriverType;
-// exports.devices = binding.devices;

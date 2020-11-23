@@ -105,7 +105,7 @@
             'direct_dependent_settings': {
                 'include_dirs': [
                     'hidapi/hidapi',
-                    "<!(node -e \"require('nan')\")"
+                    "<!@(node -p \"require('node-addon-api').include\")"
                 ]
             },
             'include_dirs': ['hidapi/hidapi'],
@@ -122,7 +122,7 @@
         [ 'OS=="linux"', {
             'targets': [
                 {
-                    'target_name': 'HID-hidraw',
+                    'target_name': 'HID_hidraw',
                     'sources': [ 'src/HID.cc' ],
                     'dependencies': ['hidapi-linux-hidraw'],
                     'defines': [
@@ -146,7 +146,7 @@
                     'direct_dependent_settings': {
                         'include_dirs': [
                             'hidapi/hidapi',
-                            "<!(node -e \"require('nan')\")"
+                            "<!@(node -p \"require('node-addon-api').include\")"
                         ]
                     },
                     'include_dirs': ['hidapi/hidapi' ],
