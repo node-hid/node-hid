@@ -16,7 +16,8 @@
                 [ 'OS=="mac"', {
                     'LDFLAGS': [
                         '-framework IOKit',
-                        '-framework CoreFoundation'
+                        '-framework CoreFoundation',
+                        '-framework AppKit'
                     ],
                     'xcode_settings': {
                         'CLANG_CXX_LIBRARY': 'libc++',
@@ -24,7 +25,8 @@
                         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
                         'OTHER_LDFLAGS': [
                             '-framework IOKit',
-                            '-framework CoreFoundation'
+                            '-framework CoreFoundation',
+                            '-framework AppKit'
                         ],
                     }
                 }], # OS==mac
