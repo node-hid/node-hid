@@ -1,7 +1,7 @@
 {
   "name": "node-hid",
   "description": "USB HID device access library",
-  "version": "2.1.0-0",
+  "version": "2.1.1",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "bugs": "https://github.com/node-hid/node-hid/issues",
   "homepage": "https://github.com/node-hid/node-hid#readme",
