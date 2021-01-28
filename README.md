@@ -5,6 +5,7 @@
 [![build windows](https://github.com/node-hid/node-hid/workflows/windows/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Awindows)
 [![build linux](https://github.com/node-hid/node-hid/workflows/linux/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Alinux)
 
+
 * [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)
   * [Platform Support](#platform-support)
      * [Supported Platforms](#supported-platforms)
@@ -39,13 +40,13 @@
      * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
   * [General notes:](#general-notes)
      * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
-     * [Keyboards and Mice](#keyboards-and-mice)
+     * [Devices node-hid cannot read](#devices-node-hid-cannot-read)
   * [Mac notes](#mac-notes)
   * [Windows notes](#windows-notes)
      * [Xbox 360 Controller on Windows 10](#xbox-360-controller-on-windows-10)
   * [Linux notes](#linux-notes)
-     * [Selecting driver type](#selecting-driver-type)
      * [udev device permissions](#udev-device-permissions)
+     * [Selecting driver type](#selecting-driver-type)
   * [Compiling from source](#compiling-from-source)
      * [Linux (kernel 2.6 ) : (install examples shown for Debian/Ubuntu)](#linux-kernel-26--install-examples-shown-for-debianubuntu)
      * [FreeBSD](#freebsd)
@@ -57,7 +58,6 @@
   * [Electron projects using node-hid](#electron-projects-using-node-hid)
   * [NW.js projects using node-hid](#nwjs-projects-using-node-hid)
   * [Support](#support)
-
 
 ## Platform Support
 `node-hid` supports Node.js v6 and upwards. For versions before that,
@@ -361,11 +361,22 @@ In general `node-hid` is not thread-safe because the underlying C-library it wra
 However, `node-hid` is now reporting as minimally Context Aware to allow use in Electron v9+.
 Until `node-hid` (or `hidapi`) is rewritten to be thread-safe, please constrain all accesses to it via a single thread.
 
-### Keyboards and Mice
+### Devices `node-hid` cannot read
+The following devices are unavailable to `node-hid` because the OS owns them:
+
+- Keyboards
+- Mice
+- Barcode readers (in USB HID keyboard mode)
+- RFID scanners (in USB HID keyboard mode)
+- Postage Scales (in USB HID keyboard mode)
+
 Most OSes will prevent USB HID keyboards or mice, or devices that appear as a keyboard to the OS.
 This includes many RFID scanners, barcode readers, USB HID scales, and many other devices.
 This is a security precaution. Otherwise, it would be trivial to build keyloggers.
-There are non-standard work-arounds for this, but in general you cannot use `node-hid` to access keyboard-like devices.  
+
+Some keyboard-pretending devices like barcode or RFID readers can be configured to be in
+"HID data" mode or "Serial / UART" mode.  If in "HID Data" mode then `node-hid` can access them,
+if in "Serial / UART" mode, you should use `node-serialport` instead.
 
 ## Mac notes
 See General notes above Keyboards
