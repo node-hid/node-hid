@@ -83,12 +83,12 @@ combination not listed here will compile and work.
 ### Supported Node versions ###
 
 * Node v8 to
-* Node v14
+* Node v16
 
 ### Supported Electron versions ###
 
 * Electron v3 to
-* Electron v14
+* Electron v16
 
 Future versions of Node or Electron should work, since `node-hid` is now based on NAPI.
 
