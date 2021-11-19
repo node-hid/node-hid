@@ -88,15 +88,13 @@ combination not listed here will compile and work.
 ### Supported Electron versions ###
 
 * Electron v3 to
-* Electron v11
+* Electron v14
 
-#### Any newer version of Electron or Node MAY NOT WORK
-Native modules like `node-hid` require upstream dependencies to be updated to work with newer Node and Electron versions. Unless you need the features in the most recent Electron or Node, use a supported version.
-
+Future versions of Node or Electron should work, since `node-hid` is now based on NAPI.
 
 ## Installation
 
-For most "standard" use cases (node v4.x on mac, linux, windows on a x86 or x64 processor), `node-hid` will install like a standard npm package:
+For most "standard" use cases (macOS, Windows, Linux x86), `node-hid` will install like a standard npm package:
 
 ```
 npm install node-hid
