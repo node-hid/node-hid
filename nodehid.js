@@ -62,12 +62,15 @@ function HID() {
         Now upon adding a new listener for "data" events, we start
         polling the HID device using `read(...)`
         See `resume()` for more details. */
-    this._paused = true;
     var self = this;
     self.on("newListener", function(eventName, listener) {
         if(eventName == "data")
             process.nextTick(self.resume.bind(self) );
     });
+    self.on("removeListener", function(eventName, listener) {
+        if(eventName == "data" && self.listenerCount("data") == 0)
+            process.nextTick(self.pause.bind(self) );
+    })
 }
 //Inherit prototype methods
 util.inherits(HID, EventEmitter);
@@ -81,44 +84,23 @@ HID.prototype.close = function close() {
 };
 //Pauses the reader, which stops "data" events from being emitted
 HID.prototype.pause = function pause() {
-    this._paused = true;
-};
-
-HID.prototype.read = function read(callback) {
-    if (this._closed) {
-    throw new Error('Unable to read from a closed HID device');
-  } else {
-    return this._raw.read(callback);
-  }
+    this._raw.readStop();
 };
 
 HID.prototype.resume = function resume() {
     var self = this;
-    if(self._paused && self.listeners("data").length > 0)
+    if(self.listenerCount("data") > 0)
     {
         //Start polling & reading loop
-        self._paused = false;
-        self.read(function readFunc(err, data) {
-            if(err)
-            {
-                //Emit error and pause reading
-                self._paused = true;
+        self._raw.readStart(function (err, data) {
+            if (err) {
                 if(!self._closing)
                     self.emit("error", err);
                 //else ignore any errors if I'm closing the device
-            }
-            else
-            {
-                //If there are no "data" listeners, we pause
-                if(self.listeners("data").length <= 0)
-                    self._paused = true;
-                //Keep reading if we aren't paused
-                if(!self._paused)
-                    self.read(readFunc);
-                //Now emit the event
+            } else {
                 self.emit("data", data);
             }
-        });
+        }, self)
     }
 };
 
