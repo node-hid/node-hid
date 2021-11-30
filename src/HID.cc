@@ -48,6 +48,7 @@ public:
 
 private:
   static Napi::Value devices(const Napi::CallbackInfo &info);
+  static Napi::Value devicesAsync(const Napi::CallbackInfo &info);
 
   Napi::Value close(const Napi::CallbackInfo &info);
   Napi::Value read(const Napi::CallbackInfo &info);
@@ -449,27 +450,22 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   return deviceInfo;
 }
 
-Napi::Value HID::devices(const Napi::CallbackInfo &info)
+bool parseDevicesParameters(const Napi::CallbackInfo &info, int *vendorId, int *productId)
 {
-  Napi::Env env = info.Env();
-
-  int vendorId = 0;
-  int productId = 0;
-
   switch (info.Length())
   {
   case 0:
-    break;
+    return true;
   case 2:
-    vendorId = info[0].As<Napi::Number>().Int32Value();
-    productId = info[1].As<Napi::Number>().Int32Value();
-    break;
+    *vendorId = info[0].As<Napi::Number>().Int32Value();
+    *productId = info[1].As<Napi::Number>().Int32Value();
+    return true;
   default:
-    Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
-    return env.Null();
+    return false;
   }
-
-  hid_device_info *devs = hid_enumerate(vendorId, productId);
+}
+Napi::Value generateDevicesResultAndFree(Napi::Env env, hid_device_info *devs)
+{
   Napi::Array retval = Napi::Array::New(env);
   int count = 0;
   for (hid_device_info *dev = devs; dev; dev = dev->next)
@@ -509,6 +505,96 @@ Napi::Value HID::devices(const Napi::CallbackInfo &info)
   return retval;
 }
 
+class DevicesWorker : public Napi::AsyncWorker
+{
+public:
+  DevicesWorker(Napi::Env &env, int vendorId, int productId)
+      : Napi::AsyncWorker(env),
+        deferred(Napi::Promise::Deferred::New(env)),
+        vendorId(vendorId), productId(productId) {}
+
+  ~DevicesWorker()
+  {
+    if (devs)
+    {
+      // ensure devs is freed if not done by OnOK
+      hid_free_enumeration(devs);
+      devs = nullptr;
+    }
+  }
+
+  // This code will be executed on the worker thread
+  void Execute() override
+  {
+    devs = hid_enumerate(vendorId, productId);
+  }
+
+  void OnOK() override
+  {
+    if (devs)
+    {
+      auto result = generateDevicesResultAndFree(Env(), devs);
+      devs = nullptr; // devs has already been freed
+      deferred.Resolve(result);
+    }
+    else
+    {
+      deferred.Reject(Env().Null());
+    }
+  }
+
+  void OnError(Napi::Error const &error)
+  {
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  Napi::Promise::Deferred deferred;
+  int vendorId;
+  int productId;
+  hid_device_info *devs;
+};
+
+Napi::Value HID::devicesAsync(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  int vendorId = 0;
+  int productId = 0;
+  if (!parseDevicesParameters(info, &vendorId, &productId))
+  {
+
+    Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  DevicesWorker *wk = new DevicesWorker(env, vendorId, productId);
+  wk->Queue();
+  return wk->GetPromise();
+}
+
+Napi::Value HID::devices(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  int vendorId = 0;
+  int productId = 0;
+  if (!parseDevicesParameters(info, &vendorId, &productId))
+  {
+
+    Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  hid_device_info *devs = hid_enumerate(vendorId, productId);
+  return generateDevicesResultAndFree(env, devs);
+}
+
 static void
 deinitialize(void *)
 {
@@ -543,6 +629,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
 
   exports.Set("HID", ctor);
   exports.Set("devices", Napi::Function::New(env, &HID::devices));
+  exports.Set("devicesAsync", Napi::Function::New(env, &HID::devicesAsync));
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)

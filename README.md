@@ -23,6 +23,7 @@
      * [Writing to a device](#writing-to-a-device)
   * [Complete API](#complete-api)
      * [devices = HID.devices()](#devices--hiddevices)
+     * [devices = HID.devicesAsync()](#devices--hiddevicesAsync)
      * [HID.setDriverType(type)](#hidsetdrivertypetype)
      * [device = new HID.HID(path)](#device--new-hidhidpath)
      * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
@@ -275,6 +276,12 @@ number of bytes written + 1.
 ### `devices = HID.devices()`
 
 - Return array listing all connected HID devices
+- This will block program execution for many milliseconds
+
+### `devices = HID.devicesAsync()`
+
+- Return a Promise for an array listing all connected HID devices
+- This is run in the background
 
 ### `HID.setDriverType(type)`
   - Linux only

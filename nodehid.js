@@ -122,12 +122,18 @@ HID.prototype.resume = function resume() {
     }
 };
 
-function showdevices() {
+function showDevices() {
     loadBinding();
     return binding.devices.apply(HID,arguments);
 }
 
+function showDevicesAsync() {
+    loadBinding();
+    return binding.devicesAsync.apply(HID,arguments);
+}
+
 //Expose API
 exports.HID = HID;
-exports.devices = showdevices;
+exports.devices = showDevices;
+exports.devicesAsync = showDevicesAsync;
 exports.setDriverType = setDriverType;
