@@ -84,19 +84,13 @@ ReadHelper::ReadHelper(std::shared_ptr<hid_device> hidHandle)
 }
 ReadHelper::~ReadHelper()
 {
-  run_read = false;
-  // read_callback.Release();
-  if (read_thread.joinable())
-  {
-    read_thread.join();
-  }
+  stop();
 }
 
 void ReadHelper::stop()
 {
   run_read = false;
 
-  // read_callback.Release();
   if (read_thread.joinable())
   {
     read_thread.join();
@@ -105,6 +99,7 @@ void ReadHelper::stop()
 
 void ReadHelper::start(Napi::Env env, Napi::Function callback)
 {
+  // If the read is already running, then abort
   if (run_read)
     return;
   run_read = true;
@@ -130,8 +125,6 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
                               unsigned char *buf = new unsigned char[READ_BUFF_MAXSIZE];
 
                               run_read = true;
-
-                              // Cache the handle each iteration to make sure it doesnt get deleted underneath us
                               while (run_read)
                               {
                                 len = hid_read_timeout(_hidHandle.get(), buf, READ_BUFF_MAXSIZE, mswait);
@@ -226,8 +219,7 @@ HID::HID(const Napi::CallbackInfo &info)
       return;
     }
 
-    _hidHandle = std::shared_ptr<hid_device>(hidHandle, [](hid_device *p)
-                                             { hid_close(p); });
+    _hidHandle = std::shared_ptr<hid_device>(hidHandle, hid_close);
   }
   else
   {
@@ -250,8 +242,7 @@ HID::HID(const Napi::CallbackInfo &info)
       Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
       return;
     }
-    _hidHandle = std::shared_ptr<hid_device>(hidHandle, [](hid_device *p)
-                                             { hid_close(p); });
+    _hidHandle = std::shared_ptr<hid_device>(hidHandle, hid_close);
   }
 
   helper = std::make_shared<ReadHelper>(_hidHandle);
@@ -265,6 +256,7 @@ void HID::closeHandle()
     helper = nullptr;
   }
 
+  // hid_close is called by the destructor
   _hidHandle = nullptr;
 }
 
@@ -274,7 +266,6 @@ Napi::Value HID::readStart(const Napi::CallbackInfo &info)
 
   if (!helper)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
