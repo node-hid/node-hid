@@ -446,11 +446,10 @@ To compile & develop locally or if `prebuild` cannot download a pre-built
 binary for you, you will need the following compiler tools and libraries:
 
 ### Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
-  * Compilation tools: `apt install build-essential git`
-  * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-  * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
+  * Compilation tools: `apt install build-essential git pkg-config`
   * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
     `yum install libusbx-devel` (Fedora)
+  * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
 
 ### FreeBSD
   * Compilation tools: `pkg install git gcc gmake libiconv node npm`
