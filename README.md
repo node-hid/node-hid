@@ -458,6 +458,8 @@ binary for you, you will need the following compiler tools and libraries:
   * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 
 ### Windows 7, 8, 10
+  The below is slightly stale. The 2021 solution is to use the official NodeJs Windows installer
+  and pick "install native module tools"
   * Visual C++ compiler and Python 2.7
       * either:
         * `npm install --global windows-build-tools`
