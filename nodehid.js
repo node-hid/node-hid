@@ -16,13 +16,22 @@ function loadBinding() {
         if( os.platform() === 'linux' ) {
             // Linux defaults to hidraw
             if( !driverType || driverType === 'hidraw' ) {
-                binding = require('bindings')('HID_hidraw.node');
+                binding = require('bindings')({
+                    bindings: 'HID_hidraw.node',
+                    module_root: __dirname,
+                });
             } else {
-                binding = require('bindings')('HID.node');
+                binding = require('bindings')({
+                    bindings: 'HID.node',
+                    module_root: __dirname,
+                });
             }
         }
         else {
-            binding = require('bindings')('HID.node');
+            binding = require('bindings')({
+                bindings: 'HID.node',
+                    module_root: __dirname,
+                });
         }
     }
 }
