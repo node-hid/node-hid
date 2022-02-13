@@ -544,6 +544,7 @@ If using `node-hid` with `webpack` or similar bundler, you may need to exclude
 
 Examples of `node-hid` in Electron:
 * [electron-hid-test](https://github.com/todbot/electron-hid-test) - Simple example of using `node-hid`, should track latest Electron release
+* [electron-hid-test-erb](https://github.com/todbot/electron-hid-test-erb) - Simple example of using `node-hid` using [electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate/)
 * [electron-hid-toy](https://github.com/todbot/electron-hid-toy) - Simple example of using `node-hid`, showing packaging and signing
 * [Blink1Control2](https://github.com/todbot/Blink1Control2/) - a complete application, using webpack (e.g. see its [webpack-config.js](https://github.com/todbot/Blink1Control2/blob/master/webpack.config.js))
 
