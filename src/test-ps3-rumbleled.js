@@ -36,14 +36,11 @@ function setRumbleLed(hidDevice, rumbleL, rumbleR, led_cmd )
     ]);
 }
 
-hid.gotData = function (err, data) {
+hid.on('data', (data) => {
     console.log('got ps3 data', data);
     // map left & right d-pad to rumble, and right action buttons to LEDs
     setRumbleLed( hid, data[15], data[17], data[3]>>3 );
-    this.read(this.gotData.bind(this));
-};
-
-hid.read(hid.gotData.bind(hid));
+})
 
 /*
  * data is 48-byte Buffer with byte values:
