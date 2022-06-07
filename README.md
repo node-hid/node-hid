@@ -32,7 +32,6 @@
      * [device.close()](#deviceclose)
      * [device.pause()](#devicepause)
      * [device.resume()](#deviceresume)
-     * [device.read(callback)](#devicereadcallback)
      * [device.readSync()](#devicereadsync)
      * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
      * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
@@ -321,19 +320,22 @@ If no listeners are registered for the `data` event, data will be lost.
 - When a `data` event is registered for this HID device, this method will
 be automatically called.
 
-### `device.read(callback)`
-
-- Low-level function call to initiate an asynchronous read from the device.
-- `callback` is of the form `callback(err, data)`
-
 ### `device.readSync()`
 
 - Return an array of numbers data. If an error occurs, an exception will be thrown.
+
+- This cannot us used while the async read is running
+
+- Note: this will block execution of javascript until the method returns. It is not recommended to use this
 
 ### `device.readTimeout(time_out)`
 
 - `time_out` - timeout in milliseconds
 - Return an array of numbers data. If an error occurs, an exception will be thrown.
+
+- This cannot us used while the async read is running
+
+- Note: this will block execution of javascript until the method returns. It is not recommended to use this
 
 ### `device.sendFeatureReport(data)`
 

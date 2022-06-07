@@ -71,11 +71,12 @@ public:
   void start(Napi::Env env, Napi::Function callback);
   void stop();
 
+  std::atomic<bool> run_read = {false};
+
 private:
   std::shared_ptr<hid_device> _hidHandle;
   Napi::ThreadSafeFunction read_callback;
   std::thread read_thread;
-  std::atomic<bool> run_read = {false};
 };
 
 ReadHelper::ReadHelper(std::shared_ptr<hid_device> hidHandle)
@@ -270,6 +271,7 @@ Napi::Value HID::readStart(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
+
   auto callback = info[0].As<Napi::Function>();
   helper->start(env, callback);
 
@@ -298,8 +300,13 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (helper != nullptr && helper->run_read)
+  {
+    Napi::TypeError::New(env, "Cannot use readSync while async read is running").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -333,6 +340,12 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
   {
 
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (helper != nullptr && helper->run_read)
+  {
+    Napi::TypeError::New(env, "Cannot use readSync while async read is running").ThrowAsJavaScriptException();
     return env.Null();
   }
 
