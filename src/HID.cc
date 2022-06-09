@@ -51,7 +51,7 @@ public:
   }
 
   hid_device *hid;
-  // std::mutex hidLock;
+  std::mutex hidLock;
 
   bool isRunning = false;
   std::queue<Napi::AsyncWorker *> jobQueue;
@@ -458,7 +458,12 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
   std::vector<unsigned char> buf(bufSize);
   buf[0] = reportId;
 
-  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
+  int returnedLength;
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+    returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
+  }
+
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
@@ -500,7 +505,12 @@ Napi::Value HID::getFeatureReportBuffer(const Napi::CallbackInfo &info)
   unsigned char *buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
-  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
+  int returnedLength;
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+    returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
+  }
+
   if (returnedLength == -1)
   {
     delete[] buf;
@@ -571,7 +581,12 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  int returnedLength = hid_send_feature_report(_hidHandle->hid, message.data(), message.size());
+  int returnedLength;
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+    returnedLength = hid_send_feature_report(_hidHandle->hid, message.data(), message.size());
+  }
+
   if (returnedLength == -1)
   { // Not sure if there would ever be a valid return value of 0.
     Napi::TypeError::New(env, "could not send feature report to device").ThrowAsJavaScriptException();
@@ -607,7 +622,13 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
   }
 
   int blockStatus = info[0].As<Napi::Number>().Int32Value();
-  int res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
+
+  int res;
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+    res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
+  }
+
   if (res < 0)
   {
     Napi::TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
@@ -634,7 +655,11 @@ public:
   {
     if (_hid)
     {
-      written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
+      {
+        std::unique_lock<std::mutex> lock(_hid->hidLock);
+        written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
+      }
+
       if (written < 0)
       {
         SetError("Cannot write to hid device");
@@ -724,7 +749,12 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  int returnedLength = hid_write(_hidHandle->hid, message.data(), message.size());
+  int returnedLength;
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+    returnedLength = hid_write(_hidHandle->hid, message.data(), message.size());
+  }
+
   if (returnedLength < 0)
   {
     Napi::TypeError::New(env, "Cannot write to hid device").ThrowAsJavaScriptException();
@@ -760,14 +790,18 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 
   Napi::Object deviceInfo = Napi::Object::New(env);
 
-  hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  {
+    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
 
-  hid_get_product_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+    hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
+    deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
 
-  hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+    hid_get_product_string(_hidHandle->hid, wstr, maxlen);
+    deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+
+    hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
+    deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+  }
 
   return deviceInfo;
 }
