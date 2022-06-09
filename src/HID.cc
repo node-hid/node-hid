@@ -866,22 +866,46 @@ Napi::Value HID::devices(const Napi::CallbackInfo &info)
   return retval;
 }
 
+// Ensure hid_init/hid_exit is coordinated across all threads
+std::mutex initLock;
+uint16_t activeThreads = 0;
+
 static void
 deinitialize(void *)
 {
-  if (hid_exit())
+  // Make sure we run init on only one thread
+  std::unique_lock<std::mutex> lock(initLock);
+
+  activeThreads--;
+
+  if (activeThreads == 0)
   {
-    // Process is exiting, no need to log? TODO
-    // Napi::TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
-    return;
+    if (hid_exit())
+    {
+      // thread is exiting, can't log? TODO
+      // Napi::TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
+      return;
+    }
   }
 }
 void HID::Initialize(Napi::Env &env, Napi::Object &exports)
 {
-  if (hid_init())
+  std::shared_ptr<void> ref;
   {
-    Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
-    return;
+    // Make sure we run init on only one thread
+    std::unique_lock<std::mutex> lock(initLock);
+
+    if (activeThreads == 0)
+    {
+      // Not initialised, so lets do that
+      if (hid_init())
+      {
+        Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
+        return;
+      }
+    }
+
+    activeThreads++;
   }
 
   napi_add_env_cleanup_hook(env, deinitialize, nullptr);
