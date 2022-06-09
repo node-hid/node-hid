@@ -151,8 +151,7 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
                               delete[] buf;
 
                               // Cleanup the function
-                              read_callback.Release();
-                            });
+                              read_callback.Release(); });
 }
 
 class HID : public Napi::ObjectWrap<HID>
@@ -178,6 +177,7 @@ private:
   Napi::Value write(const Napi::CallbackInfo &info);
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
+  Napi::Value getFeatureReportBuffer(const Napi::CallbackInfo &info);
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value readSync(const Napi::CallbackInfo &info);
   Napi::Value readTimeout(const Napi::CallbackInfo &info);
@@ -270,7 +270,6 @@ Napi::Value HID::readStart(const Napi::CallbackInfo &info)
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
-
 
   auto callback = info[0].As<Napi::Function>();
   helper->start(env, callback);
@@ -413,6 +412,46 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
     retval.Set(i, Napi::Number::New(env, buf[i]));
   }
   return retval;
+}
+
+Napi::Value HID::getFeatureReportBuffer(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  if (!_hidHandle)
+  {
+
+    Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (info.Length() != 2 || !info[0].IsNumber() || !info[1].IsNumber())
+  {
+    Napi::TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  const uint8_t reportId = info[0].As<Napi::Number>().Uint32Value();
+  const int bufSize = info[1].As<Napi::Number>().Uint32Value();
+  if (bufSize == 0)
+  {
+    Napi::TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  unsigned char *buf = new unsigned char[bufSize];
+  buf[0] = reportId;
+
+  int returnedLength = hid_get_feature_report(_hidHandle.get(), buf, bufSize);
+  if (returnedLength == -1)
+  {
+    delete[] buf;
+    Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  // Pass ownership of `buf` to the Buffer
+  return Napi::Buffer<unsigned char>::New(env, buf, returnedLength, deleteArray);
 }
 
 Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
@@ -693,6 +732,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("readStop", &HID::readStop),
                                                     InstanceMethod("write", &HID::write, napi_enumerable),
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport, napi_enumerable),
+                                                    InstanceMethod("getFeatureReportBuffer", &HID::getFeatureReportBuffer, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport, napi_enumerable),
                                                     InstanceMethod("setNonBlocking", &HID::setNonBlocking, napi_enumerable),
                                                     InstanceMethod("readSync", &HID::readSync, napi_enumerable),

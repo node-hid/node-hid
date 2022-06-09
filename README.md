@@ -36,6 +36,7 @@
      * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
      * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
      * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
+     * [device.getFeatureReportBuffer(report_id, report_length)](#devicegetfeaturereportreportbuffer_id-report_length)
      * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
   * [General notes:](#general-notes)
      * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
@@ -214,7 +215,7 @@ if( deviceInfo ) {
 
 ### Reading from a device
 
-To receive FEATURE reports, use `device.getFeatureReport()`.
+To receive FEATURE reports, use `device.getFeatureReport()` or `device.getFeatureReportBuffer()`.
 
 To receive INPUT reports, use `device.on("data",...)`.
 A `node-hid` device is an EventEmitter.
@@ -238,7 +239,7 @@ var buf = device.getFeatureReport(reportId, reportLength)
 
 Notes:
 - Reads via `device.on("data")` are asynchronous
-- Reads via `device.getFeatureReport()` are synchronous
+- Reads via `device.getFeatureReport()` and `device.getFeatureReportBuffer()` are synchronous
 - To remove an event handler, close the device with `device.close()`
 - When there is not yet a data handler or no data handler exists,
    data is not read at all -- there is no buffer.
@@ -346,6 +347,13 @@ be automatically called.
 
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
+- Returns array of numbers for the response
+
+### `device.getFeatureReportBuffers(report_id, report_length)`
+
+- `report_id` - HID feature report id to get
+- `report_length` - length of report
+- Returns a buffer containing the response
 
 ### `device.setNonBlocking(no_block)`
 
