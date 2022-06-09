@@ -240,6 +240,7 @@ private:
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value getFeatureReportBuffer(const Napi::CallbackInfo &info);
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info);
+  Napi::Value sendFeatureReportAsync(const Napi::CallbackInfo &info);
   Napi::Value readSync(const Napi::CallbackInfo &info);
   Napi::Value readTimeout(const Napi::CallbackInfo &info);
   Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);
@@ -596,6 +597,92 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
   return Napi::Number::New(env, returnedLength);
 }
 
+class SendFeatureReportWorker : public Napi::AsyncWorker
+{
+public:
+  SendFeatureReportWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid,
+      std::vector<unsigned char> srcBuffer)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)),
+        srcBuffer(srcBuffer) {}
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (_hid)
+    {
+      {
+        std::unique_lock<std::mutex> lock(_hid->hidLock);
+        written = hid_send_feature_report(_hid->hid, srcBuffer.data(), srcBuffer.size());
+      }
+
+      if (written < 0)
+      {
+        SetError("could not send feature report to device");
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    _hid->JobFinished(Env());
+    deferred.Resolve(Napi::Number::New(Env(), written));
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<WrappedHidHandle> _hid;
+  int written = 0;
+  Napi::Promise::Deferred deferred;
+  std::vector<unsigned char> srcBuffer;
+};
+Napi::Value HID::sendFeatureReportAsync(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (info.Length() != 1)
+  {
+    Napi::TypeError::New(env, "need report (including id in first byte) only in sendFeatureReportAsync").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  std::vector<unsigned char> message;
+  std::string copyError = copyArrayOrBufferIntoVector(info[0], message);
+  if (copyError != "")
+  {
+    Napi::TypeError::New(env, copyError).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  auto job = new SendFeatureReportWorker(env, _hidHandle, message);
+
+  _hidHandle->QueueJob(env, job);
+
+  return job->GetPromise();
+}
+
 Napi::Value HID::close(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -919,6 +1006,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport, napi_enumerable),
                                                     InstanceMethod("getFeatureReportBuffer", &HID::getFeatureReportBuffer, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport, napi_enumerable),
+                                                    InstanceMethod("sendFeatureReportAsync", &HID::sendFeatureReportAsync, napi_enumerable),
                                                     InstanceMethod("setNonBlocking", &HID::setNonBlocking, napi_enumerable),
                                                     InstanceMethod("readSync", &HID::readSync, napi_enumerable),
                                                     InstanceMethod("readTimeout", &HID::readTimeout, napi_enumerable),
