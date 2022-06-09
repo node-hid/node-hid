@@ -154,6 +154,22 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
                               read_callback.Release(); });
 }
 
+struct WrappedHidHandle
+{
+  WrappedHidHandle(hid_device *hidHandle) : _hidHandle(hidHandle) {}
+  ~WrappedHidHandle()
+  {
+    if (_hidHandle)
+    {
+      hid_close(_hidHandle);
+      _hidHandle = nullptr;
+    }
+  }
+
+  hid_device *_hidHandle;
+  std::mutex _lock;
+}
+
 class HID : public Napi::ObjectWrap<HID>
 {
 public:
@@ -165,6 +181,7 @@ public:
   ~HID() { closeHandle(); }
 
   std::shared_ptr<hid_device> _hidHandle;
+  std::mutex _lock;
 
 private:
   static Napi::Value devices(const Napi::CallbackInfo &info);
@@ -175,6 +192,7 @@ private:
   Napi::Value readStart(const Napi::CallbackInfo &info);
   Napi::Value readStop(const Napi::CallbackInfo &info);
   Napi::Value write(const Napi::CallbackInfo &info);
+  Napi::Value writeAsync(const Napi::CallbackInfo &info);
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
   Napi::Value getFeatureReportBuffer(const Napi::CallbackInfo &info);
@@ -337,7 +355,6 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -377,7 +394,6 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -420,7 +436,6 @@ Napi::Value HID::getFeatureReportBuffer(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -454,13 +469,47 @@ Napi::Value HID::getFeatureReportBuffer(const Napi::CallbackInfo &info)
   return Napi::Buffer<unsigned char>::New(env, buf, returnedLength, deleteArray);
 }
 
+std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message)
+{
+  if (val.IsBuffer())
+  {
+    Napi::Buffer<unsigned char> buffer = val.As<Napi::Buffer<unsigned char>>();
+    uint32_t len = buffer.Length();
+    unsigned char *data = buffer.Data();
+    message.assign(data, data + len);
+
+    return "";
+  }
+  else if (val.IsArray())
+  {
+    Napi::Array messageArray = val.As<Napi::Array>();
+    message.reserve(messageArray.Length());
+
+    for (unsigned i = 0; i < messageArray.Length(); i++)
+    {
+      Napi::Value v = messageArray.Get(i);
+      if (!v.IsNumber())
+      {
+        return "unexpected array element in array to send, expecting only integers";
+      }
+      uint32_t b = v.As<Napi::Number>().Uint32Value();
+      message.push_back((unsigned char)b);
+    }
+
+    return "";
+  }
+  else
+  {
+    return "unexpected data to send, expecting an array or buffer";
+  }
+}
+
 Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -472,33 +521,10 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
   }
 
   std::vector<unsigned char> message;
-  if (info[0].IsBuffer())
+  std::string copyError = copyArrayOrBufferIntoVector(info[0], message);
+  if (copyError != "")
   {
-    Napi::Buffer<unsigned char> buffer = info[0].As<Napi::Buffer<unsigned char>>();
-    uint32_t len = buffer.Length();
-    unsigned char *data = buffer.Data();
-    message.assign(data, data + len);
-  }
-  else if (info[0].IsArray())
-  {
-    Napi::Array messageArray = info[0].As<Napi::Array>();
-    message.reserve(messageArray.Length());
-
-    for (unsigned i = 0; i < messageArray.Length(); i++)
-    {
-      Napi::Value v = messageArray.Get(i);
-      if (!v.IsNumber())
-      {
-        Napi::TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
-        return env.Null();
-      }
-      uint32_t b = v.As<Napi::Number>().Uint32Value();
-      message.push_back((unsigned char)b);
-    }
-  }
-  else
-  {
-    Napi::TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, copyError).ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -527,7 +553,6 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -549,13 +574,67 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
   return env.Null();
 }
 
-Napi::Value HID::write(const Napi::CallbackInfo &info)
+class WriteWorker : public Napi::AsyncWorker
+{
+public:
+  WriteWorker(
+      Napi::Env &env,
+      std::shared_ptr<hid_device> hid,
+      std::vector<unsigned char> srcBuffer)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)),
+        srcBuffer(srcBuffer) {}
+
+  ~WriteWorker()
+  {
+    // this->srcBuffer.Reset();
+  }
+
+  // This code will be executed on the worker thread
+  void Execute() override
+  {
+    if (_hid)
+    {
+      written = hid_write(_hid.get(), srcBuffer.data(), srcBuffer.size());
+      if (written < 0)
+      {
+        SetError("Cannot write to hid device");
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    deferred.Resolve(Napi::Number::New(Env(), written));
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<hid_device> _hid;
+  int written = 0;
+  Napi::Promise::Deferred deferred;
+  std::vector<unsigned char> srcBuffer;
+};
+
+Napi::Value HID::writeAsync(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -567,33 +646,40 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
   }
 
   std::vector<unsigned char> message;
-  if (info[0].IsBuffer())
+  std::string copyError = copyArrayOrBufferIntoVector(info[0], message);
+  if (copyError != "")
   {
-    Napi::Buffer<unsigned char> buffer = info[0].As<Napi::Buffer<unsigned char>>();
-    uint32_t len = buffer.Length();
-    unsigned char *data = buffer.Data();
-    message.assign(data, data + len);
+    Napi::TypeError::New(env, copyError).ThrowAsJavaScriptException();
+    return env.Null();
   }
-  else if (info[0].IsArray())
-  {
-    Napi::Array messageArray = info[0].As<Napi::Array>();
-    message.reserve(messageArray.Length());
 
-    for (unsigned i = 0; i < messageArray.Length(); i++)
-    {
-      Napi::Value v = messageArray.Get(i);
-      if (!v.IsNumber())
-      {
-        Napi::TypeError::New(env, "unexpected array element in array to send, expecting only integers").ThrowAsJavaScriptException();
-        return env.Null();
-      }
-      uint32_t b = v.As<Napi::Number>().Uint32Value();
-      message.push_back((unsigned char)b);
-    }
-  }
-  else
+  auto job = new WriteWorker(env, _hidHandle, std::move(message));
+  job->Queue();
+
+  return job->GetPromise();
+}
+
+Napi::Value HID::write(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  if (!_hidHandle)
   {
-    Napi::TypeError::New(env, "unexpected data to send, expecting an array or buffer").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (info.Length() != 1)
+  {
+    Napi::TypeError::New(env, "HID write requires one argument").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  std::vector<unsigned char> message;
+  std::string copyError = copyArrayOrBufferIntoVector(info[0], message);
+  if (copyError != "")
+  {
+    Napi::TypeError::New(env, copyError).ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -624,7 +710,6 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 
   if (!_hidHandle)
   {
-
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -731,6 +816,7 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("readStart", &HID::readStart),
                                                     InstanceMethod("readStop", &HID::readStop),
                                                     InstanceMethod("write", &HID::write, napi_enumerable),
+                                                    InstanceMethod("writeAsync", &HID::writeAsync, napi_enumerable),
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport, napi_enumerable),
                                                     InstanceMethod("getFeatureReportBuffer", &HID::getFeatureReportBuffer, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport, napi_enumerable),
