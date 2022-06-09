@@ -26,6 +26,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <queue>
 
 #include <stdlib.h>
 
@@ -35,6 +36,65 @@
 #include <hidapi.h>
 
 #define READ_BUFF_MAXSIZE 2048
+
+class WrappedHidHandle
+{
+public:
+  WrappedHidHandle(hid_device *hidHandle) : hid(hidHandle) {}
+  ~WrappedHidHandle()
+  {
+    if (hid)
+    {
+      hid_close(hid);
+      hid = nullptr;
+    }
+  }
+
+  hid_device *hid;
+  // std::mutex hidLock;
+
+  bool isRunning = false;
+  std::queue<Napi::AsyncWorker *> jobQueue;
+  std::mutex jobQueueMutex;
+
+  /**
+   * Push a job onto the queue.
+   * Note: This must only be run from the main thread
+   */
+  void QueueJob(const Napi::Env &, Napi::AsyncWorker *job)
+  {
+    std::unique_lock<std::mutex> lock(jobQueueMutex);
+    if (!isRunning)
+    {
+      isRunning = true;
+      job->Queue();
+    }
+    else
+    {
+      jobQueue.push(job);
+    }
+  }
+
+  /**
+   * The job has finished, start the next in the queue.
+   * Note: This must only be run from the main thread
+   */
+  void JobFinished(const Napi::Env &)
+  {
+    std::unique_lock<std::mutex> lock(jobQueueMutex);
+
+    if (jobQueue.size() == 0)
+    {
+      isRunning = false;
+    }
+    else
+    {
+      auto newJob = jobQueue.front();
+      jobQueue.pop();
+      newJob->Queue();
+    }
+  }
+};
 
 struct ReadCallbackProps
 {
@@ -65,7 +125,7 @@ static void ReadErrorCallback(Napi::Env env, Napi::Function jsCallback, void *da
 class ReadHelper
 {
 public:
-  ReadHelper(std::shared_ptr<hid_device> hidHandle);
+  ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle);
   ~ReadHelper();
 
   void start(Napi::Env env, Napi::Function callback);
@@ -74,12 +134,12 @@ public:
   std::atomic<bool> run_read = {false};
 
 private:
-  std::shared_ptr<hid_device> _hidHandle;
+  std::shared_ptr<WrappedHidHandle> _hidHandle;
   Napi::ThreadSafeFunction read_callback;
   std::thread read_thread;
 };
 
-ReadHelper::ReadHelper(std::shared_ptr<hid_device> hidHandle)
+ReadHelper::ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle)
 {
   _hidHandle = hidHandle;
 }
@@ -128,7 +188,7 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
                               run_read = true;
                               while (run_read)
                               {
-                                len = hid_read_timeout(_hidHandle.get(), buf, READ_BUFF_MAXSIZE, mswait);
+                                len = hid_read_timeout(_hidHandle->hid, buf, READ_BUFF_MAXSIZE, mswait);
                                 if (len < 0)
                                 {
                                   // Emit and error and stop reading
@@ -154,22 +214,6 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
                               read_callback.Release(); });
 }
 
-struct WrappedHidHandle
-{
-  WrappedHidHandle(hid_device *hidHandle) : _hidHandle(hidHandle) {}
-  ~WrappedHidHandle()
-  {
-    if (_hidHandle)
-    {
-      hid_close(_hidHandle);
-      _hidHandle = nullptr;
-    }
-  }
-
-  hid_device *_hidHandle;
-  std::mutex _lock;
-}
-
 class HID : public Napi::ObjectWrap<HID>
 {
 public:
@@ -180,8 +224,7 @@ public:
   HID(const Napi::CallbackInfo &info);
   ~HID() { closeHandle(); }
 
-  std::shared_ptr<hid_device> _hidHandle;
-  std::mutex _lock;
+  std::shared_ptr<WrappedHidHandle> _hidHandle;
 
 private:
   static Napi::Value devices(const Napi::CallbackInfo &info);
@@ -238,7 +281,7 @@ HID::HID(const Napi::CallbackInfo &info)
       return;
     }
 
-    _hidHandle = std::shared_ptr<hid_device>(hidHandle, hid_close);
+    _hidHandle = std::make_shared<WrappedHidHandle>(hidHandle);
   }
   else
   {
@@ -261,7 +304,7 @@ HID::HID(const Napi::CallbackInfo &info)
       Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
       return;
     }
-    _hidHandle = std::shared_ptr<hid_device>(hidHandle, hid_close);
+    _hidHandle = std::make_shared<WrappedHidHandle>(hidHandle);
   }
 
   helper = std::make_shared<ReadHelper>(_hidHandle);
@@ -334,7 +377,7 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
   }
 
   unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read(_hidHandle.get(), buff_read, sizeof buff_read);
+  int returnedLength = hid_read(_hidHandle->hid, buff_read, sizeof buff_read);
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
@@ -373,7 +416,7 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
 
   const int timeout = info[0].As<Napi::Number>().Uint32Value();
   unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read_timeout(_hidHandle.get(), buff_read, sizeof buff_read, timeout);
+  int returnedLength = hid_read_timeout(_hidHandle->hid, buff_read, sizeof buff_read, timeout);
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
@@ -415,7 +458,7 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
   std::vector<unsigned char> buf(bufSize);
   buf[0] = reportId;
 
-  int returnedLength = hid_get_feature_report(_hidHandle.get(), buf.data(), bufSize);
+  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
@@ -457,7 +500,7 @@ Napi::Value HID::getFeatureReportBuffer(const Napi::CallbackInfo &info)
   unsigned char *buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
-  int returnedLength = hid_get_feature_report(_hidHandle.get(), buf, bufSize);
+  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
   if (returnedLength == -1)
   {
     delete[] buf;
@@ -528,7 +571,7 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  int returnedLength = hid_send_feature_report(_hidHandle.get(), message.data(), message.size());
+  int returnedLength = hid_send_feature_report(_hidHandle->hid, message.data(), message.size());
   if (returnedLength == -1)
   { // Not sure if there would ever be a valid return value of 0.
     Napi::TypeError::New(env, "could not send feature report to device").ThrowAsJavaScriptException();
@@ -564,7 +607,7 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
   }
 
   int blockStatus = info[0].As<Napi::Number>().Int32Value();
-  int res = hid_set_nonblocking(_hidHandle.get(), blockStatus);
+  int res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
   if (res < 0)
   {
     Napi::TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
@@ -579,24 +622,19 @@ class WriteWorker : public Napi::AsyncWorker
 public:
   WriteWorker(
       Napi::Env &env,
-      std::shared_ptr<hid_device> hid,
+      std::shared_ptr<WrappedHidHandle> hid,
       std::vector<unsigned char> srcBuffer)
       : Napi::AsyncWorker(env),
         _hid(hid),
         deferred(Napi::Promise::Deferred::New(env)),
         srcBuffer(srcBuffer) {}
 
-  ~WriteWorker()
-  {
-    // this->srcBuffer.Reset();
-  }
-
-  // This code will be executed on the worker thread
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
     if (_hid)
     {
-      written = hid_write(_hid.get(), srcBuffer.data(), srcBuffer.size());
+      written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
       if (written < 0)
       {
         SetError("Cannot write to hid device");
@@ -610,10 +648,12 @@ public:
 
   void OnOK() override
   {
+    _hid->JobFinished(Env());
     deferred.Resolve(Napi::Number::New(Env(), written));
   }
   void OnError(Napi::Error const &error) override
   {
+    _hid->JobFinished(Env());
     deferred.Reject(error.Value());
   }
 
@@ -623,7 +663,7 @@ public:
   }
 
 private:
-  std::shared_ptr<hid_device> _hid;
+  std::shared_ptr<WrappedHidHandle> _hid;
   int written = 0;
   Napi::Promise::Deferred deferred;
   std::vector<unsigned char> srcBuffer;
@@ -654,7 +694,8 @@ Napi::Value HID::writeAsync(const Napi::CallbackInfo &info)
   }
 
   auto job = new WriteWorker(env, _hidHandle, std::move(message));
-  job->Queue();
+
+  _hidHandle->QueueJob(env, job);
 
   return job->GetPromise();
 }
@@ -683,7 +724,7 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  int returnedLength = hid_write(_hidHandle.get(), message.data(), message.size());
+  int returnedLength = hid_write(_hidHandle->hid, message.data(), message.size());
   if (returnedLength < 0)
   {
     Napi::TypeError::New(env, "Cannot write to hid device").ThrowAsJavaScriptException();
@@ -719,13 +760,13 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 
   Napi::Object deviceInfo = Napi::Object::New(env);
 
-  hid_get_manufacturer_string(_hidHandle.get(), wstr, maxlen);
+  hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
   deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
 
-  hid_get_product_string(_hidHandle.get(), wstr, maxlen);
+  hid_get_product_string(_hidHandle->hid, wstr, maxlen);
   deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
 
-  hid_get_serial_number_string(_hidHandle.get(), wstr, maxlen);
+  hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
   deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
 
   return deviceInfo;
