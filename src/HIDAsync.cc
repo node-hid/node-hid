@@ -161,7 +161,6 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
 
   if (!helper)
   {
-
     // Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -171,16 +170,56 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
   return env.Null();
 };
 
-class ReadOnceWorker : public Napi::AsyncWorker
+class MyAsyncWorker : public Napi::AsyncWorker
+{
+public:
+  MyAsyncWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env))
+  {
+  }
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  virtual void Execute() override;
+
+  virtual Napi::Value GetResult(const Napi::Env &env) = 0;
+
+  void OnOK() override
+  {
+    Napi::Env env = Env();
+    _hid->JobFinished(env);
+
+    deferred.Resolve(GetResult(env));
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+protected:
+  const std::shared_ptr<WrappedHidHandle> _hid;
+
+private:
+  Napi::Promise::Deferred deferred;
+};
+
+class ReadOnceWorker : public MyAsyncWorker
 {
 public:
   ReadOnceWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       int timeout)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)),
+      : MyAsyncWorker(env, hid),
         _timeout(timeout)
   {
   }
@@ -219,30 +258,15 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    Napi::Env env = Env();
-    _hid->JobFinished(env);
-
     auto result = convertToNodeOwnerBuffer(env, buffer, returnedLength);
     buffer = nullptr;
 
-    deferred.Resolve(result);
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return result;
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
-  Napi::Promise::Deferred deferred;
   int returnedLength = 0;
   unsigned char *buffer;
   int _timeout;
@@ -285,16 +309,15 @@ Napi::Value HIDAsync::read(const Napi::CallbackInfo &info)
   return job->GetPromise();
 }
 
-class GetFeatureReportWorker : public Napi::AsyncWorker
+class GetFeatureReportWorker : public MyAsyncWorker
 {
 public:
   GetFeatureReportWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
-      uint8_t reportId, int bufSize)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)),
+      uint8_t reportId,
+      int bufSize)
+      : MyAsyncWorker(env, hid),
         bufferLength(bufSize)
   {
     buffer = new unsigned char[bufSize];
@@ -325,31 +348,16 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    Napi::Env env = Env();
-    _hid->JobFinished(env);
-
     auto result = convertToNodeOwnerBuffer(env, buffer, bufferLength);
     buffer = nullptr;
 
-    deferred.Resolve(result);
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return result;
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
   int written = 0;
-  Napi::Promise::Deferred deferred;
   unsigned char *buffer;
   int bufferLength;
 };
@@ -385,16 +393,14 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
   return job->GetPromise();
 }
 
-class SendFeatureReportWorker : public Napi::AsyncWorker
+class SendFeatureReportWorker : public MyAsyncWorker
 {
 public:
   SendFeatureReportWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       std::vector<unsigned char> srcBuffer)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)),
+      : MyAsyncWorker(env, hid),
         srcBuffer(srcBuffer) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
@@ -414,26 +420,13 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    _hid->JobFinished(Env());
-    deferred.Resolve(Napi::Number::New(Env(), written));
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return Napi::Number::New(env, written);
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
   int written = 0;
-  Napi::Promise::Deferred deferred;
   std::vector<unsigned char> srcBuffer;
 };
 
@@ -477,16 +470,14 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
   return env.Null();
 }
 
-class SetNonBlockingWorker : public Napi::AsyncWorker
+class SetNonBlockingWorker : public MyAsyncWorker
 {
 public:
   SetNonBlockingWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       int mode)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)),
+      : MyAsyncWorker(env, hid),
         mode(mode) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
@@ -506,25 +497,12 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    _hid->JobFinished(Env());
-    deferred.Resolve(Env().Undefined());
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return env.Undefined();
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
-  Napi::Promise::Deferred deferred;
   int mode;
 };
 
@@ -553,16 +531,14 @@ Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
   return job->GetPromise();
 }
 
-class WriteWorker : public Napi::AsyncWorker
+class WriteWorker : public MyAsyncWorker
 {
 public:
   WriteWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       std::vector<unsigned char> srcBuffer)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)),
+      : MyAsyncWorker(env, hid),
         srcBuffer(srcBuffer) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
@@ -582,26 +558,13 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    _hid->JobFinished(Env());
-    deferred.Resolve(Napi::Number::New(Env(), written));
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return Napi::Number::New(env, written);
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
   int written = 0;
-  Napi::Promise::Deferred deferred;
   std::vector<unsigned char> srcBuffer;
 };
 
@@ -647,15 +610,13 @@ static std::string narrow(wchar_t *wide)
   return os.str();
 }
 
-class GetDeviceInfoWorker : public Napi::AsyncWorker
+class GetDeviceInfoWorker : public MyAsyncWorker
 {
 public:
   GetDeviceInfoWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env)) {}
+      : MyAsyncWorker(env, hid) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
@@ -686,33 +647,18 @@ public:
     }
   }
 
-  void OnOK() override
+  Napi::Value GetResult(const Napi::Env &env) override
   {
-    Napi::Env env = Env();
-    _hid->JobFinished(env);
-
     Napi::Object deviceInfo = Napi::Object::New(env);
 
     deviceInfo.Set("manufacturer", Napi::String::New(env, resManufacturer));
     deviceInfo.Set("product", Napi::String::New(env, resProduct));
     deviceInfo.Set("serialNumber", Napi::String::New(env, resSerialNumber));
 
-    deferred.Resolve(deviceInfo);
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
+    return deviceInfo;
   }
 
 private:
-  std::shared_ptr<WrappedHidHandle> _hid;
-  Napi::Promise::Deferred deferred;
   std::string resManufacturer;
   std::string resProduct;
   std::string resSerialNumber;
