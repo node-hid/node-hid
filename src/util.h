@@ -10,7 +10,7 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
-std::shared_ptr<void> getLibRef(const Napi::Env &env);
+std::shared_ptr<void> getLibRef();
 
 Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
 
@@ -23,9 +23,8 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
 class WrappedHidHandle
 {
 public:
-    WrappedHidHandle(hid_device *hidHandle);
+    WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle);
     ~WrappedHidHandle();
-    hid_device *hid;
 
     /**
      * Push a job onto the queue.
@@ -39,7 +38,11 @@ public:
      */
     void JobFinished(const Napi::Env &);
 
+    hid_device *hid;
+
 private:
+    std::shared_ptr<void> libRef;
+
     bool isRunning = false;
     std::queue<Napi::AsyncWorker *> jobQueue;
     std::mutex jobQueueMutex;

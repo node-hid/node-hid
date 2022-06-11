@@ -21,10 +21,10 @@ deinitialize(void *ptr)
 Napi::Object
 Init(Napi::Env env, Napi::Object exports)
 {
-    std::shared_ptr<void> ref = getLibRef(env);
+    std::shared_ptr<void> ref = getLibRef();
     if (ref == nullptr)
     {
-        // getLibRef threw an error
+        Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
         return exports;
     }
 

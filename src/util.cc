@@ -17,7 +17,7 @@ static void releaseLib(void *)
     }
 }
 
-std::shared_ptr<void> getLibRef(const Napi::Env &env)
+std::shared_ptr<void> getLibRef()
 {
     {
         // Make sure we run init on only one thread
@@ -29,7 +29,6 @@ std::shared_ptr<void> getLibRef(const Napi::Env &env)
             // Not initialised, so lets do that
             if (hid_init())
             {
-                Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
                 return nullptr;
             }
 
@@ -85,7 +84,7 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
     }
 }
 
-WrappedHidHandle::WrappedHidHandle(hid_device *hidHandle) : hid(hidHandle) {}
+WrappedHidHandle::WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle) : hid(hidHandle), libRef(libRef) {}
 WrappedHidHandle::~WrappedHidHandle()
 {
     if (hid)

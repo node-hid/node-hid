@@ -40,6 +40,13 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
+  auto libRef = getLibRef();
+  if (!libRef)
+  {
+    Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
+    return;
+  }
+
   if (!info.IsConstructCall())
   {
     Napi::TypeError::New(env, "HID function can only be used as a constructor").ThrowAsJavaScriptException();
@@ -71,7 +78,7 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
       return;
     }
 
-    _hidHandle = std::make_shared<WrappedHidHandle>(hidHandle);
+    _hidHandle = std::make_shared<WrappedHidHandle>(libRef, hidHandle);
   }
   else
   {
@@ -94,7 +101,7 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
       Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
       return;
     }
-    _hidHandle = std::make_shared<WrappedHidHandle>(hidHandle);
+    _hidHandle = std::make_shared<WrappedHidHandle>(libRef, hidHandle);
   }
 
   helper = std::make_shared<ReadHelper>(_hidHandle);
