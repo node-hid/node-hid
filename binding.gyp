@@ -6,7 +6,7 @@
     'targets': [
         {
             'target_name': 'HID',
-            'sources': [ 'src/HID.cc' ],
+            'sources': [ 'src/HID.cc', 'src/HIDAsync.cc' ],
             'dependencies': ['hidapi'],
             'defines': [
                 '_LARGEFILE_SOURCE',
@@ -125,7 +125,7 @@
             'targets': [
                 {
                     'target_name': 'HID_hidraw',
-                    'sources': [ 'src/HID.cc' ],
+                    'sources': [ 'src/HID.cc', 'src/HIDAsync.cc' ],
                     'dependencies': ['hidapi-linux-hidraw'],
                     'defines': [
                         '_LARGEFILE_SOURCE',
