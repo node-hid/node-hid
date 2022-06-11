@@ -33,70 +33,21 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  auto libRef = getAppCtx();
-  if (!libRef)
+  if (info.Length() != 1 || !info[0].IsExternal())
+  {
+    Napi::TypeError::New(env, "HIDAsync constructor is not supported").ThrowAsJavaScriptException();
+    return;
+  }
+
+  auto appCtx = getAppCtx();
+  if (!appCtx)
   {
     Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
     return;
   }
 
-  if (!info.IsConstructCall())
-  {
-    Napi::TypeError::New(env, "HID function can only be used as a constructor").ThrowAsJavaScriptException();
-    return;
-  }
-
-  if (info.Length() < 1)
-  {
-    Napi::TypeError::New(env, "HID constructor requires at least one arguments").ThrowAsJavaScriptException();
-    return;
-  }
-
-  if (info.Length() == 1)
-  {
-    // open by path
-    if (!info[0].IsString())
-    {
-      Napi::TypeError::New(env, "Device path must be a string").ThrowAsJavaScriptException();
-      return;
-    }
-
-    std::string path = info[0].As<Napi::String>().Utf8Value();
-    auto hidHandle = hid_open_path(path.c_str());
-    if (!hidHandle)
-    {
-      std::ostringstream os;
-      os << "cannot open device with path " << path;
-      Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
-      return;
-    }
-
-    _hidHandle = std::make_shared<WrappedHidHandle>(libRef, hidHandle);
-  }
-  else
-  {
-    int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
-    int32_t productId = info[1].As<Napi::Number>().Int32Value();
-    wchar_t wserialstr[100]; // FIXME: is there a better way?
-    wchar_t *wserialptr = NULL;
-    if (info.Length() > 2)
-    {
-      std::string serialstr = info[2].As<Napi::String>().Utf8Value();
-      mbstowcs(wserialstr, serialstr.c_str(), 100);
-      wserialptr = wserialstr;
-    }
-
-    auto hidHandle = hid_open(vendorId, productId, wserialptr);
-    if (!hidHandle)
-    {
-      std::ostringstream os;
-      os << "cannot open device with vendor id 0x" << std::hex << vendorId << " and product id 0x" << productId;
-      Napi::TypeError::New(env, os.str()).ThrowAsJavaScriptException();
-      return;
-    }
-    _hidHandle = std::make_shared<WrappedHidHandle>(libRef, hidHandle);
-  }
-
+  auto ptr = info[0].As<Napi::External<hid_device>>().Data();
+  _hidHandle = std::make_shared<WrappedHidHandle>(appCtx, ptr);
   helper = std::make_shared<ReadHelper>(_hidHandle);
 }
 
@@ -135,6 +86,164 @@ void HIDAsync::closeHandle()
 
   // hid_close is called by the destructor
   _hidHandle = nullptr;
+}
+
+class OpenByPathWorker : public PromiseAsyncWorker<ApplicationContext>
+{
+public:
+  OpenByPathWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, std::string path)
+      : PromiseAsyncWorker(env, appCtx),
+        path(path) {}
+
+  ~OpenByPathWorker()
+  {
+    if (dev)
+    {
+      // dev wasn't claimed
+      hid_close(dev);
+      dev = nullptr;
+    }
+  }
+
+  // This code will be executed on the worker thread
+  void Execute() override
+  {
+    std::unique_lock<std::mutex> lock(queue->enumerateLock);
+    dev = hid_open_path(path.c_str());
+    if (!dev)
+    {
+      std::ostringstream os;
+      os << "cannot open device with path " << path;
+      SetError(os.str());
+    }
+  }
+
+  Napi::Value GetResult(const Napi::Env &env) override
+  {
+    // TODO call the constructor
+    // auto result = generateDevicesResultAndFree(env, devs);
+    dev = nullptr; // devs has already been freed
+    return env.Null();
+  }
+
+private:
+  std::string path;
+  hid_device *dev;
+};
+
+class OpenByUsbIdsWorker : public PromiseAsyncWorker<ApplicationContext>
+{
+public:
+  OpenByUsbIdsWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, int vendorId, int productId, std::string serial)
+      : PromiseAsyncWorker(env, appCtx),
+        vendorId(vendorId),
+        productId(productId),
+        serial(serial) {}
+
+  ~OpenByUsbIdsWorker()
+  {
+    if (dev)
+    {
+      // dev wasn't claimed
+      hid_close(dev);
+      dev = nullptr;
+    }
+  }
+
+  // This code will be executed on the worker thread
+  void Execute() override
+  {
+    std::unique_lock<std::mutex> lock(queue->enumerateLock);
+
+    wchar_t wserialstr[100]; // FIXME: is there a better way?
+    wchar_t *wserialptr = NULL;
+    if (serial != "")
+    {
+      mbstowcs(wserialstr, serial.c_str(), 100); // TODO: this is not thread safe!
+      wserialptr = wserialstr;
+    }
+
+    dev = hid_open(vendorId, productId, wserialptr);
+    if (!dev)
+    {
+      std::ostringstream os;
+      os << "cannot open device with vendor id 0x" << std::hex << vendorId << " and product id 0x" << productId;
+      SetError(os.str());
+    }
+  }
+
+  Napi::Value GetResult(const Napi::Env &env) override
+  {
+    // TODO call the constructor
+    // auto result = generateDevicesResultAndFree(env, devs);
+    dev = nullptr; // devs has already been freed
+    return env.Null();
+  }
+
+private:
+  int vendorId;
+  int productId;
+  std::string serial;
+  hid_device *dev;
+};
+
+Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  auto appCtx = getAppCtx();
+  if (!appCtx)
+  {
+    Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (info.Length() < 1)
+  {
+    Napi::TypeError::New(env, "HIDAsync::Create requires at least one arguments").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  // TODO
+
+  if (info.Length() == 1)
+  {
+    // open by path
+    if (!info[0].IsString())
+    {
+      Napi::TypeError::New(env, "Device path must be a string").ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    std::string path = info[0].As<Napi::String>().Utf8Value();
+
+    return (new OpenByPathWorker(env, appCtx, path))->QueueAndRun();
+  }
+  else
+  {
+    if (!info[0].IsNumber() || !info[1].IsNumber())
+    {
+      Napi::TypeError::New(env, "VendorId and ProductId must be integers").ThrowAsJavaScriptException();
+      return env.Null();
+    }
+
+    std::string serial;
+    if (info.Length() > 2)
+    {
+      if (!info[2].IsString())
+      {
+        Napi::TypeError::New(env, "Serial must be a string").ThrowAsJavaScriptException();
+        return env.Null();
+      }
+
+      serial = info[2].As<Napi::String>().Utf8Value();
+    }
+
+    int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
+    int32_t productId = info[1].As<Napi::Number>().Int32Value();
+
+    return (new OpenByUsbIdsWorker(env, appCtx, vendorId, productId, serial))->QueueAndRun();
+  }
 }
 
 Napi::Value HIDAsync::readStart(const Napi::CallbackInfo &info)
@@ -617,6 +726,8 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
 Napi::Value HIDAsync::Initialize(Napi::Env &env)
 {
   Napi::Function ctor = DefineClass(env, "HIDAsync", {
+                                                         StaticMethod<&HIDAsync::Create>("Create", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
+
                                                          InstanceMethod("close", &HIDAsync::close),
                                                          InstanceMethod("readStart", &HIDAsync::readStart),
                                                          InstanceMethod("readStop", &HIDAsync::readStop),

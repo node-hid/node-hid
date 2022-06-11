@@ -15,6 +15,8 @@ private:
 
     void closeHandle();
 
+    static Napi::Value Create(const Napi::CallbackInfo &info);
+
     Napi::Value close(const Napi::CallbackInfo &info);
     Napi::Value readStart(const Napi::CallbackInfo &info);
     Napi::Value readStop(const Napi::CallbackInfo &info);

@@ -37,6 +37,13 @@ HID::HID(const Napi::CallbackInfo &info)
     return;
   }
 
+  auto appCtx = getAppCtx();
+  if (!appCtx)
+  {
+    Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
+    return;
+  }
+
   if (info.Length() < 1)
   {
     Napi::TypeError::New(env, "HID constructor requires at least one argument").ThrowAsJavaScriptException();
@@ -53,7 +60,11 @@ HID::HID(const Napi::CallbackInfo &info)
     }
 
     std::string path = info[0].As<Napi::String>().Utf8Value();
-    _hidHandle = hid_open_path(path.c_str());
+    {
+      std::unique_lock<std::mutex> lock(appCtx->enumerateLock);
+      _hidHandle = hid_open_path(path.c_str());
+    }
+
     if (!_hidHandle)
     {
       std::ostringstream os;
@@ -75,7 +86,11 @@ HID::HID(const Napi::CallbackInfo &info)
       wserialptr = wserialstr;
     }
 
-    _hidHandle = hid_open(vendorId, productId, wserialptr);
+    {
+      std::unique_lock<std::mutex> lock(appCtx->enumerateLock);
+      _hidHandle = hid_open(vendorId, productId, wserialptr);
+    }
+
     if (!_hidHandle)
     {
       std::ostringstream os;

@@ -68,8 +68,8 @@ Napi::Value devices(const Napi::CallbackInfo &info)
         return env.Null();
     }
 
-    auto libRef = getAppCtx();
-    if (!libRef)
+    auto appCtx = getAppCtx();
+    if (!appCtx)
     {
         Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
         return env.Null();
@@ -77,7 +77,7 @@ Napi::Value devices(const Napi::CallbackInfo &info)
 
     hid_device_info *devs;
     {
-        std::unique_lock<std::mutex> lock(libRef->enumerateLock);
+        std::unique_lock<std::mutex> lock(appCtx->enumerateLock);
         devs = hid_enumerate(vendorId, productId);
     }
     return generateDevicesResultAndFree(env, devs);
@@ -118,7 +118,7 @@ public:
         }
         else
         {
-            return env.Null();
+            return Napi::Array::New(env, 0);
         }
     }
 
