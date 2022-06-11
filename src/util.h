@@ -67,8 +67,7 @@ public:
 
 private:
     // Hold a reference to the ApplicationContext,
-    std::shared_ptr<ApplicationContext>
-        appCtx;
+    std::shared_ptr<ApplicationContext> appCtx;
 };
 
 template <class T>
@@ -84,7 +83,7 @@ public:
     }
 
     // This code will be executed on the worker thread. Note: Napi types cannot be used
-    virtual void Execute() override;
+    virtual void Execute() override = 0;
 
     virtual Napi::Value GetResult(const Napi::Env &env) = 0;
 

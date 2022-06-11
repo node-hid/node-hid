@@ -4,7 +4,9 @@
 class HIDAsync : public Napi::ObjectWrap<HIDAsync>
 {
 public:
-    static Napi::Value Initialize(Napi::Env &env);
+    static Napi::Function Initialize(Napi::Env &env);
+
+    static Napi::Value Create(const Napi::CallbackInfo &info);
 
     HIDAsync(const Napi::CallbackInfo &info);
     ~HIDAsync() { closeHandle(); }
@@ -14,8 +16,6 @@ private:
     std::shared_ptr<WrappedHidHandle> _hidHandle;
 
     void closeHandle();
-
-    static Napi::Value Create(const Napi::CallbackInfo &info);
 
     Napi::Value close(const Napi::CallbackInfo &info);
     Napi::Value readStart(const Napi::CallbackInfo &info);

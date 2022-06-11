@@ -91,8 +91,9 @@ void HIDAsync::closeHandle()
 class OpenByPathWorker : public PromiseAsyncWorker<ApplicationContext>
 {
 public:
-  OpenByPathWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, std::string path)
+  OpenByPathWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference *constructor, std::string path)
       : PromiseAsyncWorker(env, appCtx),
+        constructor(constructor),
         path(path) {}
 
   ~OpenByPathWorker()
@@ -120,13 +121,13 @@ public:
 
   Napi::Value GetResult(const Napi::Env &env) override
   {
-    // TODO call the constructor
-    // auto result = generateDevicesResultAndFree(env, devs);
+    auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
-    return env.Null();
+    return constructor->Call({ptr});
   }
 
 private:
+  Napi::FunctionReference *constructor;
   std::string path;
   hid_device *dev;
 };
@@ -134,8 +135,9 @@ private:
 class OpenByUsbIdsWorker : public PromiseAsyncWorker<ApplicationContext>
 {
 public:
-  OpenByUsbIdsWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, int vendorId, int productId, std::string serial)
+  OpenByUsbIdsWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference *constructor, int vendorId, int productId, std::string serial)
       : PromiseAsyncWorker(env, appCtx),
+        constructor(constructor),
         vendorId(vendorId),
         productId(productId),
         serial(serial) {}
@@ -174,13 +176,13 @@ public:
 
   Napi::Value GetResult(const Napi::Env &env) override
   {
-    // TODO call the constructor
-    // auto result = generateDevicesResultAndFree(env, devs);
+    auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
-    return env.Null();
+    return constructor->Call({ptr});
   }
 
 private:
+  Napi::FunctionReference *constructor;
   int vendorId;
   int productId;
   std::string serial;
@@ -204,6 +206,14 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
+  void *data = info.Data();
+  if (!data)
+  {
+    Napi::TypeError::New(env, "HIDAsync::Create missing constructor data").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+  Napi::FunctionReference *constructor = (Napi::FunctionReference *)data;
+
   // TODO
 
   if (info.Length() == 1)
@@ -217,7 +227,7 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
 
     std::string path = info[0].As<Napi::String>().Utf8Value();
 
-    return (new OpenByPathWorker(env, appCtx, path))->QueueAndRun();
+    return (new OpenByPathWorker(env, appCtx, constructor, path))->QueueAndRun();
   }
   else
   {
@@ -242,7 +252,7 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
     int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
     int32_t productId = info[1].As<Napi::Number>().Int32Value();
 
-    return (new OpenByUsbIdsWorker(env, appCtx, vendorId, productId, serial))->QueueAndRun();
+    return (new OpenByUsbIdsWorker(env, appCtx, constructor, vendorId, productId, serial))->QueueAndRun();
   }
 }
 
@@ -723,11 +733,9 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
   return (new GetDeviceInfoWorker(env, _hidHandle))->QueueAndRun();
 }
 
-Napi::Value HIDAsync::Initialize(Napi::Env &env)
+Napi::Function HIDAsync::Initialize(Napi::Env &env)
 {
   Napi::Function ctor = DefineClass(env, "HIDAsync", {
-                                                         StaticMethod<&HIDAsync::Create>("Create", static_cast<napi_property_attributes>(napi_writable | napi_configurable)),
-
                                                          InstanceMethod("close", &HIDAsync::close),
                                                          InstanceMethod("readStart", &HIDAsync::readStart),
                                                          InstanceMethod("readStop", &HIDAsync::readStop),
