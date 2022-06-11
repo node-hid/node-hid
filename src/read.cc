@@ -8,7 +8,7 @@ struct ReadCallbackProps
 
 static void ReadCallback(Napi::Env env, Napi::Function jsCallback, ReadCallbackProps *data)
 {
-    auto buffer = Napi::Buffer<unsigned char>::New(env, data->buf, data->len, deleteArray);
+    auto buffer = convertToNodeOwnerBuffer(env, data->buf, data->len);
     // buf is now owned by the buffer
     delete data;
 

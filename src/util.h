@@ -10,8 +10,12 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
-void deleteArray(const Napi::Env &env, unsigned char *ptr);
+Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
 
+/**
+ * Convert a js value (either a buffer ot array of numbers) into a vector of bytes.
+ * Returns a non-empty string upon failure
+ */
 std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message);
 
 class WrappedHidHandle

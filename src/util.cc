@@ -5,6 +5,11 @@ void deleteArray(const Napi::Env &env, unsigned char *ptr)
     delete[] ptr;
 }
 
+Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len)
+{
+    return Napi::Buffer<unsigned char>::New(env, ptr, len, deleteArray);
+}
+
 std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message)
 {
     if (val.IsBuffer())

@@ -57,7 +57,6 @@ private:
   Napi::Value write(const Napi::CallbackInfo &info); // Asynced
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
-  Napi::Value getFeatureReportBuffer(const Napi::CallbackInfo &info);
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info); // Asynced
   Napi::Value readSync(const Napi::CallbackInfo &info);
   Napi::Value readTimeout(const Napi::CallbackInfo &info);
@@ -274,48 +273,6 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  std::vector<unsigned char> buf(bufSize);
-  buf[0] = reportId;
-
-  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
-  if (returnedLength == -1)
-  {
-    Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  Napi::Array retval = Napi::Array::New(env, returnedLength);
-  for (int i = 0; i < returnedLength; i++)
-  {
-    retval.Set(i, Napi::Number::New(env, buf[i]));
-  }
-  return retval;
-}
-
-Napi::Value HIDAsync::getFeatureReportBuffer(const Napi::CallbackInfo &info)
-{
-  Napi::Env env = info.Env();
-
-  if (!_hidHandle)
-  {
-    Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  if (info.Length() != 2 || !info[0].IsNumber() || !info[1].IsNumber())
-  {
-    Napi::TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  const uint8_t reportId = info[0].As<Napi::Number>().Uint32Value();
-  const int bufSize = info[1].As<Napi::Number>().Uint32Value();
-  if (bufSize == 0)
-  {
-    Napi::TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
   unsigned char *buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
@@ -328,7 +285,7 @@ Napi::Value HIDAsync::getFeatureReportBuffer(const Napi::CallbackInfo &info)
   }
 
   // Pass ownership of `buf` to the Buffer
-  return Napi::Buffer<unsigned char>::New(env, buf, returnedLength, deleteArray);
+  return convertToNodeOwnerBuffer(env, buf, returnedLength);
 }
 
 class SendFeatureReportWorker : public Napi::AsyncWorker
@@ -682,7 +639,6 @@ void HIDAsync::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("readStop", &HIDAsync::readStop),
                                                     InstanceMethod("write", &HIDAsync::write, napi_enumerable),
                                                     InstanceMethod("getFeatureReport", &HIDAsync::getFeatureReport, napi_enumerable),
-                                                    InstanceMethod("getFeatureReportBuffer", &HIDAsync::getFeatureReportBuffer, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HIDAsync::sendFeatureReport, napi_enumerable),
                                                     InstanceMethod("setNonBlocking", &HIDAsync::setNonBlocking, napi_enumerable),
                                                     InstanceMethod("readSync", &HIDAsync::readSync, napi_enumerable),
