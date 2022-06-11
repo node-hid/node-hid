@@ -33,7 +33,7 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  auto libRef = getLibRef();
+  auto libRef = getAppCtx();
   if (!libRef)
   {
     Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
@@ -143,56 +143,14 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
   return env.Null();
 };
 
-class MyAsyncWorker : public Napi::AsyncWorker
-{
-public:
-  MyAsyncWorker(
-      Napi::Env &env,
-      std::shared_ptr<WrappedHidHandle> hid)
-      : Napi::AsyncWorker(env),
-        _hid(hid),
-        deferred(Napi::Promise::Deferred::New(env))
-  {
-  }
-
-  // This code will be executed on the worker thread. Note: Napi types cannot be used
-  virtual void Execute() override;
-
-  virtual Napi::Value GetResult(const Napi::Env &env) = 0;
-
-  void OnOK() override
-  {
-    Napi::Env env = Env();
-    _hid->JobFinished(env);
-
-    deferred.Resolve(GetResult(env));
-  }
-  void OnError(Napi::Error const &error) override
-  {
-    _hid->JobFinished(Env());
-    deferred.Reject(error.Value());
-  }
-
-  Napi::Promise GetPromise() const
-  {
-    return deferred.Promise();
-  }
-
-protected:
-  const std::shared_ptr<WrappedHidHandle> _hid;
-
-private:
-  Napi::Promise::Deferred deferred;
-};
-
-class ReadOnceWorker : public MyAsyncWorker
+class ReadOnceWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   ReadOnceWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       int timeout)
-      : MyAsyncWorker(env, hid),
+      : PromiseAsyncWorker(env, hid),
         _timeout(timeout)
   {
   }
@@ -207,27 +165,20 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    buffer = new unsigned char[READ_BUFF_MAXSIZE];
+    // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
+    if (_timeout == -1)
     {
-      buffer = new unsigned char[READ_BUFF_MAXSIZE];
-      // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
-      if (_timeout == -1)
-      {
-        returnedLength = hid_read(_hid->hid, buffer, READ_BUFF_MAXSIZE);
-      }
-      else
-      {
-        returnedLength = hid_read_timeout(_hid->hid, buffer, READ_BUFF_MAXSIZE, _timeout);
-      }
-
-      if (returnedLength < 0)
-      {
-        SetError("could not read data from device");
-      }
+      returnedLength = hid_read(queue->hid, buffer, READ_BUFF_MAXSIZE);
     }
     else
     {
-      SetError("No hid handle");
+      returnedLength = hid_read_timeout(queue->hid, buffer, READ_BUFF_MAXSIZE, _timeout);
+    }
+
+    if (returnedLength < 0)
+    {
+      SetError("could not read data from device");
     }
   }
 
@@ -275,14 +226,10 @@ Napi::Value HIDAsync::read(const Napi::CallbackInfo &info)
     }
   }
 
-  auto job = new ReadOnceWorker(env, _hidHandle, timeout);
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new ReadOnceWorker(env, _hidHandle, timeout))->QueueAndRun();
 }
 
-class GetFeatureReportWorker : public MyAsyncWorker
+class GetFeatureReportWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   GetFeatureReportWorker(
@@ -290,7 +237,7 @@ public:
       std::shared_ptr<WrappedHidHandle> hid,
       uint8_t reportId,
       int bufSize)
-      : MyAsyncWorker(env, hid),
+      : PromiseAsyncWorker(env, hid),
         bufferLength(bufSize)
   {
     buffer = new unsigned char[bufSize];
@@ -307,17 +254,10 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    bufferLength = hid_get_feature_report(queue->hid, buffer, bufferLength);
+    if (bufferLength < 0)
     {
-      bufferLength = hid_get_feature_report(_hid->hid, buffer, bufferLength);
-      if (bufferLength < 0)
-      {
-        SetError("could not get feature report from device");
-      }
-    }
-    else
-    {
-      SetError("No hid handle");
+      SetError("could not get feature report from device");
     }
   }
 
@@ -359,37 +299,26 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  auto job = new GetFeatureReportWorker(env, _hidHandle, reportId, bufSize);
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new GetFeatureReportWorker(env, _hidHandle, reportId, bufSize))->QueueAndRun();
 }
 
-class SendFeatureReportWorker : public MyAsyncWorker
+class SendFeatureReportWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   SendFeatureReportWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       std::vector<unsigned char> srcBuffer)
-      : MyAsyncWorker(env, hid),
+      : PromiseAsyncWorker(env, hid),
         srcBuffer(srcBuffer) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    written = hid_send_feature_report(queue->hid, srcBuffer.data(), srcBuffer.size());
+    if (written < 0)
     {
-      written = hid_send_feature_report(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      if (written < 0)
-      {
-        SetError("could not send feature report to device");
-      }
-    }
-    else
-    {
-      SetError("No hid handle");
+      SetError("could not send feature report to device");
     }
   }
 
@@ -427,11 +356,7 @@ Napi::Value HIDAsync::sendFeatureReport(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  auto job = new SendFeatureReportWorker(env, _hidHandle, message);
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new SendFeatureReportWorker(env, _hidHandle, message))->QueueAndRun();
 }
 
 Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
@@ -443,30 +368,23 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
   return env.Null();
 }
 
-class SetNonBlockingWorker : public MyAsyncWorker
+class SetNonBlockingWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   SetNonBlockingWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       int mode)
-      : MyAsyncWorker(env, hid),
+      : PromiseAsyncWorker(env, hid),
         mode(mode) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    int res = hid_set_nonblocking(queue->hid, mode);
+    if (res < 0)
     {
-      int res = hid_set_nonblocking(_hid->hid, mode);
-      if (res < 0)
-      {
-        SetError("Error setting non-blocking mode.");
-      }
-    }
-    else
-    {
-      SetError("No hid handle");
+      SetError("Error setting non-blocking mode.");
     }
   }
 
@@ -497,37 +415,26 @@ Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
 
   int blockStatus = info[0].As<Napi::Number>().Int32Value();
 
-  auto job = new SetNonBlockingWorker(env, _hidHandle, blockStatus);
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new SetNonBlockingWorker(env, _hidHandle, blockStatus))->QueueAndRun();
 }
 
-class WriteWorker : public MyAsyncWorker
+class WriteWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   WriteWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid,
       std::vector<unsigned char> srcBuffer)
-      : MyAsyncWorker(env, hid),
+      : PromiseAsyncWorker(env, hid),
         srcBuffer(srcBuffer) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    written = hid_write(queue->hid, srcBuffer.data(), srcBuffer.size());
+    if (written < 0)
     {
-      written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      if (written < 0)
-      {
-        SetError("Cannot write to hid device");
-      }
-    }
-    else
-    {
-      SetError("No hid handle");
+      SetError("Cannot write to hid device");
     }
   }
 
@@ -565,47 +472,36 @@ Napi::Value HIDAsync::write(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  auto job = new WriteWorker(env, _hidHandle, std::move(message));
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new WriteWorker(env, _hidHandle, std::move(message)))->QueueAndRun();
 }
 
-class GetDeviceInfoWorker : public MyAsyncWorker
+class GetDeviceInfoWorker : public PromiseAsyncWorker<WrappedHidHandle>
 {
 public:
   GetDeviceInfoWorker(
       Napi::Env &env,
       std::shared_ptr<WrappedHidHandle> hid)
-      : MyAsyncWorker(env, hid) {}
+      : PromiseAsyncWorker(env, hid) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (_hid)
+    const int maxlen = 256;
+    wchar_t wstr[maxlen]; // FIXME: use new & delete
+
+    if (hid_get_manufacturer_string(queue->hid, wstr, maxlen) == 0)
     {
-      const int maxlen = 256;
-      wchar_t wstr[maxlen]; // FIXME: use new & delete
-
-      if (hid_get_manufacturer_string(_hid->hid, wstr, maxlen) == 0)
-      {
-        resManufacturer = narrow(wstr);
-      }
-
-      if (hid_get_product_string(_hid->hid, wstr, maxlen) == 0)
-      {
-        resProduct = narrow(wstr);
-      }
-
-      if (hid_get_serial_number_string(_hid->hid, wstr, maxlen) == 0)
-      {
-        resSerialNumber = narrow(wstr);
-      }
+      resManufacturer = narrow(wstr);
     }
-    else
+
+    if (hid_get_product_string(queue->hid, wstr, maxlen) == 0)
     {
-      SetError("No hid handle");
+      resProduct = narrow(wstr);
+    }
+
+    if (hid_get_serial_number_string(queue->hid, wstr, maxlen) == 0)
+    {
+      resSerialNumber = narrow(wstr);
     }
   }
 
@@ -635,11 +531,7 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  auto job = new GetDeviceInfoWorker(env, _hidHandle);
-
-  _hidHandle->QueueJob(env, job);
-
-  return job->GetPromise();
+  return (new GetDeviceInfoWorker(env, _hidHandle))->QueueAndRun();
 }
 
 Napi::Value HIDAsync::Initialize(Napi::Env &env)

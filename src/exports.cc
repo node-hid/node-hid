@@ -22,7 +22,7 @@ deinitialize(void *ptr)
 Napi::Object
 Init(Napi::Env env, Napi::Object exports)
 {
-    std::shared_ptr<void> ref = getLibRef();
+    std::shared_ptr<void> ref = getAppCtx();
     if (ref == nullptr)
     {
         Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
@@ -34,7 +34,9 @@ Init(Napi::Env env, Napi::Object exports)
 
     exports.Set("HID", HID::Initialize(env));
     exports.Set("HIDAsync", HIDAsync::Initialize(env));
+
     exports.Set("devices", Napi::Function::New(env, &devices));
+    exports.Set("devicesAsync", Napi::Function::New(env, &devicesAsync));
 
     return exports;
 }

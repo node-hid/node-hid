@@ -1,26 +1,22 @@
 #include "devices.h"
 
-Napi::Value devices(const Napi::CallbackInfo &info)
+bool parseDevicesParameters(const Napi::CallbackInfo &info, int *vendorId, int *productId)
 {
-    Napi::Env env = info.Env();
-
-    int vendorId = 0;
-    int productId = 0;
-
     switch (info.Length())
     {
     case 0:
-        break;
+        return true;
     case 2:
-        vendorId = info[0].As<Napi::Number>().Int32Value();
-        productId = info[1].As<Napi::Number>().Int32Value();
-        break;
+        *vendorId = info[0].As<Napi::Number>().Int32Value();
+        *productId = info[1].As<Napi::Number>().Int32Value();
+        return true;
     default:
-        Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
-        return env.Null();
+        return false;
     }
+}
 
-    hid_device_info *devs = hid_enumerate(vendorId, productId);
+Napi::Value generateDevicesResultAndFree(const Napi::Env &env, hid_device_info *devs)
+{
     Napi::Array retval = Napi::Array::New(env);
     int count = 0;
     for (hid_device_info *dev = devs; dev; dev = dev->next)
@@ -58,4 +54,99 @@ Napi::Value devices(const Napi::CallbackInfo &info)
     }
     hid_free_enumeration(devs);
     return retval;
+}
+
+Napi::Value devices(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    int vendorId = 0;
+    int productId = 0;
+    if (!parseDevicesParameters(info, &vendorId, &productId))
+    {
+        Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    auto libRef = getAppCtx();
+    if (!libRef)
+    {
+        Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    hid_device_info *devs;
+    {
+        std::unique_lock<std::mutex> lock(libRef->enumerateLock);
+        devs = hid_enumerate(vendorId, productId);
+    }
+    return generateDevicesResultAndFree(env, devs);
+}
+
+class DevicesWorker : public PromiseAsyncWorker<ApplicationContext>
+{
+public:
+    DevicesWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, int vendorId, int productId)
+        : PromiseAsyncWorker(env, appCtx),
+          vendorId(vendorId),
+          productId(productId) {}
+
+    ~DevicesWorker()
+    {
+        if (devs)
+        {
+            // ensure devs is freed if not done by OnOK
+            hid_free_enumeration(devs);
+            devs = nullptr;
+        }
+    }
+
+    // This code will be executed on the worker thread
+    void Execute() override
+    {
+        std::unique_lock<std::mutex> lock(queue->enumerateLock);
+        devs = hid_enumerate(vendorId, productId);
+    }
+
+    Napi::Value GetResult(const Napi::Env &env) override
+    {
+        if (devs)
+        {
+            auto result = generateDevicesResultAndFree(env, devs);
+            devs = nullptr; // devs has already been freed
+            return result;
+        }
+        else
+        {
+            return env.Null();
+        }
+    }
+
+private:
+    int vendorId;
+    int productId;
+    hid_device_info *devs;
+};
+
+Napi::Value devicesAsync(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    int vendorId = 0;
+    int productId = 0;
+    if (!parseDevicesParameters(info, &vendorId, &productId))
+    {
+
+        Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    auto appCtx = getAppCtx();
+    if (!appCtx)
+    {
+        Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    return (new DevicesWorker(env, appCtx, vendorId, productId))->QueueAndRun();
 }

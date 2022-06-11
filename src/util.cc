@@ -4,9 +4,9 @@
 
 // Ensure hid_init/hid_exit is coordinated across all threads
 std::mutex initLock;
-std::weak_ptr<void> initRef;
+std::weak_ptr<ApplicationContext> initRef;
 
-static void releaseLib(void *)
+ApplicationContext::~ApplicationContext()
 {
     // Make sure we dont try to aquire it or run init at the same time
     std::unique_lock<std::mutex> lock(initLock);
@@ -19,26 +19,24 @@ static void releaseLib(void *)
     }
 }
 
-std::shared_ptr<void> getLibRef()
+std::shared_ptr<ApplicationContext> getAppCtx()
 {
+    // Make sure we run init on only one thread
+    std::unique_lock<std::mutex> lock(initLock);
+
+    auto ref = initRef.lock();
+    if (!ref)
     {
-        // Make sure we run init on only one thread
-        std::unique_lock<std::mutex> lock(initLock);
-
-        auto ref = initRef.lock();
-        if (!ref)
+        // Not initialised, so lets do that
+        if (hid_init())
         {
-            // Not initialised, so lets do that
-            if (hid_init())
-            {
-                return nullptr;
-            }
-
-            ref = std::shared_ptr<void>(nullptr, releaseLib);
-            initRef = ref;
+            return nullptr;
         }
-        return ref;
+
+        ref = std::make_shared<ApplicationContext>();
+        initRef = ref;
     }
+    return ref;
 }
 
 void deleteArray(const Napi::Env &env, unsigned char *ptr)
@@ -97,7 +95,7 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
     }
 }
 
-WrappedHidHandle::WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle) : hid(hidHandle), libRef(libRef) {}
+WrappedHidHandle::WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), libRef(libRef) {}
 WrappedHidHandle::~WrappedHidHandle()
 {
     if (hid)
@@ -105,11 +103,9 @@ WrappedHidHandle::~WrappedHidHandle()
         hid_close(hid);
         hid = nullptr;
     }
-
-    // TODO - discard the jobQueue in a safe manner
 }
 
-void WrappedHidHandle::QueueJob(const Napi::Env &, Napi::AsyncWorker *job)
+void AsyncWorkerQueue::QueueJob(const Napi::Env &, Napi::AsyncWorker *job)
 {
     std::unique_lock<std::mutex> lock(jobQueueMutex);
     if (!isRunning)
@@ -123,7 +119,7 @@ void WrappedHidHandle::QueueJob(const Napi::Env &, Napi::AsyncWorker *job)
     }
 }
 
-void WrappedHidHandle::JobFinished(const Napi::Env &)
+void AsyncWorkerQueue::JobFinished(const Napi::Env &)
 {
     std::unique_lock<std::mutex> lock(jobQueueMutex);
 
