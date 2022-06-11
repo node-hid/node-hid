@@ -95,11 +95,12 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
     }
 }
 
-WrappedHidHandle::WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), libRef(libRef) {}
+WrappedHidHandle::WrappedHidHandle(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), appCtx(appCtx) {}
 WrappedHidHandle::~WrappedHidHandle()
 {
     if (hid)
     {
+        // We shouldn't ever get here, but lets make sure it was freed
         hid_close(hid);
         hid = nullptr;
     }

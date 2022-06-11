@@ -68,7 +68,7 @@ HID::HID(const Napi::CallbackInfo &info)
   {
     int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
     int32_t productId = info[1].As<Napi::Number>().Int32Value();
-    wchar_t wserialstr[100]; // FIXME: is there a better way?
+    wchar_t wserialstr[100]; // FIXME: is there a better way? TODO_ this is not thread safe!
     wchar_t *wserialptr = NULL;
     if (info.Length() > 2)
     {

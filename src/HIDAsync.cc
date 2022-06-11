@@ -100,6 +100,31 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
   helper = std::make_shared<ReadHelper>(_hidHandle);
 }
 
+class CloseWorker : public PromiseAsyncWorker<WrappedHidHandle>
+{
+public:
+  CloseWorker(
+      Napi::Env &env, std::shared_ptr<WrappedHidHandle> hid)
+      : PromiseAsyncWorker(env, hid) {}
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (queue->hid)
+    {
+      hid_close(queue->hid);
+      queue->hid = nullptr; // TODO - we need to null check this in other workers
+    }
+  }
+
+  Napi::Value GetResult(const Napi::Env &env) override
+  {
+    return env.Undefined();
+  }
+
+private:
+};
+
 void HIDAsync::closeHandle()
 {
   if (helper)
@@ -165,20 +190,27 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    buffer = new unsigned char[READ_BUFF_MAXSIZE];
-    // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
-    if (_timeout == -1)
+    if (queue->hid)
     {
-      returnedLength = hid_read(queue->hid, buffer, READ_BUFF_MAXSIZE);
+      buffer = new unsigned char[READ_BUFF_MAXSIZE];
+      // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
+      if (_timeout == -1)
+      {
+        returnedLength = hid_read(queue->hid, buffer, READ_BUFF_MAXSIZE);
+      }
+      else
+      {
+        returnedLength = hid_read_timeout(queue->hid, buffer, READ_BUFF_MAXSIZE, _timeout);
+      }
+
+      if (returnedLength < 0)
+      {
+        SetError("could not read data from device");
+      }
     }
     else
     {
-      returnedLength = hid_read_timeout(queue->hid, buffer, READ_BUFF_MAXSIZE, _timeout);
-    }
-
-    if (returnedLength < 0)
-    {
-      SetError("could not read data from device");
+      SetError("device has been closed");
     }
   }
 
@@ -254,10 +286,17 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    bufferLength = hid_get_feature_report(queue->hid, buffer, bufferLength);
-    if (bufferLength < 0)
+    if (queue->hid)
     {
-      SetError("could not get feature report from device");
+      bufferLength = hid_get_feature_report(queue->hid, buffer, bufferLength);
+      if (bufferLength < 0)
+      {
+        SetError("could not get feature report from device");
+      }
+    }
+    else
+    {
+      SetError("device has been closed");
     }
   }
 
@@ -315,10 +354,17 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    written = hid_send_feature_report(queue->hid, srcBuffer.data(), srcBuffer.size());
-    if (written < 0)
+    if (queue->hid)
     {
-      SetError("could not send feature report to device");
+      written = hid_send_feature_report(queue->hid, srcBuffer.data(), srcBuffer.size());
+      if (written < 0)
+      {
+        SetError("could not send feature report to device");
+      }
+    }
+    else
+    {
+      SetError("device has been closed");
     }
   }
 
@@ -363,9 +409,13 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  this->closeHandle();
+  // TODO - option to flush or purge queued operations
 
-  return env.Null();
+  auto result = (new CloseWorker(env, _hidHandle))->QueueAndRun();
+
+  closeHandle();
+
+  return result;
 }
 
 class SetNonBlockingWorker : public PromiseAsyncWorker<WrappedHidHandle>
@@ -381,10 +431,17 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    int res = hid_set_nonblocking(queue->hid, mode);
-    if (res < 0)
+    if (queue->hid)
     {
-      SetError("Error setting non-blocking mode.");
+      int res = hid_set_nonblocking(queue->hid, mode);
+      if (res < 0)
+      {
+        SetError("Error setting non-blocking mode.");
+      }
+    }
+    else
+    {
+      SetError("device has been closed");
     }
   }
 
@@ -431,10 +488,17 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    written = hid_write(queue->hid, srcBuffer.data(), srcBuffer.size());
-    if (written < 0)
+    if (queue->hid)
     {
-      SetError("Cannot write to hid device");
+      written = hid_write(queue->hid, srcBuffer.data(), srcBuffer.size());
+      if (written < 0)
+      {
+        SetError("Cannot write to hid device");
+      }
+    }
+    else
+    {
+      SetError("device has been closed");
     }
   }
 
@@ -486,22 +550,29 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    const int maxlen = 256;
-    wchar_t wstr[maxlen]; // FIXME: use new & delete
-
-    if (hid_get_manufacturer_string(queue->hid, wstr, maxlen) == 0)
+    if (queue->hid)
     {
-      resManufacturer = narrow(wstr);
+      const int maxlen = 256;
+      wchar_t wstr[maxlen]; // FIXME: use new & delete
+
+      if (hid_get_manufacturer_string(queue->hid, wstr, maxlen) == 0)
+      {
+        resManufacturer = narrow(wstr);
+      }
+
+      if (hid_get_product_string(queue->hid, wstr, maxlen) == 0)
+      {
+        resProduct = narrow(wstr);
+      }
+
+      if (hid_get_serial_number_string(queue->hid, wstr, maxlen) == 0)
+      {
+        resSerialNumber = narrow(wstr);
+      }
     }
-
-    if (hid_get_product_string(queue->hid, wstr, maxlen) == 0)
+    else
     {
-      resProduct = narrow(wstr);
-    }
-
-    if (hid_get_serial_number_string(queue->hid, wstr, maxlen) == 0)
-    {
-      resSerialNumber = narrow(wstr);
+      SetError("device has been closed");
     }
   }
 

@@ -43,18 +43,6 @@ private:
     std::mutex jobQueueMutex;
 };
 
-class WrappedHidHandle : public AsyncWorkerQueue
-{
-public:
-    WrappedHidHandle(std::shared_ptr<void> libRef, hid_device *hidHandle);
-    ~WrappedHidHandle();
-
-    hid_device *hid;
-
-private:
-    std::shared_ptr<void> libRef;
-};
-
 class ApplicationContext : public AsyncWorkerQueue
 {
 public:
@@ -66,6 +54,19 @@ public:
 };
 
 std::shared_ptr<ApplicationContext> getAppCtx();
+
+class WrappedHidHandle : public AsyncWorkerQueue
+{
+public:
+    WrappedHidHandle(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle);
+    ~WrappedHidHandle();
+
+    hid_device *hid;
+
+private:
+    // Hold a reference to the ApplicationContext,
+    std::shared_ptr<ApplicationContext> appCtx;
+};
 
 template <class T>
 class PromiseAsyncWorker : public Napi::AsyncWorker
