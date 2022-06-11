@@ -141,7 +141,7 @@ Napi::Value HIDAsync::readStart(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!helper)
+  if (!helper || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -232,7 +232,7 @@ Napi::Value HIDAsync::read(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -318,7 +318,7 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -382,7 +382,7 @@ Napi::Value HIDAsync::sendFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -409,7 +409,16 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
+  if (!_hidHandle || _hidHandle->is_closed)
+  {
+    Napi::TypeError::New(env, "device is already closed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   // TODO - option to flush or purge queued operations
+
+  // Mark it as closed, to stop new jobs being pushed to the queue
+  _hidHandle->is_closed = true;
 
   auto result = (new CloseWorker(env, _hidHandle))->QueueAndRun();
 
@@ -458,7 +467,7 @@ Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -516,7 +525,7 @@ Napi::Value HIDAsync::write(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
@@ -596,7 +605,7 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!_hidHandle)
+  if (!_hidHandle || _hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();

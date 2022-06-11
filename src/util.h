@@ -63,9 +63,12 @@ public:
 
     hid_device *hid;
 
+    bool is_closed = false;
+
 private:
     // Hold a reference to the ApplicationContext,
-    std::shared_ptr<ApplicationContext> appCtx;
+    std::shared_ptr<ApplicationContext>
+        appCtx;
 };
 
 template <class T>

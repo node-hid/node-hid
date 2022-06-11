@@ -26,8 +26,6 @@
 #include "util.h"
 #include "HID.h"
 
-#define READ_BUFF_MAXSIZE 2048
-
 HID::HID(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<HID>(info)
 {
