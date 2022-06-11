@@ -14,6 +14,8 @@ std::shared_ptr<void> getLibRef();
 
 Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
 
+std::string narrow(wchar_t *wide);
+
 /**
  * Convert a js value (either a buffer ot array of numbers) into a vector of bytes.
  * Returns a non-empty string upon failure

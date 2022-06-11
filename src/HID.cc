@@ -20,17 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include <iostream>
-#include <iomanip>
 #include <sstream>
 #include <vector>
 
-#include <stdlib.h>
-
 #include "util.h"
 #include "HID.h"
-
-#include <hidapi.h>
 
 #define READ_BUFF_MAXSIZE 2048
 
@@ -340,17 +334,6 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
   return Napi::Number::New(env, returnedLength);
 }
 
-static std::string narrow(wchar_t *wide)
-{
-  std::wstring ws(wide);
-  std::ostringstream os;
-  for (size_t i = 0; i < ws.size(); i++)
-  {
-    os << os.narrow(ws[i], '?');
-  }
-  return os.str();
-}
-
 Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -370,66 +353,6 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
 
   return deviceInfo;
-}
-
-Napi::Value HID::devices(const Napi::CallbackInfo &info)
-{
-  Napi::Env env = info.Env();
-
-  int vendorId = 0;
-  int productId = 0;
-
-  switch (info.Length())
-  {
-  case 0:
-    break;
-  case 2:
-    vendorId = info[0].As<Napi::Number>().Int32Value();
-    productId = info[1].As<Napi::Number>().Int32Value();
-    break;
-  default:
-    Napi::TypeError::New(env, "unexpected number of arguments to HID.devices() call, expecting either no arguments or vendor and product ID").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  hid_device_info *devs = hid_enumerate(vendorId, productId);
-  Napi::Array retval = Napi::Array::New(env);
-  int count = 0;
-  for (hid_device_info *dev = devs; dev; dev = dev->next)
-  {
-    Napi::Object deviceInfo = Napi::Object::New(env);
-    deviceInfo.Set("vendorId", Napi::Number::New(env, dev->vendor_id));
-    deviceInfo.Set("productId", Napi::Number::New(env, dev->product_id));
-    if (dev->path)
-    {
-      deviceInfo.Set("path", Napi::String::New(env, dev->path));
-    }
-    if (dev->serial_number)
-    {
-      deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(dev->serial_number)));
-    }
-    if (dev->manufacturer_string)
-    {
-      deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(dev->manufacturer_string)));
-    }
-    if (dev->product_string)
-    {
-      deviceInfo.Set("product", Napi::String::New(env, narrow(dev->product_string)));
-    }
-    deviceInfo.Set("release", Napi::Number::New(env, dev->release_number));
-    deviceInfo.Set("interface", Napi::Number::New(env, dev->interface_number));
-    if (dev->usage_page)
-    {
-      deviceInfo.Set("usagePage", Napi::Number::New(env, dev->usage_page));
-    }
-    if (dev->usage)
-    {
-      deviceInfo.Set("usage", Napi::Number::New(env, dev->usage));
-    }
-    retval.Set(count++, deviceInfo);
-  }
-  hid_free_enumeration(devs);
-  return retval;
 }
 
 Napi::Value HID::Initialize(Napi::Env &env)

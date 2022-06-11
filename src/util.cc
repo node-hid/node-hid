@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "util.h"
 
 // Ensure hid_init/hid_exit is coordinated across all threads
@@ -47,6 +49,17 @@ void deleteArray(const Napi::Env &env, unsigned char *ptr)
 Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len)
 {
     return Napi::Buffer<unsigned char>::New(env, ptr, len, deleteArray);
+}
+
+std::string narrow(wchar_t *wide)
+{
+    std::wstring ws(wide);
+    std::ostringstream os;
+    for (size_t i = 0; i < ws.size(); i++)
+    {
+        os << os.narrow(ws[i], '?');
+    }
+    return os.str();
 }
 
 std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message)

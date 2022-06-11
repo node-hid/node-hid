@@ -10,6 +10,7 @@
                 'src/exports.cc',
                 'src/HID.cc',
                 'src/HIDAsync.cc',
+                'src/devices.cc',
                 'src/read.cc',
                 'src/util.cc'
             ],
@@ -135,6 +136,7 @@
                         'src/exports.cc',
                         'src/HID.cc',
                         'src/HIDAsync.cc',
+                        'src/devices.cc',
                         'src/read.cc',
                         'src/util.cc'
                     ],

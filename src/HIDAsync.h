@@ -14,8 +14,6 @@ public:
     std::shared_ptr<WrappedHidHandle> _hidHandle;
 
 private:
-    static Napi::Value devices(const Napi::CallbackInfo &info);
-
     std::shared_ptr<ReadHelper> helper;
 
     Napi::Value close(const Napi::CallbackInfo &info);

@@ -4,6 +4,7 @@
 
 #include "HID.h"
 #include "HIDAsync.h"
+#include "devices.h"
 
 struct libRef
 {
@@ -33,7 +34,7 @@ Init(Napi::Env env, Napi::Object exports)
 
     exports.Set("HID", HID::Initialize(env));
     exports.Set("HIDAsync", HIDAsync::Initialize(env));
-    // exports.Set("devices", Napi::Function::New(env, &HID::devices));
+    exports.Set("devices", Napi::Function::New(env, &devices));
 
     return exports;
 }
