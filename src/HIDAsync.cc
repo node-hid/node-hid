@@ -32,192 +32,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-
-#include <hidapi.h>
-
-#define READ_BUFF_MAXSIZE 2048
-
-class WrappedHidHandle
-{
-public:
-  WrappedHidHandle(hid_device *hidHandle) : hid(hidHandle) {}
-  ~WrappedHidHandle()
-  {
-    if (hid)
-    {
-      hid_close(hid);
-      hid = nullptr;
-    }
-
-    // TODO - discard the jobQueue in a safe manner
-  }
-
-  hid_device *hid;
-  std::mutex hidLock;
-
-  bool isRunning = false;
-  std::queue<Napi::AsyncWorker *> jobQueue;
-  std::mutex jobQueueMutex;
-
-  int count = 0;
-  std::chrono::nanoseconds time;
-
-  /**
-   * Push a job onto the queue.
-   * Note: This must only be run from the main thread
-   */
-  void QueueJob(const Napi::Env &, Napi::AsyncWorker *job)
-  {
-    std::unique_lock<std::mutex> lock(jobQueueMutex);
-    if (!isRunning)
-    {
-      isRunning = true;
-      job->Queue();
-    }
-    else
-    {
-      jobQueue.push(job);
-    }
-  }
-
-  /**
-   * The job has finished, start the next in the queue.
-   * Note: This must only be run from the main thread
-   */
-  void JobFinished(const Napi::Env &)
-  {
-    std::unique_lock<std::mutex> lock(jobQueueMutex);
-
-    if (jobQueue.size() == 0)
-    {
-      isRunning = false;
-    }
-    else
-    {
-      auto newJob = jobQueue.front();
-      jobQueue.pop();
-      newJob->Queue();
-    }
-  }
-};
-
-struct ReadCallbackProps
-{
-  unsigned char *buf;
-  int len;
-};
-
-inline void deleteArray(const Napi::Env &env, unsigned char *ptr)
-{
-  delete[] ptr;
-}
-
-static void ReadCallback(Napi::Env env, Napi::Function jsCallback, ReadCallbackProps *data)
-{
-  auto buffer = Napi::Buffer<unsigned char>::New(env, data->buf, data->len, deleteArray);
-  // buf is now owned by the buffer
-  delete data;
-
-  jsCallback.Call({env.Null(), buffer});
-};
-static void ReadErrorCallback(Napi::Env env, Napi::Function jsCallback, void *data)
-{
-  auto error = Napi::String::New(env, "could not read from HID device");
-
-  jsCallback.Call({error, env.Null()});
-};
-
-class ReadHelper
-{
-public:
-  ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle);
-  ~ReadHelper();
-
-  void start(Napi::Env env, Napi::Function callback);
-  void stop();
-
-  std::atomic<bool> run_read = {false};
-
-private:
-  std::shared_ptr<WrappedHidHandle> _hidHandle;
-  Napi::ThreadSafeFunction read_callback;
-  std::thread read_thread;
-};
-
-ReadHelper::ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle)
-{
-  _hidHandle = hidHandle;
-}
-ReadHelper::~ReadHelper()
-{
-  stop();
-}
-
-void ReadHelper::stop()
-{
-  run_read = false;
-
-  if (read_thread.joinable())
-  {
-    read_thread.join();
-  }
-}
-
-void ReadHelper::start(Napi::Env env, Napi::Function callback)
-{
-  // If the read is already running, then abort
-  if (run_read)
-    return;
-  run_read = true;
-
-  read_callback = Napi::ThreadSafeFunction::New(
-      env,
-      callback,        // JavaScript function called asynchronously
-      "HID:read",      // Name
-      0,               // Unlimited queue
-      1,               // Only one thread will use this initially
-      [=](Napi::Env) { // Finalizer used to clean threads up
-                       // Wait for end of the thread, if it wasnt the one to close up
-        if (read_thread.joinable())
-        {
-          read_thread.join();
-        }
-      });
-
-  read_thread = std::thread([=]()
-                            {
-                              int mswait = 50;
-                              int len = 0;
-                              unsigned char *buf = new unsigned char[READ_BUFF_MAXSIZE];
-
-                              run_read = true;
-                              while (run_read)
-                              {
-                                len = hid_read_timeout(_hidHandle->hid, buf, READ_BUFF_MAXSIZE, mswait);
-                                if (len < 0)
-                                {
-                                  // Emit and error and stop reading
-                                  read_callback.BlockingCall((void *)nullptr, ReadErrorCallback);
-                                  break;
-                                }
-                                else if (len > 0)
-                                {
-                                  auto data = new ReadCallbackProps;
-                                  data->buf = buf;
-                                  data->len = len;
-
-                                  read_callback.BlockingCall(data, ReadCallback);
-                                  // buf is now owned by ReadCallback
-                                  buf = new unsigned char[READ_BUFF_MAXSIZE];
-                                }
-                              }
-
-                              run_read = false;
-                              delete[] buf;
-
-                              // Cleanup the function
-                              read_callback.Release(); });
-}
+#include "read.h"
 
 class HIDAsync : public Napi::ObjectWrap<HIDAsync>
 {
@@ -543,26 +358,9 @@ public:
   {
     if (_hid)
     {
-      auto t1 = std::chrono::high_resolution_clock::now();
       {
-        // std::unique_lock<std::mutex> lock(_hid->hidLock);
+        std::unique_lock<std::mutex> lock(_hid->hidLock);
         written = hid_send_feature_report(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      }
-      auto t2 = std::chrono::high_resolution_clock::now();
-
-      _hid->count++;
-      if (_hid->count == 1)
-      {
-        _hid->time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
-      }
-      else
-      {
-        _hid->time += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
-      }
-
-      if (_hid->count == 10000)
-      {
-        std::cout << "Finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(_hid->time).count() << "milliseconds" << std::endl;
       }
 
       if (written < 0)
@@ -688,27 +486,9 @@ public:
   {
     if (_hid)
     {
-      auto t1 = std::chrono::high_resolution_clock::now();
       {
-        // std::unique_lock<std::mutex> lock(_hid->hidLock);
+        std::unique_lock<std::mutex> lock(_hid->hidLock);
         written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      }
-
-      auto t2 = std::chrono::high_resolution_clock::now();
-
-      _hid->count++;
-      if (_hid->count == 1)
-      {
-        _hid->time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
-      }
-      else
-      {
-        _hid->time += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
-      }
-
-      if (_hid->count == 10000)
-      {
-        std::cout << "Finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(_hid->time).count() << "milliseconds" << std::endl;
       }
 
       if (written < 0)

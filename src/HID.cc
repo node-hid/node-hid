@@ -128,11 +128,6 @@ void HID::closeHandle()
   }
 }
 
-void deleteArray(const Napi::Env &env, unsigned char *ptr)
-{
-  delete[] ptr;
-}
-
 class ReadWorker : public Napi::AsyncWorker
 {
 public:
