@@ -52,15 +52,14 @@ private:
   std::shared_ptr<ReadHelper> helper;
 
   Napi::Value close(const Napi::CallbackInfo &info);
-  Napi::Value readStart(const Napi::CallbackInfo &info);
-  Napi::Value readStop(const Napi::CallbackInfo &info);
-  Napi::Value write(const Napi::CallbackInfo &info); // Asynced
-  Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
+  Napi::Value readStart(const Napi::CallbackInfo &info);         // OK
+  Napi::Value readStop(const Napi::CallbackInfo &info);          // OK
+  Napi::Value write(const Napi::CallbackInfo &info);             // Asynced
+  Napi::Value setNonBlocking(const Napi::CallbackInfo &info);    // Asynced
   Napi::Value getFeatureReport(const Napi::CallbackInfo &info);  // Asynced
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info); // Asynced
-  Napi::Value readSync(const Napi::CallbackInfo &info);
-  Napi::Value readTimeout(const Napi::CallbackInfo &info);
-  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info); // Asynced
+  Napi::Value read(const Napi::CallbackInfo &info);              // Asynced
+  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);     // Asynced
 };
 
 HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
@@ -172,7 +171,84 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
   return env.Null();
 };
 
-Napi::Value HIDAsync::readSync(const Napi::CallbackInfo &info)
+class ReadOnceWorker : public Napi::AsyncWorker
+{
+public:
+  ReadOnceWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid,
+      int timeout)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)),
+        _timeout(timeout)
+  {
+  }
+  ~ReadOnceWorker()
+  {
+    if (buffer)
+    {
+      delete[] buffer;
+    }
+  }
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (_hid)
+    {
+      buffer = new unsigned char[READ_BUFF_MAXSIZE];
+      // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
+      if (_timeout == -1)
+      {
+        returnedLength = hid_read(_hid->hid, buffer, READ_BUFF_MAXSIZE);
+      }
+      else
+      {
+        returnedLength = hid_read_timeout(_hid->hid, buffer, READ_BUFF_MAXSIZE, _timeout);
+      }
+
+      if (returnedLength < 0)
+      {
+        SetError("could not read data from device");
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    Napi::Env env = Env();
+    _hid->JobFinished(env);
+
+    auto result = convertToNodeOwnerBuffer(env, buffer, returnedLength);
+    buffer = nullptr;
+
+    deferred.Resolve(result);
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<WrappedHidHandle> _hid;
+  Napi::Promise::Deferred deferred;
+  int returnedLength = 0;
+  unsigned char *buffer;
+  int _timeout;
+};
+
+Napi::Value HIDAsync::read(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
@@ -184,69 +260,29 @@ Napi::Value HIDAsync::readSync(const Napi::CallbackInfo &info)
 
   if (helper != nullptr && helper->run_read)
   {
-    Napi::TypeError::New(env, "Cannot use readSync while async read is running").ThrowAsJavaScriptException();
+    Napi::TypeError::New(env, "Cannot use read while async read is running").ThrowAsJavaScriptException();
     return env.Null();
   }
 
+  int timeout = -1;
   if (info.Length() != 0)
   {
-    Napi::TypeError::New(env, "readSync needs zero length parameter").ThrowAsJavaScriptException();
-    return env.Null();
+    if (info[0].IsNumber())
+    {
+      timeout = info[0].As<Napi::Number>().Uint32Value();
+    }
+    else
+    {
+      Napi::TypeError::New(env, "time out parameter must be a number").ThrowAsJavaScriptException();
+      return env.Null();
+    }
   }
 
-  unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read(_hidHandle->hid, buff_read, sizeof buff_read);
-  if (returnedLength == -1)
-  {
-    Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
-    return env.Null();
-  }
+  auto job = new ReadOnceWorker(env, _hidHandle, timeout);
 
-  Napi::Array retval = Napi::Array::New(env, returnedLength);
-  for (int i = 0; i < returnedLength; i++)
-  {
-    retval.Set(i, Napi::Number::New(env, buff_read[i]));
-  }
-  return retval;
-}
+  _hidHandle->QueueJob(env, job);
 
-Napi::Value HIDAsync::readTimeout(const Napi::CallbackInfo &info)
-{
-  Napi::Env env = info.Env();
-
-  if (!_hidHandle)
-  {
-    Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  if (helper != nullptr && helper->run_read)
-  {
-    Napi::TypeError::New(env, "Cannot use readSync while async read is running").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  if (info.Length() != 1 || !info[0].IsNumber())
-  {
-    Napi::TypeError::New(env, "readTimeout needs time out parameter").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  const int timeout = info[0].As<Napi::Number>().Uint32Value();
-  unsigned char buff_read[READ_BUFF_MAXSIZE];
-  int returnedLength = hid_read_timeout(_hidHandle->hid, buff_read, sizeof buff_read, timeout);
-  if (returnedLength == -1)
-  {
-    Napi::TypeError::New(env, "could not read data from device").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  Napi::Array retval = Napi::Array::New(env, returnedLength);
-  for (int i = 0; i < returnedLength; i++)
-  {
-    retval.Set(i, Napi::Number::New(env, buff_read[i]));
-  }
-  return retval;
+  return job->GetPromise();
 }
 
 class GetFeatureReportWorker : public Napi::AsyncWorker
@@ -441,6 +477,57 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
   return env.Null();
 }
 
+class SetNonBlockingWorker : public Napi::AsyncWorker
+{
+public:
+  SetNonBlockingWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid,
+      int mode)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)),
+        mode(mode) {}
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (_hid)
+    {
+      int res = hid_set_nonblocking(_hid->hid, mode);
+      if (res < 0)
+      {
+        SetError("Error setting non-blocking mode.");
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    _hid->JobFinished(Env());
+    deferred.Resolve(Env().Undefined());
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<WrappedHidHandle> _hid;
+  Napi::Promise::Deferred deferred;
+  int mode;
+};
+
 Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -459,14 +546,11 @@ Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
 
   int blockStatus = info[0].As<Napi::Number>().Int32Value();
 
-  int res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
-  if (res < 0)
-  {
-    Napi::TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
-    return env.Null();
-  }
+  auto job = new SetNonBlockingWorker(env, _hidHandle, blockStatus);
 
-  return env.Null();
+  _hidHandle->QueueJob(env, job);
+
+  return job->GetPromise();
 }
 
 class WriteWorker : public Napi::AsyncWorker
@@ -763,8 +847,7 @@ void HIDAsync::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("getFeatureReport", &HIDAsync::getFeatureReport, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HIDAsync::sendFeatureReport, napi_enumerable),
                                                     InstanceMethod("setNonBlocking", &HIDAsync::setNonBlocking, napi_enumerable),
-                                                    InstanceMethod("readSync", &HIDAsync::readSync, napi_enumerable),
-                                                    InstanceMethod("readTimeout", &HIDAsync::readTimeout, napi_enumerable),
+                                                    InstanceMethod("read", &HIDAsync::read, napi_enumerable),
                                                     InstanceMethod("getDeviceInfo", &HIDAsync::getDeviceInfo, napi_enumerable),
                                                 });
 
