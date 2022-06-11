@@ -56,11 +56,11 @@ private:
   Napi::Value readStop(const Napi::CallbackInfo &info);
   Napi::Value write(const Napi::CallbackInfo &info); // Asynced
   Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
-  Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
+  Napi::Value getFeatureReport(const Napi::CallbackInfo &info);  // Asynced
   Napi::Value sendFeatureReport(const Napi::CallbackInfo &info); // Asynced
   Napi::Value readSync(const Napi::CallbackInfo &info);
   Napi::Value readTimeout(const Napi::CallbackInfo &info);
-  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);
+  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info); // Asynced
 };
 
 HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
@@ -249,6 +249,75 @@ Napi::Value HIDAsync::readTimeout(const Napi::CallbackInfo &info)
   return retval;
 }
 
+class GetFeatureReportWorker : public Napi::AsyncWorker
+{
+public:
+  GetFeatureReportWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid,
+      uint8_t reportId, int bufSize)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)),
+        bufferLength(bufSize)
+  {
+    buffer = new unsigned char[bufSize];
+    buffer[0] = reportId;
+  }
+  ~GetFeatureReportWorker()
+  {
+    if (buffer)
+    {
+      delete[] buffer;
+    }
+  }
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (_hid)
+    {
+      bufferLength = hid_get_feature_report(_hid->hid, buffer, bufferLength);
+      if (bufferLength < 0)
+      {
+        SetError("could not get feature report from device");
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    Napi::Env env = Env();
+    _hid->JobFinished(env);
+
+    auto result = convertToNodeOwnerBuffer(env, buffer, bufferLength);
+    buffer = nullptr;
+
+    deferred.Resolve(result);
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<WrappedHidHandle> _hid;
+  int written = 0;
+  Napi::Promise::Deferred deferred;
+  unsigned char *buffer;
+  int bufferLength;
+};
+
 Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -267,25 +336,17 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
 
   const uint8_t reportId = info[0].As<Napi::Number>().Uint32Value();
   const int bufSize = info[1].As<Napi::Number>().Uint32Value();
-  if (bufSize == 0)
+  if (bufSize <= 0)
   {
     Napi::TypeError::New(env, "Length parameter cannot be zero in getFeatureReport").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  unsigned char *buf = new unsigned char[bufSize];
-  buf[0] = reportId;
+  auto job = new GetFeatureReportWorker(env, _hidHandle, reportId, bufSize);
 
-  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
-  if (returnedLength == -1)
-  {
-    delete[] buf;
-    Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
-    return env.Null();
-  }
+  _hidHandle->QueueJob(env, job);
 
-  // Pass ownership of `buf` to the Buffer
-  return convertToNodeOwnerBuffer(env, buf, returnedLength);
+  return job->GetPromise();
 }
 
 class SendFeatureReportWorker : public Napi::AsyncWorker
@@ -339,6 +400,7 @@ private:
   Napi::Promise::Deferred deferred;
   std::vector<unsigned char> srcBuffer;
 };
+
 Napi::Value HIDAsync::sendFeatureReport(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -501,6 +563,76 @@ static std::string narrow(wchar_t *wide)
   return os.str();
 }
 
+class GetDeviceInfoWorker : public Napi::AsyncWorker
+{
+public:
+  GetDeviceInfoWorker(
+      Napi::Env &env,
+      std::shared_ptr<WrappedHidHandle> hid)
+      : Napi::AsyncWorker(env),
+        _hid(hid),
+        deferred(Napi::Promise::Deferred::New(env)) {}
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    if (_hid)
+    {
+      const int maxlen = 256;
+      wchar_t wstr[maxlen]; // FIXME: use new & delete
+
+      if (hid_get_manufacturer_string(_hid->hid, wstr, maxlen) == 0)
+      {
+        resManufacturer = narrow(wstr);
+      }
+
+      if (hid_get_product_string(_hid->hid, wstr, maxlen) == 0)
+      {
+        resProduct = narrow(wstr);
+      }
+
+      if (hid_get_serial_number_string(_hid->hid, wstr, maxlen) == 0)
+      {
+        resSerialNumber = narrow(wstr);
+      }
+    }
+    else
+    {
+      SetError("No hid handle");
+    }
+  }
+
+  void OnOK() override
+  {
+    Napi::Env env = Env();
+    _hid->JobFinished(env);
+
+    Napi::Object deviceInfo = Napi::Object::New(env);
+
+    deviceInfo.Set("manufacturer", Napi::String::New(env, resManufacturer));
+    deviceInfo.Set("product", Napi::String::New(env, resProduct));
+    deviceInfo.Set("serialNumber", Napi::String::New(env, resSerialNumber));
+
+    deferred.Resolve(deviceInfo);
+  }
+  void OnError(Napi::Error const &error) override
+  {
+    _hid->JobFinished(Env());
+    deferred.Reject(error.Value());
+  }
+
+  Napi::Promise GetPromise() const
+  {
+    return deferred.Promise();
+  }
+
+private:
+  std::shared_ptr<WrappedHidHandle> _hid;
+  Napi::Promise::Deferred deferred;
+  std::string resManufacturer;
+  std::string resProduct;
+  std::string resSerialNumber;
+};
 Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -511,21 +643,11 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  const int maxlen = 256;
-  wchar_t wstr[maxlen]; // FIXME: use new & delete
+  auto job = new GetDeviceInfoWorker(env, _hidHandle);
 
-  Napi::Object deviceInfo = Napi::Object::New(env);
+  _hidHandle->QueueJob(env, job);
 
-  hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
-
-  hid_get_product_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
-
-  hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
-  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
-
-  return deviceInfo;
+  return job->GetPromise();
 }
 
 Napi::Value HIDAsync::devices(const Napi::CallbackInfo &info)
