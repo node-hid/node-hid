@@ -20,7 +20,6 @@ public:
     WrappedHidHandle(hid_device *hidHandle);
     ~WrappedHidHandle();
     hid_device *hid;
-    std::mutex hidLock;
 
     /**
      * Push a job onto the queue.

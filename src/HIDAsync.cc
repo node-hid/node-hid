@@ -277,12 +277,7 @@ Napi::Value HIDAsync::getFeatureReport(const Napi::CallbackInfo &info)
   std::vector<unsigned char> buf(bufSize);
   buf[0] = reportId;
 
-  int returnedLength;
-  {
-    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
-    returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
-  }
-
+  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf.data(), bufSize);
   if (returnedLength == -1)
   {
     Napi::TypeError::New(env, "could not get feature report from device").ThrowAsJavaScriptException();
@@ -324,12 +319,7 @@ Napi::Value HIDAsync::getFeatureReportBuffer(const Napi::CallbackInfo &info)
   unsigned char *buf = new unsigned char[bufSize];
   buf[0] = reportId;
 
-  int returnedLength;
-  {
-    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
-    returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
-  }
-
+  int returnedLength = hid_get_feature_report(_hidHandle->hid, buf, bufSize);
   if (returnedLength == -1)
   {
     delete[] buf;
@@ -358,11 +348,7 @@ public:
   {
     if (_hid)
     {
-      {
-        std::unique_lock<std::mutex> lock(_hid->hidLock);
-        written = hid_send_feature_report(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      }
-
+      written = hid_send_feature_report(_hid->hid, srcBuffer.data(), srcBuffer.size());
       if (written < 0)
       {
         SetError("could not send feature report to device");
@@ -454,12 +440,7 @@ Napi::Value HIDAsync::setNonBlocking(const Napi::CallbackInfo &info)
 
   int blockStatus = info[0].As<Napi::Number>().Int32Value();
 
-  int res;
-  {
-    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
-    res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
-  }
-
+  int res = hid_set_nonblocking(_hidHandle->hid, blockStatus);
   if (res < 0)
   {
     Napi::TypeError::New(env, "Error setting non-blocking mode.").ThrowAsJavaScriptException();
@@ -486,11 +467,7 @@ public:
   {
     if (_hid)
     {
-      {
-        std::unique_lock<std::mutex> lock(_hid->hidLock);
-        written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
-      }
-
+      written = hid_write(_hid->hid, srcBuffer.data(), srcBuffer.size());
       if (written < 0)
       {
         SetError("Cannot write to hid device");
@@ -582,18 +559,14 @@ Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
 
   Napi::Object deviceInfo = Napi::Object::New(env);
 
-  {
-    std::unique_lock<std::mutex> lock(_hidHandle->hidLock);
+  hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
+  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_manufacturer_string(_hidHandle->hid, wstr, maxlen);
-    deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  hid_get_product_string(_hidHandle->hid, wstr, maxlen);
+  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
 
-    hid_get_product_string(_hidHandle->hid, wstr, maxlen);
-    deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
-
-    hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
-    deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
-  }
+  hid_get_serial_number_string(_hidHandle->hid, wstr, maxlen);
+  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
 
   return deviceInfo;
 }
