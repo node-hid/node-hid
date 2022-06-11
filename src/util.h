@@ -10,6 +10,8 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
+std::shared_ptr<void> getLibRef(const Napi::Env &env);
+
 Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
 
 /**

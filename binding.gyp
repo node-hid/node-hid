@@ -7,6 +7,7 @@
         {
             'target_name': 'HID',
             'sources': [
+                'src/exports.cc',
                 'src/HID.cc',
                 'src/HIDAsync.cc',
                 'src/read.cc',
@@ -131,6 +132,7 @@
                 {
                     'target_name': 'HID_hidraw',
                     'sources': [
+                        'src/exports.cc',
                         'src/HID.cc',
                         'src/HIDAsync.cc',
                         'src/read.cc',

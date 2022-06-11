@@ -1,5 +1,45 @@
 #include "util.h"
 
+// Ensure hid_init/hid_exit is coordinated across all threads
+std::mutex initLock;
+std::weak_ptr<void> initRef;
+
+static void releaseLib(void *)
+{
+    // Make sure we dont try to aquire it or run init at the same time
+    std::unique_lock<std::mutex> lock(initLock);
+
+    initRef.reset();
+
+    if (hid_exit())
+    {
+        // thread is exiting, can't log?
+    }
+}
+
+std::shared_ptr<void> getLibRef(const Napi::Env &env)
+{
+    {
+        // Make sure we run init on only one thread
+        std::unique_lock<std::mutex> lock(initLock);
+
+        auto ref = initRef.lock();
+        if (!ref)
+        {
+            // Not initialised, so lets do that
+            if (hid_init())
+            {
+                Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
+                return nullptr;
+            }
+
+            ref = std::shared_ptr<void>(nullptr, releaseLib);
+            initRef = ref;
+        }
+        return ref;
+    }
+}
+
 void deleteArray(const Napi::Env &env, unsigned char *ptr)
 {
     delete[] ptr;

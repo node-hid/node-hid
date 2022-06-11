@@ -1,3 +1,6 @@
+#ifndef NODEHID_READ_H__
+#define NODEHID_READ_H__
+
 #include "util.h"
 
 #include <thread>
@@ -19,3 +22,5 @@ private:
     Napi::ThreadSafeFunction read_callback;
     std::thread read_thread;
 };
+
+#endif // NODEHID_READ_H__

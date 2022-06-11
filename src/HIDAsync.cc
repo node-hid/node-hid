@@ -32,35 +32,8 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "HIDAsync.h"
 #include "read.h"
-
-class HIDAsync : public Napi::ObjectWrap<HIDAsync>
-{
-public:
-  static void Initialize(Napi::Env &env, Napi::Object &exports);
-
-  void closeHandle();
-
-  HIDAsync(const Napi::CallbackInfo &info);
-  ~HIDAsync() { closeHandle(); }
-
-  std::shared_ptr<WrappedHidHandle> _hidHandle;
-
-private:
-  static Napi::Value devices(const Napi::CallbackInfo &info);
-
-  std::shared_ptr<ReadHelper> helper;
-
-  Napi::Value close(const Napi::CallbackInfo &info);
-  Napi::Value readStart(const Napi::CallbackInfo &info);         // OK
-  Napi::Value readStop(const Napi::CallbackInfo &info);          // OK
-  Napi::Value write(const Napi::CallbackInfo &info);             // Asynced
-  Napi::Value setNonBlocking(const Napi::CallbackInfo &info);    // Asynced
-  Napi::Value getFeatureReport(const Napi::CallbackInfo &info);  // Asynced
-  Napi::Value sendFeatureReport(const Napi::CallbackInfo &info); // Asynced
-  Napi::Value read(const Napi::CallbackInfo &info);              // Asynced
-  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);     // Asynced
-};
 
 HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<HIDAsync>(info)
@@ -740,72 +713,19 @@ Napi::Value HIDAsync::devices(const Napi::CallbackInfo &info)
   return retval;
 }
 
-// // Ensure hid_init/hid_exit is coordinated across all threads
-// std::mutex initLock;
-// uint16_t activeThreads = 0;
-
-// static void
-// deinitialize(void *)
-// {
-//   // Make sure we run init on only one thread
-//   std::unique_lock<std::mutex> lock(initLock);
-
-//   activeThreads--;
-
-//   if (activeThreads == 0)
-//   {
-//     // TODO: libusb might be grumpy about this. Is it being called before the hid devices have been disposed?
-//     if (hid_exit())
-//     {
-//       // thread is exiting, can't log? TODO
-//       // Napi::TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
-//       return;
-//     }
-//   }
-// }
-void HIDAsync::Initialize(Napi::Env &env, Napi::Object &exports)
+Napi::Value HIDAsync::Initialize(Napi::Env &env)
 {
-  // std::shared_ptr<void> ref;
-  // {
-  //   // Make sure we run init on only one thread
-  //   std::unique_lock<std::mutex> lock(initLock);
+  Napi::Function ctor = DefineClass(env, "HIDAsync", {
+                                                         InstanceMethod("close", &HIDAsync::close),
+                                                         InstanceMethod("readStart", &HIDAsync::readStart),
+                                                         InstanceMethod("readStop", &HIDAsync::readStop),
+                                                         InstanceMethod("write", &HIDAsync::write, napi_enumerable),
+                                                         InstanceMethod("getFeatureReport", &HIDAsync::getFeatureReport, napi_enumerable),
+                                                         InstanceMethod("sendFeatureReport", &HIDAsync::sendFeatureReport, napi_enumerable),
+                                                         InstanceMethod("setNonBlocking", &HIDAsync::setNonBlocking, napi_enumerable),
+                                                         InstanceMethod("read", &HIDAsync::read, napi_enumerable),
+                                                         InstanceMethod("getDeviceInfo", &HIDAsync::getDeviceInfo, napi_enumerable),
+                                                     });
 
-  //   if (activeThreads == 0)
-  //   {
-  //     // Not initialised, so lets do that
-  //     if (hid_init())
-  //     {
-  //       Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
-  //       return;
-  //     }
-  //   }
-
-  //   activeThreads++;
-  // }
-
-  // napi_add_env_cleanup_hook(env, deinitialize, nullptr);
-
-  Napi::Function ctor = DefineClass(env, "HID", {
-                                                    InstanceMethod("close", &HIDAsync::close),
-                                                    InstanceMethod("readStart", &HIDAsync::readStart),
-                                                    InstanceMethod("readStop", &HIDAsync::readStop),
-                                                    InstanceMethod("write", &HIDAsync::write, napi_enumerable),
-                                                    InstanceMethod("getFeatureReport", &HIDAsync::getFeatureReport, napi_enumerable),
-                                                    InstanceMethod("sendFeatureReport", &HIDAsync::sendFeatureReport, napi_enumerable),
-                                                    InstanceMethod("setNonBlocking", &HIDAsync::setNonBlocking, napi_enumerable),
-                                                    InstanceMethod("read", &HIDAsync::read, napi_enumerable),
-                                                    InstanceMethod("getDeviceInfo", &HIDAsync::getDeviceInfo, napi_enumerable),
-                                                });
-
-  exports.Set("HID", ctor);
-  exports.Set("devices", Napi::Function::New(env, &HIDAsync::devices));
+  return ctor;
 }
-
-// Napi::Object Init(Napi::Env env, Napi::Object exports)
-// {
-//   HIDAsync::Initialize(env, exports);
-
-//   return exports;
-// }
-
-// NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init)

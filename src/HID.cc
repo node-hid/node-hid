@@ -28,36 +28,11 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "HID.h"
 
 #include <hidapi.h>
 
 #define READ_BUFF_MAXSIZE 2048
-
-class HID : public Napi::ObjectWrap<HID>
-{
-public:
-  static void Initialize(Napi::Env &env, Napi::Object &exports);
-
-  void closeHandle();
-
-  HID(const Napi::CallbackInfo &info);
-  ~HID() { closeHandle(); }
-
-  hid_device *_hidHandle;
-
-private:
-  static Napi::Value devices(const Napi::CallbackInfo &info);
-
-  Napi::Value close(const Napi::CallbackInfo &info);
-  Napi::Value read(const Napi::CallbackInfo &info);
-  Napi::Value write(const Napi::CallbackInfo &info);
-  Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
-  Napi::Value getFeatureReport(const Napi::CallbackInfo &info);
-  Napi::Value sendFeatureReport(const Napi::CallbackInfo &info);
-  Napi::Value readSync(const Napi::CallbackInfo &info);
-  Napi::Value readTimeout(const Napi::CallbackInfo &info);
-  Napi::Value getDeviceInfo(const Napi::CallbackInfo &info);
-};
 
 HID::HID(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<HID>(info)
@@ -457,50 +432,8 @@ Napi::Value HID::devices(const Napi::CallbackInfo &info)
   return retval;
 }
 
-// Ensure hid_init/hid_exit is coordinated across all threads
-std::mutex initLock;
-uint16_t activeThreads = 0;
-
-static void
-deinitialize(void *)
+Napi::Value HID::Initialize(Napi::Env &env)
 {
-  // Make sure we run init on only one thread
-  std::unique_lock<std::mutex> lock(initLock);
-
-  activeThreads--;
-
-  if (activeThreads == 0)
-  {
-    // TODO: libusb might be grumpy about this. Is it being called before the hid devices have been disposed?
-    if (hid_exit())
-    {
-      // thread is exiting, can't log? TODO
-      // Napi::TypeError::New(env, "cannot uninitialize hidapi (hid_exit failed)").ThrowAsJavaScriptException();
-      return;
-    }
-  }
-}
-void HID::Initialize(Napi::Env &env, Napi::Object &exports)
-{
-  std::shared_ptr<void> ref;
-  {
-    // Make sure we run init on only one thread
-    std::unique_lock<std::mutex> lock(initLock);
-
-    if (activeThreads == 0)
-    {
-      // Not initialised, so lets do that
-      if (hid_init())
-      {
-        Napi::TypeError::New(env, "cannot initialize hidapi (hid_init failed)").ThrowAsJavaScriptException();
-        return;
-      }
-    }
-
-    activeThreads++;
-  }
-
-  napi_add_env_cleanup_hook(env, deinitialize, nullptr);
 
   Napi::Function ctor = DefineClass(env, "HID", {
                                                     InstanceMethod("close", &HID::close),
@@ -514,15 +447,5 @@ void HID::Initialize(Napi::Env &env, Napi::Object &exports)
                                                     InstanceMethod("getDeviceInfo", &HID::getDeviceInfo, napi_enumerable),
                                                 });
 
-  exports.Set("HID", ctor);
-  exports.Set("devices", Napi::Function::New(env, &HID::devices));
+  return ctor;
 }
-
-Napi::Object Init(Napi::Env env, Napi::Object exports)
-{
-  HID::Initialize(env, exports);
-
-  return exports;
-}
-
-NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init)
