@@ -69,7 +69,7 @@ private:
 class ContextState : public AsyncWorkerQueue
 {
 public:
-    ContextState(std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference asyncCtor);
+    ContextState(std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference asyncCtor) : AsyncWorkerQueue(), appCtx(appCtx), asyncCtor(std::move(asyncCtor)) {}
 
     // Keep the ApplicationContext alive for longer than this state
     std::shared_ptr<ApplicationContext> appCtx;
@@ -81,7 +81,10 @@ public:
 class DeviceContext : public AsyncWorkerQueue
 {
 public:
-    DeviceContext(std::shared_ptr<ApplicationContext> appCtx, hid_device *hid);
+    DeviceContext(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), appCtx(appCtx)
+    {
+    }
+
     ~DeviceContext();
 
     hid_device *hid;

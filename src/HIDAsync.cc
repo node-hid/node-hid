@@ -64,7 +64,7 @@ public:
     if (context->hid)
     {
       hid_close(context->hid);
-      context->hid = nullptr; // TODO - we need to null check this in other workers
+      context->hid = nullptr;
     }
   }
 
@@ -203,8 +203,6 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
   }
   ContextState *context = (ContextState *)data;
 
-  // TODO
-
   if (info.Length() == 1)
   {
     // open by path
@@ -301,7 +299,7 @@ public:
     if (context->hid)
     {
       buffer = new unsigned char[READ_BUFF_MAXSIZE];
-      // TODO: Is this necessary? Docs say that hid_read_timeout with -1 is 'blocking', but dont clarify what that means when set to nonblocking mode
+      // This is wordy, but necessary to get the correct non-blocking behaviour
       if (_timeout == -1)
       {
         returnedLength = hid_read(context->hid, buffer, READ_BUFF_MAXSIZE);

@@ -94,11 +94,6 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
     }
 }
 
-ContextState::ContextState(std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference asyncCtor) : AsyncWorkerQueue(), appCtx(appCtx), asyncCtor(std::move(asyncCtor)) {}
-
-DeviceContext::DeviceContext(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), appCtx(appCtx)
-{
-}
 DeviceContext::~DeviceContext()
 {
     if (hid)
