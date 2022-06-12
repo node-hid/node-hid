@@ -1,19 +1,17 @@
 
-var os = require('os')
+const EventEmitter = require("events").EventEmitter;
+const util = require("util");
 
-var EventEmitter = require("events").EventEmitter,
-    util = require("util");
-
-var driverType = null;
+let driverType = null;
 function setDriverType(type) {
     driverType = type;
 }
 
 // lazy load the C++ binding
-var binding = null;
+let binding = null;
 function loadBinding() {
     if( !binding ) {
-        if( os.platform() === 'linux' ) {
+        if( process.platform === 'linux' ) {
             // Linux defaults to hidraw
             if( !driverType || driverType === 'hidraw' ) {
                 binding = require('bindings')('HID_hidraw.node');
@@ -104,12 +102,84 @@ HID.prototype.resume = function resume() {
     }
 };
 
+class HIDAsync extends EventEmitter {
+    constructor(raw) {
+        super()
+
+        this._raw = raw
+
+        /* Now we have `this._raw` Object from which we need to
+            inherit.  So, one solution is to simply copy all
+            prototype methods over to `this` and binding them to
+            `this._raw`.
+            We explicitly wrap them in an async method, to ensure 
+            that any thrown errors are promise rejections
+        */
+        for (let i in this._raw) {
+            this[i] = async (...args) => this._raw[i](...args);
+        }
+
+        /* Now upon adding a new listener for "data" events, we start
+            the read thread executing. See `resume()` for more details.
+        */
+        this.on("newListener", (eventName, listener) =>{
+            if(eventName == "data")
+                process.nextTick(this.resume.bind(this) );
+        });
+        this.on("removeListener", (eventName, listener) => {
+            if(eventName == "data" && this.listenerCount("data") == 0)
+                process.nextTick(this.pause.bind(this) );
+        })
+    }
+
+    async close() {
+        this._closing = true;
+        this.removeAllListeners();
+        await this._raw.close();
+        this._closed = true;
+    }
+    
+    //Pauses the reader, which stops "data" events from being emitted
+    pause() {
+        this._raw.readStop();
+    }
+
+    resume() {
+        if(this.listenerCount("data") > 0)
+        {
+            //Start polling & reading loop
+            this._raw.readStart((err, data) => {
+                if (err) {
+                    if(!this._closing)
+                        this.emit("error", err);
+                    //else ignore any errors if I'm closing the device
+                } else {
+                    this.emit("data", data);
+                }
+            })
+        }
+    }
+}
+
 function showdevices() {
     loadBinding();
     return binding.devices.apply(HID,arguments);
 }
 
+function showdevicesAsync() {
+    loadBinding();
+    return binding.devicesAsync.apply(HID,arguments);
+}
+
+async function openAsyncHIDDevice() {
+    loadBinding();
+    const native = await binding.openAsyncHIDDevice.apply(HID, arguments);
+    return new HIDAsync(native)
+}
+
 //Expose API
 exports.HID = HID;
 exports.devices = showdevices;
+exports.devicesAsync = showdevicesAsync;
+exports.openAsyncHIDDevice = openAsyncHIDDevice;
 exports.setDriverType = setDriverType;

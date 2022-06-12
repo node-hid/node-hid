@@ -123,7 +123,7 @@ public:
   {
     auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
-    return constructor->Call({ptr});
+    return constructor->New({ptr});
   }
 
 private:
@@ -178,7 +178,7 @@ public:
   {
     auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
-    return constructor->Call({ptr});
+    return constructor->New({ptr});
   }
 
 private:
