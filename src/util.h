@@ -10,6 +10,9 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
+/**
+ * Convert a pointer into a Napi::Buffer, transferring ownership to the Buffer (it will free it at the appropriate point)
+ */
 Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
 
 std::string narrow(wchar_t *wide);
@@ -19,6 +22,22 @@ std::string narrow(wchar_t *wide);
  * Returns a non-empty string upon failure
  */
 std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message);
+
+/**
+ * Application-wide shared state.
+ * This is referenced by the main thread and every worker_thread where node-hid has been loaded and not yet unloaded.
+ */
+class ApplicationContext
+{
+public:
+    ~ApplicationContext();
+
+    static std::shared_ptr<ApplicationContext> get();
+
+    // A lock for any enumerate/open operations, as they are not thread safe
+    // In async land, these are also done in a single-threaded queue, this lock is used to link up with the sync side
+    std::mutex enumerateLock;
+};
 
 class AsyncWorkerQueue
 {
@@ -43,23 +62,27 @@ private:
     std::mutex jobQueueMutex;
 };
 
-class ApplicationContext : public AsyncWorkerQueue
+/**
+ * Context-wide shared state.
+ * One of these will be created for each Napi::Env (main thread and each worker_thread)
+ */
+class ContextState : public AsyncWorkerQueue
 {
 public:
-    ~ApplicationContext();
+    ContextState(std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference asyncCtor);
 
-    // A lock for any enumerate/open operations, as they are not thread safe
-    // In async land, these are also done in a single-threaded queue, this lock is used to link up with the sync side
-    std::mutex enumerateLock;
+    // Keep the ApplicationContext alive for longer than this state
+    std::shared_ptr<ApplicationContext> appCtx;
+
+    // Constructor for the HIDAsync class
+    Napi::FunctionReference asyncCtor;
 };
 
-std::shared_ptr<ApplicationContext> getAppCtx();
-
-class WrappedHidHandle : public AsyncWorkerQueue
+class DeviceContext : public AsyncWorkerQueue
 {
 public:
-    WrappedHidHandle(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle);
-    ~WrappedHidHandle();
+    DeviceContext(std::shared_ptr<ApplicationContext> appCtx, hid_device *hid);
+    ~DeviceContext();
 
     hid_device *hid;
 
@@ -75,9 +98,9 @@ class PromiseAsyncWorker : public Napi::AsyncWorker
 {
 public:
     PromiseAsyncWorker(
-        const Napi::Env &env, std::shared_ptr<T> queue)
+        const Napi::Env &env, T context)
         : Napi::AsyncWorker(env),
-          queue(queue),
+          context(context),
           deferred(Napi::Promise::Deferred::New(env))
     {
     }
@@ -90,13 +113,13 @@ public:
     void OnOK() override
     {
         Napi::Env env = Env();
-        queue->JobFinished(env);
+        context->JobFinished(env);
 
         deferred.Resolve(GetResult(env));
     }
     void OnError(Napi::Error const &error) override
     {
-        queue->JobFinished(Env());
+        context->JobFinished(Env());
         deferred.Reject(error.Value());
     }
 
@@ -104,13 +127,13 @@ public:
     {
         auto promise = deferred.Promise();
 
-        queue->QueueJob(Env(), this);
+        context->QueueJob(Env(), this);
 
         return promise;
     }
 
 protected:
-    std::shared_ptr<T> queue;
+    T context;
 
 private:
     Napi::Promise::Deferred deferred;

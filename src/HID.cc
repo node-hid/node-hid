@@ -37,7 +37,7 @@ HID::HID(const Napi::CallbackInfo &info)
     return;
   }
 
-  auto appCtx = getAppCtx();
+  auto appCtx = ApplicationContext::get();
   if (!appCtx)
   {
     Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();

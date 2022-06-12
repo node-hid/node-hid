@@ -9,7 +9,7 @@
 class ReadHelper
 {
 public:
-    ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle);
+    ReadHelper(std::shared_ptr<DeviceContext> hidHandle);
     ~ReadHelper();
 
     void start(Napi::Env env, Napi::Function callback);
@@ -18,7 +18,7 @@ public:
     std::atomic<bool> run_read = {false};
 
 private:
-    std::shared_ptr<WrappedHidHandle> _hidHandle;
+    std::shared_ptr<DeviceContext> _hidHandle;
     Napi::ThreadSafeFunction read_callback;
     std::thread read_thread;
 };

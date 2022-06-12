@@ -2,16 +2,14 @@
 
 #include "util.h"
 
-// Ensure hid_init/hid_exit is coordinated across all threads
-std::mutex initLock;
-std::weak_ptr<ApplicationContext> initRef;
+// Ensure hid_init/hid_exit is coordinated across all threads. Global data is bad for context-aware modules, but this is designed to be safe
+std::mutex lockApplicationContext;
+std::weak_ptr<ApplicationContext> weakApplicationContext; // This will let it be garbage collected when it goes out of scope in the last thread
 
 ApplicationContext::~ApplicationContext()
 {
     // Make sure we dont try to aquire it or run init at the same time
-    std::unique_lock<std::mutex> lock(initLock);
-
-    initRef.reset();
+    std::unique_lock<std::mutex> lock(lockApplicationContext);
 
     if (hid_exit())
     {
@@ -19,12 +17,13 @@ ApplicationContext::~ApplicationContext()
     }
 }
 
-std::shared_ptr<ApplicationContext> getAppCtx()
+std::shared_ptr<ApplicationContext> ApplicationContext::get()
 {
-    // Make sure we run init on only one thread
-    std::unique_lock<std::mutex> lock(initLock);
+    // Make sure that we don't try to lock the pointer while it is being freed
+    // and that two threads don't try to create it concurrently
+    std::unique_lock<std::mutex> lock(lockApplicationContext);
 
-    auto ref = initRef.lock();
+    auto ref = weakApplicationContext.lock();
     if (!ref)
     {
         // Not initialised, so lets do that
@@ -34,7 +33,7 @@ std::shared_ptr<ApplicationContext> getAppCtx()
         }
 
         ref = std::make_shared<ApplicationContext>();
-        initRef = ref;
+        weakApplicationContext = ref;
     }
     return ref;
 }
@@ -95,8 +94,12 @@ std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsi
     }
 }
 
-WrappedHidHandle::WrappedHidHandle(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), appCtx(appCtx) {}
-WrappedHidHandle::~WrappedHidHandle()
+ContextState::ContextState(std::shared_ptr<ApplicationContext> appCtx, Napi::FunctionReference asyncCtor) : AsyncWorkerQueue(), appCtx(appCtx), asyncCtor(std::move(asyncCtor)) {}
+
+DeviceContext::DeviceContext(std::shared_ptr<ApplicationContext> appCtx, hid_device *hidHandle) : AsyncWorkerQueue(), hid(hidHandle), appCtx(appCtx)
+{
+}
+DeviceContext::~DeviceContext()
 {
     if (hid)
     {

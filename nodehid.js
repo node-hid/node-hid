@@ -121,6 +121,10 @@ class HIDAsync extends EventEmitter {
     constructor(raw) {
         super()
 
+        if (!(raw instanceof binding.HIDAsync)) {
+            throw new Error(`HIDAsync cannot be constructed directly. Use HIDAsync.open() instead`)
+        }
+
         this._raw = raw
 
         /* Now we have `this._raw` Object from which we need to
@@ -145,6 +149,12 @@ class HIDAsync extends EventEmitter {
             if(eventName == "data" && this.listenerCount("data") == 0)
                 process.nextTick(this.pause.bind(this) );
         })
+    }
+
+    static async open(...args) {
+        loadBinding();
+        const native = await binding.openAsyncHIDDevice(...args);
+        return new HIDAsync(native)
     }
 
     async close() {
@@ -181,20 +191,15 @@ function showdevices() {
     return binding.devices.apply(HID,arguments);
 }
 
-function showdevicesAsync() {
+function showdevicesAsync(...args) {
     loadBinding();
-    return binding.devicesAsync.apply(HID,arguments);
+    return binding.devicesAsync(...args);
 }
 
-async function openAsyncHIDDevice() {
-    loadBinding();
-    const native = await binding.openAsyncHIDDevice.apply(HID, arguments);
-    return new HIDAsync(native)
-}
 
 //Expose API
 exports.HID = HID;
+exports.HIDAsync = HIDAsync;
 exports.devices = showdevices;
 exports.devicesAsync = showdevicesAsync;
-exports.openAsyncHIDDevice = openAsyncHIDDevice;
 exports.setDriverType = setDriverType;

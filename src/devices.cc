@@ -68,7 +68,7 @@ Napi::Value devices(const Napi::CallbackInfo &info)
         return env.Null();
     }
 
-    auto appCtx = getAppCtx();
+    auto appCtx = ApplicationContext::get();
     if (!appCtx)
     {
         Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
@@ -83,11 +83,11 @@ Napi::Value devices(const Napi::CallbackInfo &info)
     return generateDevicesResultAndFree(env, devs);
 }
 
-class DevicesWorker : public PromiseAsyncWorker<ApplicationContext>
+class DevicesWorker : public PromiseAsyncWorker<ContextState *>
 {
 public:
-    DevicesWorker(const Napi::Env &env, std::shared_ptr<ApplicationContext> appCtx, int vendorId, int productId)
-        : PromiseAsyncWorker(env, appCtx),
+    DevicesWorker(const Napi::Env &env, ContextState *context, int vendorId, int productId)
+        : PromiseAsyncWorker(env, context),
           vendorId(vendorId),
           productId(productId) {}
 
@@ -104,7 +104,7 @@ public:
     // This code will be executed on the worker thread
     void Execute() override
     {
-        std::unique_lock<std::mutex> lock(queue->enumerateLock);
+        std::unique_lock<std::mutex> lock(context->appCtx->enumerateLock);
         devs = hid_enumerate(vendorId, productId);
     }
 
@@ -132,6 +132,14 @@ Napi::Value devicesAsync(const Napi::CallbackInfo &info)
 {
     Napi::Env env = info.Env();
 
+    void *data = info.Data();
+    if (!data)
+    {
+        Napi::TypeError::New(env, "devicesAsync missing context").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    ContextState *context = (ContextState *)data;
+
     int vendorId = 0;
     int productId = 0;
     if (!parseDevicesParameters(info, &vendorId, &productId))
@@ -141,12 +149,5 @@ Napi::Value devicesAsync(const Napi::CallbackInfo &info)
         return env.Null();
     }
 
-    auto appCtx = getAppCtx();
-    if (!appCtx)
-    {
-        Napi::TypeError::New(env, "hidapi not initialized").ThrowAsJavaScriptException();
-        return env.Null();
-    }
-
-    return (new DevicesWorker(env, appCtx, vendorId, productId))->QueueAndRun();
+    return (new DevicesWorker(env, context, vendorId, productId))->QueueAndRun();
 }

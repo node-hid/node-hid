@@ -21,7 +21,7 @@ static void ReadErrorCallback(Napi::Env env, Napi::Function jsCallback, void *da
     jsCallback.Call({error, env.Null()});
 };
 
-ReadHelper::ReadHelper(std::shared_ptr<WrappedHidHandle> hidHandle)
+ReadHelper::ReadHelper(std::shared_ptr<DeviceContext> hidHandle)
 {
     _hidHandle = hidHandle;
 }
