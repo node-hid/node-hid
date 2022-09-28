@@ -45,10 +45,10 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "node-addon-api": "^3.0.2",
-    "prebuild-install": "^6.0.0"
+    "prebuild-install": "^7.1.1"
   },
   "devDependencies": {
-    "prebuild": "^10.0.1",
+    "prebuild": "^11.0.4",
     "rimraf": "^2.6.2"
   },
   "gypfile": true
