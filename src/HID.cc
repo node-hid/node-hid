@@ -129,11 +129,6 @@ void HID::closeHandle()
   }
 }
 
-void deleteArray(const Napi::Env &env, unsigned char *ptr)
-{
-  delete[] ptr;
-}
-
 class ReadWorker : public Napi::AsyncWorker
 {
 public:
@@ -163,8 +158,7 @@ public:
 
   void OnOK() override
   {
-    auto buffer = Napi::Buffer<unsigned char>::New(Env(), buf, len, deleteArray);
-    buf = nullptr; // It is now owned by the buffer
+    auto buffer = Napi::Buffer<unsigned char>::Copy(Env(), buf, len);
     Callback().Call({Env().Null(), buffer});
   }
 
