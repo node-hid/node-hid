@@ -29,6 +29,14 @@ function loadBinding() {
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
+
+    // see issue #150 (enhancement, solves issue #149)
+    // throw an error for those who forget to instantiate, i.e. by "*new* HID.HID()"
+    // and who would otherwise be left trying to figure out why "self.on is not a function"
+    if (!new.target) {
+        throw new Error('HID() must be called with \'new\' operator');
+    }
+
     //Inherit from EventEmitter
     EventEmitter.call(this);
 
