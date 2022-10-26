@@ -1,5 +1,7 @@
 
 var os = require('os')
+const path = require('path');
+const fs = require('fs');
 
 var EventEmitter = require("events").EventEmitter,
     util = require("util");
@@ -13,16 +15,23 @@ function setDriverType(type) {
 var binding = null;
 function loadBinding() {
     if( !binding ) {
-        if( os.platform() === 'linux' ) {
+        if( os.platform() === 'linux' && (!driverType || driverType === 'hidraw')) {
             // Linux defaults to hidraw
-            if( !driverType || driverType === 'hidraw' ) {
+            const prebuildFilename = `HID_hidraw_${process.platform}_${process.arch}.node`;
+            const prebuildPath = path.join(__dirname, prebuildFilename);
+            if (fs.existsSync(prebuildPath)) {
+                binding = require(prebuildPath);
+            } else {
                 binding = require('bindings')('HID_hidraw.node');
+            }
+        } else {
+            const prebuildFilename = `HID_${process.platform}_${process.arch}.node`;
+            const prebuildPath = path.join(__dirname, prebuildFilename);
+            if (fs.existsSync(prebuildPath)) {
+                binding = require(prebuildPath);
             } else {
                 binding = require('bindings')('HID.node');
             }
-        }
-        else {
-            binding = require('bindings')('HID.node');
         }
     }
 }
