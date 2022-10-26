@@ -14,24 +14,17 @@ function setDriverType(type) {
 // lazy load the C++ binding
 var binding = null;
 function loadBinding() {
-    if( !binding ) {
+    if (!binding) {
+        binding = require("pkg-prebuilds/bindings")(
+            __dirname,
+            require("./binding-options")
+        );
+        return;
         if( os.platform() === 'linux' && (!driverType || driverType === 'hidraw')) {
             // Linux defaults to hidraw
-            const prebuildFilename = `HID_hidraw_${process.platform}_${process.arch}.node`;
-            const prebuildPath = path.join(__dirname, prebuildFilename);
-            if (fs.existsSync(prebuildPath)) {
-                binding = require(prebuildPath);
-            } else {
-                binding = require('bindings')('HID_hidraw.node');
-            }
+            binding = require('bindings')('HID_hidraw.node');
         } else {
-            const prebuildFilename = `HID_${process.platform}_${process.arch}.node`;
-            const prebuildPath = path.join(__dirname, prebuildFilename);
-            if (fs.existsSync(prebuildPath)) {
-                binding = require(prebuildPath);
-            } else {
-                binding = require('bindings')('HID.node');
-            }
+            binding = require('bindings')('HID.node');
         }
     }
 }

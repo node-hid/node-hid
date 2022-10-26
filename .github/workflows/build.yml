@@ -1,0 +1,148 @@
+name: Prebuild
+
+on:
+  push:
+    # tags:
+    #   - v*
+
+env:
+  NAPI_VERSION: 7
+  BINDING_NAME: midi
+
+jobs:
+  build-and-test:
+    name: Build ${{ matrix.arch }} on ${{ matrix.os }} ${{ matrix.libc }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # windows
+          - os: windows-2019
+            arch: x64
+            is-native: true
+          - os: windows-2019
+            arch: ia32
+            is-native: false
+          # macos
+          - os: macos-11
+            arch: arm64
+            is-native: false
+          - os: macos-10.15
+            arch: x64
+            is-native: true
+          # linux
+          - os: ubuntu-18.04
+            arch: x64
+            is-native: true
+          # linux-libc
+          - os: ubuntu-latest
+            arch: arm64
+            is-native: false
+            docker-arch: linux/arm64
+            docker-image: node:14-buster
+          - os: ubuntu-latest
+            arch: arm
+            is-native: false
+            docker-arch: linux/arm/v7
+            docker-image: node:14-buster
+          # linux-musl
+          - os: ubuntu-latest
+            arch: x64
+            is-native: false
+            docker-arch: linux/amd64
+            docker-image: node:14-alpine
+            libc: musl
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
+
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+
+      - name: rebuild
+        if: ${{ !matrix.docker-arch }}
+        shell: bash
+        run: |
+          npm i
+
+          # if [ -n "${{ matrix.is-native }}" ]; then
+          #   npm test
+          # fi
+
+          npm rebuild --arch=${{ matrix.arch }}
+          npm pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip  --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+        env:
+          CI: true
+          npm_config_build_from_source: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.docker-arch
+      - name: rebuild (in docker)
+        uses: addnab/docker-run-action@v3
+        if: matrix.docker-arch
+        with:
+          image: ${{ matrix.docker-image }}
+          # shell: bash
+          options: --platform=${{ matrix.docker-arch }} -v ${{ github.workspace }}:/work -e CI=1 -e npm_config_build_from_source=1 -e NAPI_VERSION -e BINDING_NAME
+          run: |
+            if command -v apt-get &> /dev/null
+            then
+              apt-get update
+              apt-get install -y libasound2-dev
+            elif command -v apk &> /dev/null
+            then
+              apk update
+              apk add python3 make g++ gcc alsa-lib-dev
+            fi
+
+            cd /work
+
+            npm i
+            # npm test
+
+            npm pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }} --libc=${{ matrix.libc }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.libc }}-prebuilds
+          path: prebuilds
+          retention-days: 1
+
+  bundle:
+    name: Bundle prebuilds
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: tmp
+
+      - name: Display structure of downloaded files
+        run: |
+          mkdir prebuilds
+          mv tmp/*/* prebuilds/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-prebuilds
+          path: prebuilds
+          retention-days: 7
