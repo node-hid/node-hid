@@ -80,7 +80,10 @@ jobs:
 
           npm run rebuild --arch=${{ matrix.arch }}
           npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
-          npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_RAW.node --name=$BINDING_NAME_RAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+
+          if [ -f "build/Release/$BINDING_NAME_RAW.node" ]; then
+            npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_RAW.node --name=$BINDING_NAME_RAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+          fi
         env:
           CI: true
           npm_config_build_from_source: true
