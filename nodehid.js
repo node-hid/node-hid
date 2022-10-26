@@ -1,8 +1,3 @@
-
-var os = require('os')
-const path = require('path');
-const fs = require('fs');
-
 var EventEmitter = require("events").EventEmitter,
     util = require("util");
 
@@ -17,15 +12,11 @@ function loadBinding() {
     if (!binding) {
         binding = require("pkg-prebuilds/bindings")(
             __dirname,
-            require("./binding-options")
+            {
+                name: process.platform === "linux" && (!driverType || driverType === "hidraw") ? "HID_hidraw" : "HID",
+                napi_versions: [3],
+            }
         );
-        return;
-        if( os.platform() === 'linux' && (!driverType || driverType === 'hidraw')) {
-            // Linux defaults to hidraw
-            binding = require('bindings')('HID_hidraw.node');
-        } else {
-            binding = require('bindings')('HID.node');
-        }
     }
 }
 

@@ -8,6 +8,7 @@ on:
 env:
   NAPI_VERSION: 3
   BINDING_NAME: HID
+  BINDING_NAME_RAW: HID_hidraw
 
 jobs:
   build-and-test:
@@ -78,7 +79,8 @@ jobs:
           # fi
 
           npm run rebuild --arch=${{ matrix.arch }}
-          npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip  --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+          npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+          npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_RAW.node --name=$BINDING_NAME_RAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
         env:
           CI: true
           npm_config_build_from_source: true
@@ -92,7 +94,7 @@ jobs:
         with:
           image: ${{ matrix.docker-image }}
           # shell: bash
-          options: --platform=${{ matrix.docker-arch }} -v ${{ github.workspace }}:/work -e CI=1 -e npm_config_build_from_source=1 -e NAPI_VERSION -e BINDING_NAME
+          options: --platform=${{ matrix.docker-arch }} -v ${{ github.workspace }}:/work -e CI=1 -e npm_config_build_from_source=1 -e NAPI_VERSION -e BINDING_NAME -e BINDING_NAME_RAW
           run: |
             if command -v apt-get &> /dev/null
             then
@@ -110,6 +112,7 @@ jobs:
             # npm run test
 
             npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+            npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_RAW.node --name=$BINDING_NAME_RAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
