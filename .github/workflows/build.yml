@@ -6,8 +6,8 @@ on:
     #   - v*
 
 env:
-  NAPI_VERSION: 7
-  BINDING_NAME: midi
+  NAPI_VERSION: 3
+  BINDING_NAME: HID
 
 jobs:
   build-and-test:
@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev
+          sudo apt-get install -y libudev-dev libusb-1.0-0-dev
 
       - name: Use Node.js 14.x
         uses: actions/setup-node@v1
@@ -104,11 +104,11 @@ jobs:
             if command -v apt-get &> /dev/null
             then
               apt-get update
-              apt-get install -y libasound2-dev
+              apt-get install -y libudev-dev libusb-1.0-0-dev
             elif command -v apk &> /dev/null
             then
               apk update
-              apk add python3 make g++ gcc alsa-lib-dev
+              apk add python3 make g++ gcc libusb-dev
             fi
 
             cd /work
