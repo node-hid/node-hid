@@ -36,7 +36,6 @@ jobs:
           - os: ubuntu-18.04
             arch: x64
             is-native: true
-          # linux-libc
           - os: ubuntu-latest
             arch: arm64
             is-native: false
@@ -47,12 +46,6 @@ jobs:
             is-native: false
             docker-arch: linux/arm/v7
             docker-image: node:14-buster
-          # linux-musl
-          - os: ubuntu-latest
-            arch: x64
-            is-native: false
-            docker-arch: linux/amd64
-            docker-image: node:14-alpine
 
     steps:
       - uses: actions/checkout@v2
@@ -113,7 +106,7 @@ jobs:
 
             cd /work
 
-            npm i
+            npm i --unsafe-perm
             # npm run test
 
             npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
