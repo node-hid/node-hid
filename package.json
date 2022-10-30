@@ -33,6 +33,7 @@
     "hid-showdevices": "./src/show-devices.js"
   },
   "main": "./nodehid.js",
+  "types": "./nodehid.d.ts",
   "binary": {
     "napi_versions": [
       4
