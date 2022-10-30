@@ -10,11 +10,6 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
-/**
- * Convert a pointer into a Napi::Buffer, transferring ownership to the Buffer (it will free it at the appropriate point)
- */
-Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len);
-
 std::string narrow(wchar_t *wide);
 
 /**

@@ -38,16 +38,6 @@ std::shared_ptr<ApplicationContext> ApplicationContext::get()
     return ref;
 }
 
-void deleteArray(const Napi::Env &env, unsigned char *ptr)
-{
-    delete[] ptr;
-}
-
-Napi::Buffer<unsigned char> convertToNodeOwnerBuffer(const Napi::Env &env, unsigned char *ptr, size_t len)
-{
-    return Napi::Buffer<unsigned char>::New(env, ptr, len, deleteArray);
-}
-
 std::string narrow(wchar_t *wide)
 {
     std::wstring ws(wide);

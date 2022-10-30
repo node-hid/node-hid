@@ -456,11 +456,10 @@ To compile & develop locally or if `prebuild` cannot download a pre-built
 binary for you, you will need the following compiler tools and libraries:
 
 ### Linux (kernel 2.6+) : (install examples shown for Debian/Ubuntu)
-  * Compilation tools: `apt install build-essential git`
-  * gcc-4.8+: `apt install gcc-4.8 g++-4.8 && export CXX=g++-4.8`
-  * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
+  * Compilation tools: `apt install build-essential git pkg-config`
   * libudev-dev: `apt install libudev-dev` (Debian/Ubuntu) /
     `yum install libusbx-devel` (Fedora)
+  * libusb-1.0-0 w/headers:`apt install libusb-1.0-0 libusb-1.0-0-dev`
 
 ### FreeBSD
   * Compilation tools: `pkg install git gcc gmake libiconv node npm`
@@ -469,6 +468,8 @@ binary for you, you will need the following compiler tools and libraries:
   * [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12)
 
 ### Windows 7, 8, 10
+  The below is slightly stale. The 2021 solution is to use the official NodeJs Windows installer
+  and pick "install native module tools"
   * Visual C++ compiler and Python 2.7
       * either:
         * `npm install --global windows-build-tools`
@@ -553,6 +554,7 @@ If using `node-hid` with `webpack` or similar bundler, you may need to exclude
 
 Examples of `node-hid` in Electron:
 * [electron-hid-test](https://github.com/todbot/electron-hid-test) - Simple example of using `node-hid`, should track latest Electron release
+* [electron-hid-test-erb](https://github.com/todbot/electron-hid-test-erb) - Simple example of using `node-hid` using [electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate/)
 * [electron-hid-toy](https://github.com/todbot/electron-hid-toy) - Simple example of using `node-hid`, showing packaging and signing
 * [Blink1Control2](https://github.com/todbot/Blink1Control2/) - a complete application, using webpack (e.g. see its [webpack-config.js](https://github.com/todbot/Blink1Control2/blob/master/webpack.config.js))
 

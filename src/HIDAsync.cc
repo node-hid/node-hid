@@ -322,8 +322,7 @@ public:
 
   Napi::Value GetResult(const Napi::Env &env) override
   {
-    auto result = convertToNodeOwnerBuffer(env, buffer, returnedLength);
-    buffer = nullptr;
+    auto result = Napi::Buffer<unsigned char>::Copy(env, buffer, returnedLength);
 
     return result;
   }
@@ -408,8 +407,7 @@ public:
 
   Napi::Value GetResult(const Napi::Env &env) override
   {
-    auto result = convertToNodeOwnerBuffer(env, buffer, bufferLength);
-    buffer = nullptr;
+    auto result = Napi::Buffer<unsigned char>::Copy(env, buffer, bufferLength);
 
     return result;
   }

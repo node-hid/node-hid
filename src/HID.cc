@@ -139,8 +139,7 @@ public:
 
   void OnOK() override
   {
-    auto buffer = convertToNodeOwnerBuffer(Env(), buf, len);
-    buf = nullptr; // It is now owned by the buffer
+    auto buffer = Napi::Buffer<unsigned char>::Copy(Env(), buf, len);
     Callback().Call({Env().Null(), buffer});
   }
 
