@@ -1,4 +1,6 @@
 #include <sstream>
+#include <locale>
+#include <codecvt>
 
 #include "util.h"
 
@@ -38,15 +40,14 @@ std::shared_ptr<ApplicationContext> ApplicationContext::get()
     return ref;
 }
 
-std::string narrow(wchar_t *wide)
+std::string utf8_encode(const std::wstring &source)
 {
-    std::wstring ws(wide);
-    std::ostringstream os;
-    for (size_t i = 0; i < ws.size(); i++)
-    {
-        os << os.narrow(ws[i], '?');
-    }
-    return os.str();
+    return std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(source);
+}
+
+std::wstring utf8_decode(const std::string &source)
+{
+    return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(source);
 }
 
 std::string copyArrayOrBufferIntoVector(const Napi::Value &val, std::vector<unsigned char> &message)

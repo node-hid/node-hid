@@ -154,12 +154,12 @@ public:
   {
     std::unique_lock<std::mutex> lock(context->appCtx->enumerateLock);
 
-    wchar_t wserialstr[100]; // FIXME: is there a better way?
-    wchar_t *wserialptr = NULL;
+    std::wstring wserialstr;
+    const wchar_t *wserialptr = nullptr;
     if (serial != "")
     {
-      mbstowcs(wserialstr, serial.c_str(), 100); // TODO: this is not thread safe!
-      wserialptr = wserialstr;
+      wserialstr = utf8_decode(serial);
+      wserialptr = wserialstr.c_str();
     }
 
     dev = hid_open(vendorId, productId, wserialptr);
@@ -670,17 +670,17 @@ public:
 
       if (hid_get_manufacturer_string(context->hid, wstr, maxlen) == 0)
       {
-        resManufacturer = narrow(wstr);
+        resManufacturer = utf8_encode(wstr);
       }
 
       if (hid_get_product_string(context->hid, wstr, maxlen) == 0)
       {
-        resProduct = narrow(wstr);
+        resProduct = utf8_encode(wstr);
       }
 
       if (hid_get_serial_number_string(context->hid, wstr, maxlen) == 0)
       {
-        resSerialNumber = narrow(wstr);
+        resSerialNumber = utf8_encode(wstr);
       }
     }
     else

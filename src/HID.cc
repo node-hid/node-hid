@@ -77,13 +77,13 @@ HID::HID(const Napi::CallbackInfo &info)
   {
     int32_t vendorId = info[0].As<Napi::Number>().Int32Value();
     int32_t productId = info[1].As<Napi::Number>().Int32Value();
-    wchar_t wserialstr[100]; // FIXME: is there a better way? TODO_ this is not thread safe!
-    wchar_t *wserialptr = NULL;
+    std::wstring wserialstr;
+    const wchar_t *wserialptr = nullptr;
     if (info.Length() > 2)
     {
       std::string serialstr = info[2].As<Napi::String>().Utf8Value();
-      mbstowcs(wserialstr, serialstr.c_str(), 100);
-      wserialptr = wserialstr;
+      wserialstr = utf8_decode(serialstr);
+      wserialptr = wserialstr.c_str();
     }
 
     {
@@ -356,13 +356,13 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
   Napi::Object deviceInfo = Napi::Object::New(env);
 
   hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  deviceInfo.Set("manufacturer", Napi::String::New(env, utf8_encode(wstr)));
 
   hid_get_product_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+  deviceInfo.Set("product", Napi::String::New(env, utf8_encode(wstr)));
 
   hid_get_serial_number_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+  deviceInfo.Set("serialNumber", Napi::String::New(env, utf8_encode(wstr)));
 
   return deviceInfo;
 }

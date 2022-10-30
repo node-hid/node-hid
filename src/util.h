@@ -10,7 +10,8 @@
 
 #define READ_BUFF_MAXSIZE 2048
 
-std::string narrow(wchar_t *wide);
+std::string utf8_encode(const std::wstring &source);
+std::wstring utf8_decode(const std::string &source);
 
 /**
  * Convert a js value (either a buffer ot array of numbers) into a vector of bytes.
@@ -37,6 +38,8 @@ public:
 class AsyncWorkerQueue
 {
     // TODO - discard the jobQueue in a safe manner
+    // there should be a destructor which ensures that the queue is empty
+    // when we 'unref' it from the parent, we should mark it as dead, and tell any remaining workers to abort
 
 public:
     /**
