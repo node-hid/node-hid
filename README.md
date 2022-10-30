@@ -32,11 +32,11 @@
      * [device.close()](#deviceclose)
      * [device.pause()](#devicepause)
      * [device.resume()](#deviceresume)
+     * [device.read(callback)](#devicereadcallback)
      * [device.readSync()](#devicereadsync)
      * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
      * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
      * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-     * [device.getFeatureReportBuffer(report_id, report_length)](#devicegetfeaturereportreportbuffer_id-report_length)
      * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
   * [General notes:](#general-notes)
      * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
@@ -215,7 +215,7 @@ if( deviceInfo ) {
 
 ### Reading from a device
 
-To receive FEATURE reports, use `device.getFeatureReport()` or `device.getFeatureReportBuffer()`.
+To receive FEATURE reports, use `device.getFeatureReport()`.
 
 To receive INPUT reports, use `device.on("data",...)`.
 A `node-hid` device is an EventEmitter.
@@ -239,7 +239,7 @@ var buf = device.getFeatureReport(reportId, reportLength)
 
 Notes:
 - Reads via `device.on("data")` are asynchronous
-- Reads via `device.getFeatureReport()` and `device.getFeatureReportBuffer()` are synchronous
+- Reads via `device.getFeatureReport()` are synchronous
 - To remove an event handler, close the device with `device.close()`
 - When there is not yet a data handler or no data handler exists,
    data is not read at all -- there is no buffer.
@@ -321,22 +321,19 @@ If no listeners are registered for the `data` event, data will be lost.
 - When a `data` event is registered for this HID device, this method will
 be automatically called.
 
+### `device.read(callback)`
+
+- Low-level function call to initiate an asynchronous read from the device.
+- `callback` is of the form `callback(err, data)`
+
 ### `device.readSync()`
 
 - Return an array of numbers data. If an error occurs, an exception will be thrown.
-
-- This cannot us used while the async read is running
-
-- Note: this will block execution of javascript until the method returns. It is not recommended to use this
 
 ### `device.readTimeout(time_out)`
 
 - `time_out` - timeout in milliseconds
 - Return an array of numbers data. If an error occurs, an exception will be thrown.
-
-- This cannot us used while the async read is running
-
-- Note: this will block execution of javascript until the method returns. It is not recommended to use this
 
 ### `device.sendFeatureReport(data)`
 
@@ -347,13 +344,6 @@ be automatically called.
 
 - `report_id` - HID feature report id to get
 - `report_length` - length of report
-- Returns array of numbers for the response
-
-### `device.getFeatureReportBuffers(report_id, report_length)`
-
-- `report_id` - HID feature report id to get
-- `report_length` - length of report
-- Returns a buffer containing the response
 
 ### `device.setNonBlocking(no_block)`
 
