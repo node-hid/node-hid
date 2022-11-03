@@ -212,6 +212,11 @@ if( deviceInfo ) {
   // ... use device
 }
 ```
+You can also find device of interest by passing VID and PID   
+```js
+//return all the devices that match specified VID and PID
+var devices = HID.devices(0x16C0,0x0486);
+```
 
 ### Reading from a device
 
@@ -275,6 +280,10 @@ number of bytes written + 1.
 ### `devices = HID.devices()`
 
 - Return array listing all connected HID devices
+
+### `devices = HID.devices(vid,pid)`
+
+- Return array listing all connected HID devices with specific VendorId and ProductId
 
 ### `HID.setDriverType(type)`
   - Linux only
