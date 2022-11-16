@@ -74,9 +74,9 @@ jobs:
         run: |
           npm i
 
-          # if [ -n "${{ matrix.is-native }}" ]; then
-          #   npm test
-          # fi
+          if [ -n "${{ matrix.is-native }}" ]; then
+            npm test
+          fi
 
           npm run rebuild --arch=${{ matrix.arch }}
           npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
@@ -112,7 +112,7 @@ jobs:
             cd /work
 
             npm i --unsafe-perm
-            # npm run test
+            npm run test
 
             npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
             npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
