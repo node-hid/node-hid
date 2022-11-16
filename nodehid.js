@@ -10,13 +10,11 @@ function setDriverType(type) {
 var binding = null;
 function loadBinding() {
     if (!binding) {
-        binding = require("pkg-prebuilds/bindings")(
-            __dirname,
-            {
-                name: process.platform === "linux" && (!driverType || driverType === "hidraw") ? "HID_hidraw" : "HID",
-                napi_versions: [3],
-            }
-        );
+        const options = require('./binding-options');
+        if (process.platform === "linux" && (!driverType || driverType === "hidraw")) {
+            options.name = 'HID_hidraw';
+        }
+        binding = require("pkg-prebuilds/bindings")(__dirname, options);
     }
 }
 
