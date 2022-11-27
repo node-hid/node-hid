@@ -30,15 +30,15 @@ Napi::Value generateDevicesResultAndFree(const Napi::Env &env, hid_device_info *
         }
         if (dev->serial_number)
         {
-            deviceInfo.Set("serialNumber", Napi::String::New(env, utf8_encode(dev->serial_number)));
+            deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(dev->serial_number)));
         }
         if (dev->manufacturer_string)
         {
-            deviceInfo.Set("manufacturer", Napi::String::New(env, utf8_encode(dev->manufacturer_string)));
+            deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(dev->manufacturer_string)));
         }
         if (dev->product_string)
         {
-            deviceInfo.Set("product", Napi::String::New(env, utf8_encode(dev->product_string)));
+            deviceInfo.Set("product", Napi::String::New(env, narrow(dev->product_string)));
         }
         deviceInfo.Set("release", Napi::Number::New(env, dev->release_number));
         deviceInfo.Set("interface", Napi::Number::New(env, dev->interface_number));
