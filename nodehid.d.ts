@@ -42,10 +42,6 @@ export function devicesAsync(): Promise<Device[]>
 
 export class HIDAsync extends EventEmitter {
     private constructor()
-
-    static open(path: string): Promise<HIDAsync>
-    static open(vid: number, pid: number): Promise<HIDAsync>
-
     close(): Promise<void>
     pause(): void
     read(time_out?: number | undefined): Promise<Buffer | undefined>
@@ -55,6 +51,9 @@ export class HIDAsync extends EventEmitter {
     write(values: number[] | Buffer): Promise<number>
     setNonBlocking(no_block: boolean): Promise<void>
 }
+
+export function openAsyncHIDDevice(path: string): Promise<HIDAsync>
+export function openAsyncHIDDevice(vid: number, pid: number): Promise<HIDAsync>
 
 export function setDriverType(type: 'hidraw' | 'libusb'): void
 
