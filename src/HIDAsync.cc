@@ -24,6 +24,7 @@
 #include <vector>
 #include <queue>
 
+#include "devices.h"
 #include "util.h"
 #include "HIDAsync.h"
 #include "read.h"
@@ -665,22 +666,10 @@ public:
   {
     if (context->hid)
     {
-      const int maxlen = 256;
-      wchar_t wstr[maxlen]; // FIXME: use new & delete
-
-      if (hid_get_manufacturer_string(context->hid, wstr, maxlen) == 0)
+      dev = hid_get_device_info(context->hid);
+      if (!dev)
       {
-        resManufacturer = utf8_encode(wstr);
-      }
-
-      if (hid_get_product_string(context->hid, wstr, maxlen) == 0)
-      {
-        resProduct = utf8_encode(wstr);
-      }
-
-      if (hid_get_serial_number_string(context->hid, wstr, maxlen) == 0)
-      {
-        resSerialNumber = utf8_encode(wstr);
+        SetError("Unable to get device info");
       }
     }
     else
@@ -691,19 +680,20 @@ public:
 
   Napi::Value GetResult(const Napi::Env &env) override
   {
-    Napi::Object deviceInfo = Napi::Object::New(env);
-
-    deviceInfo.Set("manufacturer", Napi::String::New(env, resManufacturer));
-    deviceInfo.Set("product", Napi::String::New(env, resProduct));
-    deviceInfo.Set("serialNumber", Napi::String::New(env, resSerialNumber));
-
-    return deviceInfo;
+    // if the hid device has somehow been deleted, the hid_device_info is no longer valid
+    if (context->hid)
+    {
+      return generateDeviceInfo(env, dev);
+    }
+    else
+    {
+      return env.Null();
+    }
   }
 
 private:
-  std::string resManufacturer;
-  std::string resProduct;
-  std::string resSerialNumber;
+  // this is owned by context->hid
+  hid_device_info *dev;
 };
 Napi::Value HIDAsync::getDeviceInfo(const Napi::CallbackInfo &info)
 {

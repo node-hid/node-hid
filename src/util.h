@@ -114,9 +114,13 @@ public:
     void OnOK() override
     {
         Napi::Env env = Env();
+
+        // Collect the result before finishing the job, in case the result relies on the hid object
+        Napi::Value result = GetResult(env);
+
         context->JobFinished(env);
 
-        deferred.Resolve(GetResult(env));
+        deferred.Resolve(result);
     }
     void OnError(Napi::Error const &error) override
     {

@@ -21,39 +21,44 @@ Napi::Value generateDevicesResultAndFree(const Napi::Env &env, hid_device_info *
     int count = 0;
     for (hid_device_info *dev = devs; dev; dev = dev->next)
     {
-        Napi::Object deviceInfo = Napi::Object::New(env);
-        deviceInfo.Set("vendorId", Napi::Number::New(env, dev->vendor_id));
-        deviceInfo.Set("productId", Napi::Number::New(env, dev->product_id));
-        if (dev->path)
-        {
-            deviceInfo.Set("path", Napi::String::New(env, dev->path));
-        }
-        if (dev->serial_number)
-        {
-            deviceInfo.Set("serialNumber", Napi::String::New(env, utf8_encode(dev->serial_number)));
-        }
-        if (dev->manufacturer_string)
-        {
-            deviceInfo.Set("manufacturer", Napi::String::New(env, utf8_encode(dev->manufacturer_string)));
-        }
-        if (dev->product_string)
-        {
-            deviceInfo.Set("product", Napi::String::New(env, utf8_encode(dev->product_string)));
-        }
-        deviceInfo.Set("release", Napi::Number::New(env, dev->release_number));
-        deviceInfo.Set("interface", Napi::Number::New(env, dev->interface_number));
-        if (dev->usage_page)
-        {
-            deviceInfo.Set("usagePage", Napi::Number::New(env, dev->usage_page));
-        }
-        if (dev->usage)
-        {
-            deviceInfo.Set("usage", Napi::Number::New(env, dev->usage));
-        }
-        retval.Set(count++, deviceInfo);
+        retval.Set(count++, generateDeviceInfo(env, dev));
     }
     hid_free_enumeration(devs);
     return retval;
+}
+
+Napi::Value generateDeviceInfo(const Napi::Env &env, hid_device_info *dev)
+{
+    Napi::Object deviceInfo = Napi::Object::New(env);
+    deviceInfo.Set("vendorId", Napi::Number::New(env, dev->vendor_id));
+    deviceInfo.Set("productId", Napi::Number::New(env, dev->product_id));
+    if (dev->path)
+    {
+        deviceInfo.Set("path", Napi::String::New(env, dev->path));
+    }
+    if (dev->serial_number)
+    {
+        deviceInfo.Set("serialNumber", Napi::String::New(env, utf8_encode(dev->serial_number)));
+    }
+    if (dev->manufacturer_string)
+    {
+        deviceInfo.Set("manufacturer", Napi::String::New(env, utf8_encode(dev->manufacturer_string)));
+    }
+    if (dev->product_string)
+    {
+        deviceInfo.Set("product", Napi::String::New(env, utf8_encode(dev->product_string)));
+    }
+    deviceInfo.Set("release", Napi::Number::New(env, dev->release_number));
+    deviceInfo.Set("interface", Napi::Number::New(env, dev->interface_number));
+    if (dev->usage_page)
+    {
+        deviceInfo.Set("usagePage", Napi::Number::New(env, dev->usage_page));
+    }
+    if (dev->usage)
+    {
+        deviceInfo.Set("usage", Napi::Number::New(env, dev->usage));
+    }
+    return deviceInfo;
 }
 
 Napi::Value devices(const Napi::CallbackInfo &info)

@@ -23,6 +23,7 @@
 #include <sstream>
 #include <vector>
 
+#include "devices.h"
 #include "util.h"
 #include "HID.h"
 
@@ -350,21 +351,14 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  const int maxlen = 256;
-  wchar_t wstr[maxlen]; // FIXME: use new & delete
+  hid_device_info *dev = hid_get_device_info(_hidHandle);
+  if (!dev)
+  {
+    Napi::TypeError::New(env, "Unable to get device info").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
-  Napi::Object deviceInfo = Napi::Object::New(env);
-
-  hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("manufacturer", Napi::String::New(env, utf8_encode(wstr)));
-
-  hid_get_product_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("product", Napi::String::New(env, utf8_encode(wstr)));
-
-  hid_get_serial_number_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("serialNumber", Napi::String::New(env, utf8_encode(wstr)));
-
-  return deviceInfo;
+  return generateDeviceInfo(env, dev);
 }
 
 Napi::Value HID::Initialize(Napi::Env &env)
