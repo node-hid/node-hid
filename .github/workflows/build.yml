@@ -34,9 +34,11 @@ jobs:
             arch: x64
             is-native: true
           # linux
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             arch: x64
             is-native: true
+            docker-arch: linux/amd64
+            docker-image: node:14-buster
           - os: ubuntu-latest
             arch: arm64
             is-native: false
@@ -49,7 +51,7 @@ jobs:
             docker-image: node:14-buster
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Checkout submodules
         shell: bash
         run: |
@@ -63,10 +65,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libudev-dev libusb-1.0-0-dev
 
-      - name: Use Node.js 14.x
-        uses: actions/setup-node@v1
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
         with:
-          node-version: 14.x
+          node-version: 16.x
 
       - name: rebuild
         if: ${{ !matrix.docker-arch }}
