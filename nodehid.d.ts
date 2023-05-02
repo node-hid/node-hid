@@ -33,6 +33,7 @@ export class HID extends EventEmitter {
     resume(): void
     write(values: number[] | Buffer): number
     setNonBlocking(no_block: boolean): void
+    generateDeviceInfo(): Device
 }
 export function devices(vid: number, pid: number): Device[]
 export function devices(): Device[]
@@ -54,6 +55,7 @@ export class HIDAsync extends EventEmitter {
     resume(): void
     write(values: number[] | Buffer): Promise<number>
     setNonBlocking(no_block: boolean): Promise<void>
+    generateDeviceInfo(): Promise<Device>
 }
 
 export function setDriverType(type: 'hidraw' | 'libusb'): void
