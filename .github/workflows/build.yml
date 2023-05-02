@@ -79,10 +79,10 @@ jobs:
           fi
 
           npm run rebuild --arch=${{ matrix.arch }}
-          npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+          npx pkg-prebuilds-copy --baseDir build/Release --source $BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
 
           if [ -f "build/Release/$BINDING_NAME_HIDRAW.node" ]; then
-            npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
           fi
         env:
           CI: true
@@ -114,8 +114,8 @@ jobs:
             npm i --unsafe-perm
             npm run test
 
-            npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
-            npx pkg-prebuilds-copy --source build/Release/$BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
