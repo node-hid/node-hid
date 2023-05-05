@@ -35,7 +35,7 @@ function PowerMate(index)
     this.hid = new HID.HID(powerMates[index].path);
     this.position = 0;
     this.button = 0;
-    this.hid.on('data', this.interpretData.bind(this))
+    this.hid.read(this.interpretData.bind(this));
 }
 
 util.inherits(PowerMate, events.EventEmitter);
@@ -44,7 +44,7 @@ PowerMate.prototype.setLed = function(brightness) {
     this.hid.write([0, brightness]);
 }
 
-PowerMate.prototype.interpretData = function(data) {
+PowerMate.prototype.interpretData = function(error, data) {
     var button = data[0];
     if (button ^ this.button) {
         this.emit(button ? 'buttonDown' : 'buttonUp');
@@ -58,6 +58,7 @@ PowerMate.prototype.interpretData = function(data) {
         this.position += delta;
         this.emit('turn', delta, this.position);
     }
+    this.hid.read(this.interpretData.bind(this));
 }
 
 exports.PowerMate = PowerMate;
