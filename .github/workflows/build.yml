@@ -127,8 +127,8 @@ jobs:
             npm i --unsafe-perm
             npm run test
 
-            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
-            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }}
+            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME.node --name=$BINDING_NAME --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }} --libc=${{ matrix.libc }}
+            npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }} --libc=${{ matrix.libc }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
