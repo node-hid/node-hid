@@ -31,27 +31,37 @@ jobs:
           - os: macos-11
             arch: arm64
             is-native: false
-          - os: macos-10.15
+          - os: macos-11
             arch: x64
             is-native: true
-          # linux
+          # linux x64
           - os: ubuntu-latest
             arch: x64
             is-native: true
             docker-arch: linux/amd64
             docker-image: node:14-buster
+          # linux sbc 64bit
           - os: ubuntu-latest
             arch: arm64
             is-native: false
             docker-arch: linux/arm64
             docker-image: node:14-buster
+          # linux sbc 32bit
           - os: ubuntu-latest
             arch: arm
             is-native: false
             docker-arch: linux/arm/v7
             docker-image: node:14-buster
+          # linux musl/alpine
+          - os: ubuntu-latest
+            arch: x64
+            is-native: false
+            docker-arch: linux/amd64
+            docker-image: node:14-alpine
+            libc: musl
 
     steps:
+      # Perform the git clone, the submodule requires a bit of extra work to clone correctly
       - uses: actions/checkout@v3
       - name: Checkout submodules
         shell: bash
