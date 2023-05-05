@@ -5,3 +5,4 @@ npm-debug.log
 package-lock.json
 Release/
 prebuilds/
+*.tgz

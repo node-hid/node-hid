@@ -1,9 +1,7 @@
 # node-hid - Access USB HID devices from Node.js #
 
 [![npm](https://img.shields.io/npm/dm/node-hid.svg?maxAge=2592000)](http://npmjs.com/package/node-hid)
-[![build macos](https://github.com/node-hid/node-hid/workflows/macos/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Amacos)
-[![build windows](https://github.com/node-hid/node-hid/workflows/windows/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Awindows)
-[![build linux](https://github.com/node-hid/node-hid/workflows/linux/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Alinux)
+[![Prebuild](https://github.com/node-hid/node-hid/actions/workflows/build.yml/badge.svg)](https://github.com/node-hid/node-hid/actions/workflows/build.yml)
 
 
 * [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)

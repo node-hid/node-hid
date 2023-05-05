@@ -18,14 +18,9 @@
     "test": "node src/test-ci.js",
     "showdevices": "node src/show-devices.js",
     "prepublishOnly": "git submodule update --init",
-    "install": "prebuild-install --runtime napi || node-gyp rebuild",
-    "prebuild": "prebuild --runtime napi --all --verbose --include-regex \"HID.*node$\"",
-    "prebuild-upload": "prebuild --runtime napi --upload-all",
-    "prebuild-ci": "prebuild-ci",
-    "gypclean": "node-gyp clean",
-    "gypconfigure": "node-gyp configure",
-    "gypbuild": "node-gyp build",
-    "gyprebuild": "node-gyp rebuild",
+    "install": "pkg-prebuilds-verify ./binding-options.js || node-gyp rebuild",
+    "build": "node-gyp build",
+    "rebuild": "node-gyp clean configure build",
     "clean": "rimraf build node_modules prebuilds package-lock.json",
     "distclean": "npm run clean && rimraf hidapi"
   },
@@ -43,12 +38,10 @@
   },
   "license": "(MIT OR X11)",
   "dependencies": {
-    "bindings": "^1.5.0",
     "node-addon-api": "^3.0.2",
-    "prebuild-install": "^7.1.1"
+    "pkg-prebuilds": "^0.1.0"
   },
   "devDependencies": {
-    "prebuild": "^11.0.4",
     "rimraf": "^2.6.2"
   },
   "gypfile": true
