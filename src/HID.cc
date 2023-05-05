@@ -431,14 +431,17 @@ Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 
   Napi::Object deviceInfo = Napi::Object::New(env);
 
-  hid_get_manufacturer_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  if (hid_get_manufacturer_string(_hidHandle, wstr, maxlen) == 0) {
+    deviceInfo.Set("manufacturer", Napi::String::New(env, narrow(wstr)));
+  }
 
-  hid_get_product_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+  if (hid_get_product_string(_hidHandle, wstr, maxlen) == 0) {
+    deviceInfo.Set("product", Napi::String::New(env, narrow(wstr)));
+  }
 
-  hid_get_serial_number_string(_hidHandle, wstr, maxlen);
-  deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+  if (hid_get_serial_number_string(_hidHandle, wstr, maxlen) == 0) {
+    deviceInfo.Set("serialNumber", Napi::String::New(env, narrow(wstr)));
+  }
 
   return deviceInfo;
 }
