@@ -1,0 +1,60 @@
+{
+  "name": "node-hid",
+  "description": "USB HID device access library",
+  "version": "2.2.0",
+  "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
+  "bugs": "https://github.com/node-hid/node-hid/issues",
+  "homepage": "https://github.com/node-hid/node-hid#readme",
+  "contributors": [
+    "Blake Miner <miner.blake@gmail.com>",
+    "Tod Kurt <todbotdotcom@gmail.com> (https://github.com/todbot)",
+    "Julian Waller <git@julusian.co.uk> (https://github.com/julusian)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/node-hid/node-hid.git"
+  },
+  "scripts": {
+    "test": "node src/test-ci.js",
+    "showdevices": "node src/show-devices.js",
+    "prepublishOnly": "git submodule update --init",
+    "install": "node-gyp-build",
+    "prebuild": "prebuildify --napi --strip",
+    "prebuild-darwin": "prebuildify --napi --strip --arch x64+arm64",
+    "prebuild-win32-x86": "prebuildify --napi --strip",
+    "prebuild-win32-x64": "prebuildify --napi --strip",
+    "prebuild-linux-x86": "prebuildify-cross -i ghcr.io/node-usb/linux-x86 --napi --strip",
+    "prebuild-linux-x64": "prebuildify-cross -i ghcr.io/node-usb/centos7-devtoolset7 -i ghcr.io/node-usb/alpine --napi --strip --tag-libc",
+    "prebuild-linux-arm": "prebuildify-cross -i ghcr.io/node-usb/linux-arm64 -i ghcr.io/node-usb/linux-armv7 -i ghcr.io/node-usb/linux-armv6 --napi --strip --tag-armv",
+    "prebuild-android-arm": "prebuildify-cross -i ghcr.io/node-usb/android-arm64 -i ghcr.io/node-usb/android-armv7 --napi --strip --tag-armv",
+    "prebuild-download": "prebuildify-ci download",
+    "gypclean": "node-gyp clean",
+    "gypconfigure": "node-gyp configure",
+    "gypbuild": "node-gyp build",
+    "gyprebuild": "node-gyp rebuild",
+    "clean": "rimraf build node_modules prebuilds package-lock.json",
+    "distclean": "npm run clean && rimraf hidapi"
+  },
+  "bin": {
+    "hid-showdevices": "./src/show-devices.js"
+  },
+  "main": "./nodehid.js",
+  "binary": {
+    "napi_versions": [
+      3
+    ]
+  },
+  "engines": {
+    "node": ">=10.16.0"
+  },
+  "license": "(MIT OR X11)",
+  "dependencies": {
+    "node-addon-api": "^3.0.2",
+    "node-gyp-build": "^4.3.0",
+  },
+  "devDependencies": {
+    "prebuildify": "^5.0.0",
+    "rimraf": "^2.6.2"
+  },
+  "gypfile": true
+}
