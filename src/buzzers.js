@@ -30,7 +30,7 @@ function BuzzerController(index)
 
     // Initialize buzzers
     this.hid.write([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    this.hid.on('data', this.buzzerData.bind(this));
+    this.hid.read(this.buzzerData.bind(this));
 }
 
 util.inherits(BuzzerController, events.EventEmitter);
@@ -48,13 +48,14 @@ BuzzerController.prototype.handleBuzzer = function (buzzerNumber, bits)
     }
 }
 
-BuzzerController.prototype.buzzerData = function ( data) {
-    console.log('data', data);
+BuzzerController.prototype.buzzerData = function (error, data) {
+    console.log('error', error, 'data', data);
     var bits = (data[4] << 16) | (data[3] << 8) | data[2];
     for (var i = 0; i < 4; i++) {
         this.handleBuzzer(i, bits);
     }
     this.oldBits = bits;
+    this.hid.read(this.buzzerData.bind(this));
 }
 
 BuzzerController.prototype.led = function(buzzer, state) {
