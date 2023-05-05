@@ -119,7 +119,7 @@ jobs:
             elif command -v apk &> /dev/null
             then
               apk update
-              apk add python3 make g++ gcc libusb-dev
+              apk add python3 make g++ gcc libusb-dev linux-headers
             fi
 
             cd /work
