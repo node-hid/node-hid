@@ -14,31 +14,10 @@
   * [Installation](#installation)
      * [Installation Special Cases](#installation-special-cases)
   * [Examples](#examples)
-  * [Usage](#usage)
-     * [Async vs sync api](#async-vs-sync-api)
-     * [List all HID devices connected](#list-all-hid-devices-connected)
-        * [Cost of HID.devices() and <code>new HID.HID()</code> for detecting device plug/unplug](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
-     * [Opening a device](#opening-a-device)
-     * [Picking a device from the device list](#picking-a-device-from-the-device-list)
-     * [Reading from a device](#reading-from-a-device)
-     * [Writing to a device](#writing-to-a-device)
-  * [Complete API](#complete-api)
-     * [devices = HID.devices()](#devices--hiddevices)
-     * [HID.setDriverType(type)](#hidsetdrivertypetype)
-     * [device = new HID.HID(path)](#device--new-hidhidpath)
-     * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
-     * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-     * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
-     * [device.write(data)](#devicewritedata)
-     * [device.close()](#deviceclose)
-     * [device.pause()](#devicepause)
-     * [device.resume()](#deviceresume)
-     * [device.read(callback)](#devicereadcallback)
-     * [device.readSync()](#devicereadsync)
-     * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
-     * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
-     * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-     * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
+  * [Async API Usage](#async-api-usage)
+  * [Sync API Usage](#sync-api-usage)
+  * [Complete Async API](#complete-async-api)
+  * [Complete Sync API](#complete-sync-api)
   * [General notes:](#general-notes)
      * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
      * [Devices node-hid cannot read](#devices-node-hid-cannot-read)
@@ -263,80 +242,6 @@ Notes:
 - For devices using Report Ids, the first byte of the array to `write()` or `sendFeatureReport()` must be the Report Id.
 
 
-## Complete API
-
-### `devices = await HID.devicesAsync()`
-
-- Return array listing all connected HID devices
-
-### `devices = await HID.devicesAsync(vid,pid)`
-
-- Return array listing all connected HID devices with specific VendorId and ProductId
-
-### `device = await HID.HIDAsync.open(path)`
-
-- Open a HID device at the specified platform-specific path
-
-### `device = await HID.HIDAsync.open(vid,pid)`
-
-- Open first HID device with specific VendorId and ProductId
-
-### `device.on('data', function(data) {} )`
-
-- `data` - Buffer - the data read from the device
-
-### `device.on('error, function(error) {} )`
-
-- `error` - The error Object emitted
-
-### `device.write(data)`
-
-- `data` - the data to be synchronously written to the device,
-first byte is Report Id or 0x00 if not using numbered reports.
-- Returns number of bytes actually written
-
-### `device.close()`
-
-- Closes the device. Subsequent reads will raise an error.
-
-### `device.pause()`
-
-- Pauses reading and the emission of `data` events.  
-This means the underlying device is _silenced_ until resumption --
-it is not like pausing a stream, where data continues to accumulate.
-
-### `device.resume()`
-
-- This method will cause the HID device to resume emmitting `data` events.
-If no listeners are registered for the `data` event, data will be lost.
-
-- When a `data` event is registered for this HID device, this method will
-be automatically called.
-
-### `device.read(time_out)`
-
-- (optional) `time_out` - timeout in milliseconds
-- Low-level function call to initiate an asynchronous read from the device.
-- Returns a Promise containing a Buffer or the Promise will reject upon error.
-- This can only be used when `device.on('data', () => {})` is not being used. It will fail if a data handler is registered
-
-### `device.sendFeatureReport(data)`
-
-- `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
-- Returns number of bytes actually written
-
-### `device.getFeatureReport(report_id, report_length)`
-
-- `report_id` - HID feature report id to get
-- `report_length` - length of report
-
-### `device.setNonBlocking(no_block)`
-
-- `no_block` - boolean. Set to `true` to enable non-blocking reads
-- exactly mirrors `hid_set_nonblocking()` in [`hidapi`](https://github.com/libusb/hidapi)
-
-----
-
 ## Sync API Usage
 
 ### List all HID devices connected
@@ -481,7 +386,80 @@ number of bytes written + 1.
 `sendFeatureReport()` must be the Report Id.
 
 
-## Complete API
+## Complete Async API
+
+### `devices = await HID.devicesAsync()`
+
+- Return array listing all connected HID devices
+
+### `devices = await HID.devicesAsync(vid,pid)`
+
+- Return array listing all connected HID devices with specific VendorId and ProductId
+
+### `device = await HID.HIDAsync.open(path)`
+
+- Open a HID device at the specified platform-specific path
+
+### `device = await HID.HIDAsync.open(vid,pid)`
+
+- Open first HID device with specific VendorId and ProductId
+
+### `device.on('data', function(data) {} )`
+
+- `data` - Buffer - the data read from the device
+
+### `device.on('error, function(error) {} )`
+
+- `error` - The error Object emitted
+
+### `device.write(data)`
+
+- `data` - the data to be synchronously written to the device,
+first byte is Report Id or 0x00 if not using numbered reports.
+- Returns number of bytes actually written
+
+### `device.close()`
+
+- Closes the device. Subsequent reads will raise an error.
+
+### `device.pause()`
+
+- Pauses reading and the emission of `data` events.  
+This means the underlying device is _silenced_ until resumption --
+it is not like pausing a stream, where data continues to accumulate.
+
+### `device.resume()`
+
+- This method will cause the HID device to resume emmitting `data` events.
+If no listeners are registered for the `data` event, data will be lost.
+
+- When a `data` event is registered for this HID device, this method will
+be automatically called.
+
+### `device.read(time_out)`
+
+- (optional) `time_out` - timeout in milliseconds
+- Low-level function call to initiate an asynchronous read from the device.
+- Returns a Promise containing a Buffer or the Promise will reject upon error.
+- This can only be used when `device.on('data', () => {})` is not being used. It will fail if a data handler is registered
+
+### `device.sendFeatureReport(data)`
+
+- `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
+- Returns number of bytes actually written
+
+### `device.getFeatureReport(report_id, report_length)`
+
+- `report_id` - HID feature report id to get
+- `report_length` - length of report
+
+### `device.setNonBlocking(no_block)`
+
+- `no_block` - boolean. Set to `true` to enable non-blocking reads
+- exactly mirrors `hid_set_nonblocking()` in [`hidapi`](https://github.com/libusb/hidapi)
+
+
+## Complete Sync API
 
 ### `devices = HID.devices()`
 
