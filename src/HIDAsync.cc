@@ -69,7 +69,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     return env.Undefined();
   }
@@ -119,7 +119,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
@@ -172,7 +172,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     auto ptr = Napi::External<hid_device>::New(env, dev);
     dev = nullptr; // devs has already been freed
@@ -321,7 +321,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     auto result = Napi::Buffer<unsigned char>::Copy(env, buffer, returnedLength);
 
@@ -406,7 +406,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     auto result = Napi::Buffer<unsigned char>::Copy(env, buffer, bufferLength);
 
@@ -414,7 +414,6 @@ public:
   }
 
 private:
-  int written = 0;
   unsigned char *buffer;
   int bufferLength;
 };
@@ -473,7 +472,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     return Napi::Number::New(env, written);
   }
@@ -559,7 +558,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     return env.Undefined();
   }
@@ -616,7 +615,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     return Napi::Number::New(env, written);
   }
@@ -678,7 +677,7 @@ public:
     }
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     // if the hid device has somehow been deleted, the hid_device_info is no longer valid
     if (context->hid)

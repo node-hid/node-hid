@@ -109,14 +109,14 @@ public:
     // This code will be executed on the worker thread. Note: Napi types cannot be used
     virtual void Execute() override = 0;
 
-    virtual Napi::Value GetResult(const Napi::Env &env) = 0;
+    virtual Napi::Value GetPromiseResult(const Napi::Env &env) = 0;
 
     void OnOK() override
     {
         Napi::Env env = Env();
 
         // Collect the result before finishing the job, in case the result relies on the hid object
-        Napi::Value result = GetResult(env);
+        Napi::Value result = GetPromiseResult(env);
 
         context->JobFinished(env);
 

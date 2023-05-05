@@ -113,7 +113,7 @@ public:
         devs = hid_enumerate(vendorId, productId);
     }
 
-    Napi::Value GetResult(const Napi::Env &env) override
+    Napi::Value GetPromiseResult(const Napi::Env &env) override
     {
         if (devs)
         {
