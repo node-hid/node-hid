@@ -66,17 +66,18 @@ We strive to make `node-hid` cross-platform so there's a good chance any
 combination not listed here will compile and work.
 
 ### Supported Platforms ###
-- Windows x86 (32-bit) (¹)
+- Windows x86 (32-bit)
 - Windows x64 (64-bit)
 - Mac OSX 10.9+
 - Linux x64 (²)
 - Linux x86 (¹)
-- Linux ARM / Raspberry Pi (¹)
+- Linux ARM / Raspberry Pi / Various SBC (²)
+- Linux ARM64 / Various SBC (²)
 - Linux MIPSel (¹)
 - Linux PPC64 (¹)
 
 ¹ prebuilt-binaries not provided for these platforms  
-² prebuilt binary built on Ubuntu 18.04 x64
+² prebuilt binary built on Debian 10 Buster
 
 ### Supported Node versions ###
 
