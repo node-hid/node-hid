@@ -1,0 +1,54 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-2019]
+        node-version: [10.x, 12.x, 14.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update 
+          sudo apt install pkg-config libudev-dev libusb-1.0-0-dev
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: "https://npm.pkg.github.com"
+
+      - run: npm run prepublishOnly
+      - run: npm install --build-from-source
+      - run: npm test
+      - run: npm run prebuild
+      - run: npm run prebuild-upload ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          registry-url: "https://npm.pkg.github.com"
+
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

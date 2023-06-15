@@ -1,10 +1,10 @@
 {
-  "name": "node-hid",
+  "name": "@iarahealth/node-hid",
   "description": "USB HID device access library",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
-  "bugs": "https://github.com/node-hid/node-hid/issues",
-  "homepage": "https://github.com/node-hid/node-hid#readme",
+  "bugs": "https://github.com/iarahealth/node-hid/issues",
+  "homepage": "https://github.com/iarahealth/node-hid#readme",
   "contributors": [
     "Blake Miner <miner.blake@gmail.com>",
     "Tod Kurt <todbotdotcom@gmail.com> (https://github.com/todbot)",
@@ -12,14 +12,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/node-hid/node-hid.git"
+    "url": "git://github.com/iarahealth/node-hid.git"
   },
   "scripts": {
     "test": "node src/test-ci.js",
     "showdevices": "node src/show-devices.js",
     "prepublishOnly": "git submodule update --init",
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
-    "prebuild": "prebuild --runtime napi --all --verbose --include-regex \"HID.*node$\"",
+    "prebuild": "prebuild --runtime napi --all --verbose --include-regex \"HID.*(node|pdb)$\"",
     "prebuild-upload": "prebuild --runtime napi --upload-all",
     "prebuild-ci": "prebuild-ci",
     "gypclean": "node-gyp clean",
