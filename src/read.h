@@ -13,14 +13,14 @@ public:
     ~ReadHelper();
 
     void start(Napi::Env env, Napi::Function callback);
-    void stop();
+    void stop_and_join();
 
     std::atomic<bool> run_read = {false};
 
 private:
     std::shared_ptr<DeviceContext> _hidHandle;
-    Napi::ThreadSafeFunction read_callback;
     std::thread read_thread;
+    Napi::ThreadSafeFunction read_callback;
 };
 
 #endif // NODEHID_READ_H__

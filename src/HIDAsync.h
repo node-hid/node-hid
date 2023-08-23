@@ -12,8 +12,8 @@ public:
     ~HIDAsync() { closeHandle(); }
 
 private:
-    std::shared_ptr<ReadHelper> helper;
     std::shared_ptr<DeviceContext> _hidHandle;
+    std::shared_ptr<ReadHelper> helper;
 
     void closeHandle();
 

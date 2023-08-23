@@ -27,10 +27,10 @@ ReadHelper::ReadHelper(std::shared_ptr<DeviceContext> hidHandle)
 }
 ReadHelper::~ReadHelper()
 {
-    stop();
+    stop_and_join();
 }
 
-void ReadHelper::stop()
+void ReadHelper::stop_and_join()
 {
     run_read = false;
 
@@ -47,21 +47,7 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
         return;
     run_read = true;
 
-    read_callback = Napi::ThreadSafeFunction::New(
-        env,
-        callback,        // JavaScript function called asynchronously
-        "HID:read",      // Name
-        0,               // Unlimited queue
-        1,               // Only one thread will use this initially
-        [=](Napi::Env) { // Finalizer used to clean threads up
-                         // Wait for end of the thread, if it wasnt the one to close up
-            if (read_thread.joinable())
-            {
-                read_thread.join();
-            }
-        });
-
-    read_thread = std::thread([=]()
+    read_thread = std::thread([&]()
                               {
                               int mswait = 50;
                               int len = 0;
@@ -94,4 +80,18 @@ void ReadHelper::start(Napi::Env env, Napi::Function callback)
 
                               // Cleanup the function
                               read_callback.Release(); });
+
+    read_callback = Napi::ThreadSafeFunction::New(
+        env,
+        callback,        // JavaScript function called asynchronously
+        "HID:read",      // Name
+        0,               // Unlimited queue
+        1,               // Only one thread will use this initially
+        [&](Napi::Env) { // Finalizer used to clean threads up
+                         // Wait for end of the thread, if it wasnt the one to close up
+            if (read_thread.joinable())
+            {
+                read_thread.join();
+            }
+        });
 }

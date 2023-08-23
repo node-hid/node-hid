@@ -56,12 +56,19 @@ class CloseWorker : public PromiseAsyncWorker<std::shared_ptr<DeviceContext>>
 {
 public:
   CloseWorker(
-      Napi::Env &env, std::shared_ptr<DeviceContext> hid)
-      : PromiseAsyncWorker(env, hid) {}
+      Napi::Env &env, std::shared_ptr<DeviceContext> hid, std::shared_ptr<ReadHelper> helper)
+      : PromiseAsyncWorker(env, hid),
+        helper(helper) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
+    if (helper)
+    {
+      helper->stop_and_join();
+      helper = nullptr;
+    }
+
     if (context->hid)
     {
       hid_close(context->hid);
@@ -75,13 +82,14 @@ public:
   }
 
 private:
+  std::shared_ptr<ReadHelper> helper;
 };
 
 void HIDAsync::closeHandle()
 {
   if (helper)
   {
-    helper->stop();
+    helper->stop_and_join();
     helper = nullptr;
   }
 
@@ -270,7 +278,8 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  helper->stop();
+  // TODO - this should be done in a worker, to avoid blocking the main loop
+  helper->stop_and_join();
 
   return env.Null();
 };
@@ -524,9 +533,11 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
   // Mark it as closed, to stop new jobs being pushed to the queue
   _hidHandle->is_closed = true;
 
-  auto result = (new CloseWorker(env, _hidHandle))->QueueAndRun();
+  auto result = (new CloseWorker(env, std::move(_hidHandle), std::move(helper)))->QueueAndRun();
 
-  closeHandle();
+  // Ownership is transferred to CloseWorker
+  _hidHandle = nullptr;
+  helper = nullptr;
 
   return result;
 }
