@@ -268,6 +268,37 @@ Napi::Value HIDAsync::readStart(const Napi::CallbackInfo &info)
   return env.Null();
 }
 
+class ReadStopWorker : public PromiseAsyncWorker<std::shared_ptr<DeviceContext>>
+{
+public:
+  ReadStopWorker(
+      Napi::Env &env,
+      std::shared_ptr<DeviceContext> hid,
+      std::unique_ptr<ReadHelper> helper)
+      : PromiseAsyncWorker(env, hid),
+        helper(std::move(helper))
+  {
+  }
+  ~ReadStopWorker()
+  {
+  }
+
+  // This code will be executed on the worker thread. Note: Napi types cannot be used
+  void Execute() override
+  {
+    helper->stop_and_join();
+    helper = nullptr;
+  }
+
+  Napi::Value GetResult(const Napi::Env &env) override
+  {
+    return env.Undefined();
+  }
+
+private:
+  std::unique_ptr<ReadHelper> helper;
+};
+
 Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
@@ -278,10 +309,12 @@ Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  // TODO - this should be done in a worker, to avoid blocking the main loop
-  helper->stop_and_join();
+  auto result = (new ReadStopWorker(env, std::move(_hidHandle), std::move(helper)))->QueueAndRun();
 
-  return env.Null();
+  // Ownership is transferred to CloseWorker
+  helper = nullptr;
+
+  return result;
 };
 
 class ReadOnceWorker : public PromiseAsyncWorker<std::shared_ptr<DeviceContext>>
