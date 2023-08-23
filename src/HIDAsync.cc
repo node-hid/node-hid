@@ -290,7 +290,7 @@ public:
     helper = nullptr;
   }
 
-  Napi::Value GetResult(const Napi::Env &env) override
+  Napi::Value GetPromiseResult(const Napi::Env &env) override
   {
     return env.Undefined();
   }
