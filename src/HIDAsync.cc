@@ -49,16 +49,16 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
 
   auto ptr = info[0].As<Napi::External<hid_device>>().Data();
   _hidHandle = std::make_shared<DeviceContext>(appCtx, ptr);
-  helper = std::make_shared<ReadHelper>(_hidHandle);
+  helper = std::make_unique<ReadHelper>(_hidHandle);
 }
 
 class CloseWorker : public PromiseAsyncWorker<std::shared_ptr<DeviceContext>>
 {
 public:
   CloseWorker(
-      Napi::Env &env, std::shared_ptr<DeviceContext> hid, std::shared_ptr<ReadHelper> helper)
+      Napi::Env &env, std::shared_ptr<DeviceContext> hid, std::unique_ptr<ReadHelper> helper)
       : PromiseAsyncWorker(env, hid),
-        helper(helper) {}
+        helper(std::move(helper)) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
@@ -82,7 +82,7 @@ public:
   }
 
 private:
-  std::shared_ptr<ReadHelper> helper;
+  std::unique_ptr<ReadHelper> helper;
 };
 
 void HIDAsync::closeHandle()
