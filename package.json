@@ -1,7 +1,7 @@
 {
   "name": "@iarahealth/node-hid",
   "description": "USB HID device access library",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "author": "Hans Hübner <hans.huebner@gmail.com> (https://github.com/hanshuebner)",
   "bugs": "https://github.com/iarahealth/node-hid/issues",
   "homepage": "https://github.com/iarahealth/node-hid#readme",

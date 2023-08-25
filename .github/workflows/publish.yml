@@ -36,7 +36,11 @@ jobs:
       - run: npm run prepublishOnly
       - run: npm install --build-from-source
       - run: npm test
+      
       - run: npm run prebuild
+      - if: matrix.os == 'macos-latest'
+        run: npm run prebuild -- --arch arm64
+
       - run: npm run prebuild-upload ${{ secrets.GITHUB_TOKEN }}
 
   publish:
