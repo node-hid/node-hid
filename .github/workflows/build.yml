@@ -66,6 +66,14 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
+      - name: Macos Use Python 3.11
+        if: runner.os == 'macOS'
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11    # ${{ matrix.python }}
+        env:
+          PYTHON_VERSION: 3.11  # ${{ matrix.python }}  # Why do this?
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
