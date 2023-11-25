@@ -23,9 +23,9 @@ jobs:
 
     - name: setup prerequisites (linux)
       run: |
-        sudo apt update 
+        sudo apt update
         sudo apt install pkg-config libudev-dev libusb-1.0-0-dev
-  
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -33,6 +33,4 @@ jobs:
 
     - run: npm run prepublishOnly
     - run: npm install --build-from-source
-#    - run: npm ci
-#    - run: npm run build --if-present
     - run: npm test
