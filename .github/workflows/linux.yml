@@ -16,16 +16,16 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x, 14.x, 18.x]
+        node-version: [12.x, 14.x, 16.x, 18.x]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: setup prerequisites (linux)
       run: |
-        sudo apt update 
+        sudo apt update
         sudo apt install pkg-config libudev-dev libusb-1.0-0-dev
-  
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -33,6 +33,4 @@ jobs:
 
     - run: npm run prepublishOnly
     - run: npm install --build-from-source
-#    - run: npm ci
-#    - run: npm run build --if-present
     - run: npm test

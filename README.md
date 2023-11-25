@@ -486,7 +486,7 @@ be automatically called.
 
 - `data` - Buffer - the data read from the device
 
-### `device.on('error, function(error) {} )`
+### `device.on('error', function(error) {} )`
 
 - `error` - The error Object emitted
 

@@ -16,10 +16,18 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x, 14.x]
+        node-version: [16.x, 18.x]
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Use Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11    # ${{ matrix.python }}
+      env:
+        PYTHON_VERSION: 3.11  # ${{ matrix.python }}  # Why do this?
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -27,4 +35,3 @@ jobs:
     - run: npm run prepublishOnly
     - run: npm install --build-from-source
     - run: npm test
-
