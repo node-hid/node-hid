@@ -58,7 +58,7 @@ jobs:
             libc: musl
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Checkout submodules
         shell: bash
         run: |
@@ -73,7 +73,7 @@ jobs:
           sudo apt-get install -y libudev-dev libusb-1.0-0-dev
 
       - name: Use Node.js 16.x
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 16.x
 
@@ -98,7 +98,7 @@ jobs:
           npm_config_build_from_source: true
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         if: matrix.docker-arch
       - name: rebuild (in docker)
         uses: addnab/docker-run-action@v3
