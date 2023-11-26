@@ -1,9 +1,7 @@
 # node-hid - Access USB HID devices from Node.js #
 
 [![npm](https://img.shields.io/npm/dm/node-hid.svg?maxAge=2592000)](http://npmjs.com/package/node-hid)
-[![build macos](https://github.com/node-hid/node-hid/workflows/macos/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Amacos)
-[![build windows](https://github.com/node-hid/node-hid/workflows/windows/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Awindows)
-[![build linux](https://github.com/node-hid/node-hid/workflows/linux/badge.svg)](https://github.com/node-hid/node-hid/actions?query=workflow%3Alinux)
+[![Prebuild](https://github.com/node-hid/node-hid/actions/workflows/build.yml/badge.svg)](https://github.com/node-hid/node-hid/actions/workflows/build.yml)
 
 
 * [node-hid - Access USB HID devices from Node.js](#node-hid---access-usb-hid-devices-from-nodejs)
@@ -48,17 +46,18 @@ We strive to make `node-hid` cross-platform so there's a good chance any
 combination not listed here will compile and work.
 
 ### Supported Platforms ###
-- Windows x86 (32-bit) (¹)
+- Windows x86 (32-bit)
 - Windows x64 (64-bit)
 - Mac OSX 10.9+
 - Linux x64 (²)
 - Linux x86 (¹)
-- Linux ARM / Raspberry Pi (¹)
+- Linux ARM / Raspberry Pi / Various SBC (²)
+- Linux ARM64 / Various SBC (²)
 - Linux MIPSel (¹)
 - Linux PPC64 (¹)
 
 ¹ prebuilt-binaries not provided for these platforms  
-² prebuilt binary built on Ubuntu 18.04 x64
+² prebuilt binary built on Debian 10 Buster
 
 ### Supported Node versions ###
 

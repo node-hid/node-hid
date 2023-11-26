@@ -10,18 +10,12 @@ function setDriverType(type) {
 // lazy load the C++ binding
 let binding = null;
 function loadBinding() {
-    if( !binding ) {
-        if( process.platform === 'linux' ) {
-            // Linux defaults to hidraw
-            if( !driverType || driverType === 'hidraw' ) {
-                binding = require('bindings')('HID_hidraw.node');
-            } else {
-                binding = require('bindings')('HID.node');
-            }
+    if (!binding) {
+        const options = require('./binding-options');
+        if (process.platform === "linux" && (!driverType || driverType === "hidraw")) {
+            options.name = 'HID_hidraw';
         }
-        else {
-            binding = require('bindings')('HID.node');
-        }
+        binding = require("pkg-prebuilds/bindings")(__dirname, options);
     }
 }
 
