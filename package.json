@@ -28,13 +28,14 @@
     "hid-showdevices": "./src/show-devices.js"
   },
   "main": "./nodehid.js",
+  "types": "./nodehid.d.ts",
   "binary": {
     "napi_versions": [
-      3
+      4
     ]
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=10.16"
   },
   "license": "(MIT OR X11)",
   "dependencies": {
