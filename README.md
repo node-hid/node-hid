@@ -14,30 +14,10 @@
   * [Installation](#installation)
      * [Installation Special Cases](#installation-special-cases)
   * [Examples](#examples)
-  * [Usage](#usage)
-     * [List all HID devices connected](#list-all-hid-devices-connected)
-        * [Cost of HID.devices() and <code>new HID.HID()</code> for detecting device plug/unplug](#cost-of-hiddevices-and-new-hidhid-for-detecting-device-plugunplug)
-     * [Opening a device](#opening-a-device)
-     * [Picking a device from the device list](#picking-a-device-from-the-device-list)
-     * [Reading from a device](#reading-from-a-device)
-     * [Writing to a device](#writing-to-a-device)
-  * [Complete API](#complete-api)
-     * [devices = HID.devices()](#devices--hiddevices)
-     * [HID.setDriverType(type)](#hidsetdrivertypetype)
-     * [device = new HID.HID(path)](#device--new-hidhidpath)
-     * [device = new HID.HID(vid,pid)](#device--new-hidhidvidpid)
-     * [device.on('data', function(data) {} )](#deviceondata-functiondata--)
-     * [device.on('error, function(error) {} )](#deviceonerror-functionerror--)
-     * [device.write(data)](#devicewritedata)
-     * [device.close()](#deviceclose)
-     * [device.pause()](#devicepause)
-     * [device.resume()](#deviceresume)
-     * [device.read(callback)](#devicereadcallback)
-     * [device.readSync()](#devicereadsync)
-     * [device.readTimeout(time_out)](#devicereadtimeouttime_out)
-     * [device.sendFeatureReport(data)](#devicesendfeaturereportdata)
-     * [device.getFeatureReport(report_id, report_length)](#devicegetfeaturereportreport_id-report_length)
-     * [device.setNonBlocking(no_block)](#devicesetnonblockingno_block)
+  * [Async API Usage](#async-api-usage)
+  * [Sync API Usage](#sync-api-usage)
+  * [Complete Async API](#complete-async-api)
+  * [Complete Sync API](#complete-sync-api)
   * [General notes:](#general-notes)
      * [Thread safety, Worker threads, Context-aware modules](#thread-safety-worker-threads-context-aware-modules)
      * [Devices node-hid cannot read](#devices-node-hid-cannot-read)
@@ -60,8 +40,8 @@
   * [Support](#support)
 
 ## Platform Support
-`node-hid` supports Node.js v6 and upwards. For versions before that,
-you will need to build from source. The platforms, architectures and node versions `node-hid` supports are the following.
+`node-hid` currently supports Node.js v10 and upwards. For versions before that, you will need to use an older version.
+The platforms, architectures and node versions `node-hid` supports are the following.
 In general we try to provide pre-built native library binaries for the most common platforms, Node and Electron versions.
 
 We strive to make `node-hid` cross-platform so there's a good chance any
@@ -82,15 +62,15 @@ combination not listed here will compile and work.
 
 ### Supported Node versions ###
 
-* Node v8 to
-* Node v16
+* Node v10 to
+* Node v20
 
 ### Supported Electron versions ###
 
 * Electron v3 to
-* Electron v16
+* Electron v24
 
-Future versions of Node or Electron should work, since `node-hid` is now based on NAPI.
+Future versions of Node or Electron should work with no extra work, since `node-hid` is now based on NAPI.
 
 ## Installation
 
@@ -125,8 +105,144 @@ that talk to specific devices in some way.  Some interesting ones:
 To try them out, run them with `node src/showdevices.js` from within the node-hid directory.
 
 ----
+## Async vs sync API
 
-## Usage
+Since 3.0.0, `node-hid` supports both the old synchronous api, and a newer async api.
+It is recommended to use the async api to avoid `node-hid` from blocking your code from executing. For prototyping or tiny applications, this likely will not matter, but for npm libraries or larger applications it can be problematic.
+
+Additionally, the sync api is limited to only beind able to read up to the `UV_THREADPOOL_SIZE` (default is 4) number of devices at once. Reading from multiple could degrade performance of your application, as there will be fewer than expected uv workers available for nodejs and other libraries to use for other tasks.
+
+The async API is identical to the sync API described below, except every method returns a `Promise` that must be handled. Any unhandled promise can crash your application.
+
+It is safe to use the sync api for some devices in an application, and the async api for other devices. The thread safety of `hidapi` is handled for you here to avoid crashes.
+
+## Cost of `HID.devices()`, `HID.devicesAsync()`, `new HID.HID()` and `HIDAsync.open()` for detecting device plug/unplug
+All of `HID.devices()`, `HID.devicesAsync()`, `new HID.HID()` and `HIDAsync.open()` are relatively costly, each causing a USB (and potentially Bluetooth) enumeration. This takes time and OS resources. Doing either can slow down the read/write that you do in parallel with a device, and cause other USB devices to slow down too. This is how USB works.
+
+If you are polling `HID.devices()` or `HID.devicesAsync()` or other inefficient methods to detect device plug / unplug, consider instead using [node-usb](https://github.com/node-usb/node-usb#usbdetection). `node-usb` uses OS-specific, non-bus enumeration ways to detect device plug / unplug.
+
+
+## Async API Usage
+
+### List all HID devices connected
+
+```js
+var HID = require('node-hid');
+var devices = await HID.devicesAsync();
+```
+
+`devices` will contain an array of objects, one for each HID device
+available.  Of particular interest are the `vendorId` and
+`productId`, as they uniquely identify a device, and the
+`path`, which is needed to open a particular device.
+
+Sample output:
+
+```js
+await HID.devicesAsync();
+{ vendorId: 10168,
+    productId: 493,
+    path: 'IOService:/AppleACPIPl...HIDDevice@14210000,0',
+    serialNumber: '20002E8C',
+    manufacturer: 'ThingM',
+    product: 'blink(1) mk2',
+    release: 2,
+    interface: -1,
+    usagePage: 65280,
+    usage: 1 },
+  { vendorId: 1452,
+    productId: 610,
+    path: 'IOService:/AppleACPIPl...Keyboard@14400000,0',
+    serialNumber: '',
+    manufacturer: 'Apple Inc.',
+    product: 'Apple Internal Keyboard / Trackpad',
+    release: 549,
+    interface: -1,
+    usagePage: 1,
+    usage: 6 },
+    <and more>
+```
+
+
+### Opening a device
+
+Before a device can be read from or written to, it must be opened.
+Use either the `path` from the list returned by a prior call to `HID.devicesAsync()`:
+
+```js
+var device = await HID.HIDAsync.open(path);
+```
+
+or open the first device matching a VID/PID pair:
+
+```js
+var device = await HID.HIDAsync.open(vid,pid);
+```
+
+The `device` variable will contain a handle to the device.
+If an error occurs opening the device, an exception will be thrown.
+
+A `node-hid` device is an `EventEmitter`.
+While it shares some method names and usage patterns with
+`Readable` and `Writable` streams, it is not a stream and the semantics vary.
+For example, `device.write` does not take encoding or callback args and
+`device.pause` does not do the same thing as `readable.pause`.
+There is also no `pipe` method.
+
+### Reading from a device
+
+To receive FEATURE reports, use `await device.getFeatureReport()`.
+
+To receive INPUT reports, use `device.on("data",...)`.
+A `node-hid` device is an EventEmitter.
+Reading from a device is performed by registering a "data" event handler:
+
+```js
+device.on("data", function(data) {});
+```
+
+You can also listen for errors like this:
+
+```js
+device.on("error", function(err) {});
+```
+For FEATURE reports:
+
+```js
+var buf = await device.getFeatureReport(reportId, reportLength)
+```
+
+
+Notes:
+- Reads via `device.on("data")` are asynchronous
+- To remove an event handler, close the device with `device.close()`
+- When there is not yet a data handler or no data handler exists,
+   data is not read at all -- there is no buffer.
+
+### Writing to a device
+
+To send FEATURE reports, use `device.sendFeatureReport()`.  
+
+To send OUTPUT reports, use `device.write()`.
+
+The ReportId is the first byte of the array sent to `device.sendFeatureReport()` or `device.write()`, meaning the array should be one byte bigger than your report.
+If your device does NOT use numbered reports, set the first byte of the 0x00.
+
+
+```js
+device.write([0x00, 0x01, 0x01, 0x05, 0xff, 0xff]);
+```
+```js
+device.sendFeatureReport( [0x01, 'c', 0, 0xff,0x33,0x00, 70,0, 0] );
+```
+Notes:
+- All writes and other operations performed with the HIDAsync device are done in a work-queue, so will happen in the order you issue them with the returned `Promise` resolving once the operation is completed
+- You must send the exact number of bytes for your chosen OUTPUT or FEATURE report.
+- Both `device.write()` and `device.sendFeatureReport()` return a Promise containing the number of bytes written + 1.
+- For devices using Report Ids, the first byte of the array to `write()` or `sendFeatureReport()` must be the Report Id.
+
+
+## Sync API Usage
 
 ### List all HID devices connected
 
@@ -167,15 +283,10 @@ HID.devices();
     <and more>
 ```
 
-#### Cost of `HID.devices()` and `new HID.HID()` for detecting device plug/unplug
-Both `HID.devices()` and `new HID.HID()` are relatively costly, each causing a USB (and potentially Bluetooth) enumeration. This takes time and OS resources. Doing either can slow down the read/write that you do in parallel with a device, and cause other USB devices to slow down too. This is how USB works.
-
-If you are polling `HID.devices()` or doing repeated `new HID.HID(vid,pid)` to detect device plug / unplug, consider instead using [node-usb-detection](https://github.com/MadLittleMods/node-usb-detection). `node-usb-detection` uses OS-specific, non-bus enumeration ways to detect device plug / unplug.
 
 ### Opening a device
 
 Before a device can be read from or written to, it must be opened.
-The `path` can be determined by a prior HID.devices() call.
 Use either the `path` from the list returned by a prior call to `HID.devices()`:
 
 ```js
@@ -275,7 +386,80 @@ number of bytes written + 1.
 `sendFeatureReport()` must be the Report Id.
 
 
-## Complete API
+## Complete Async API
+
+### `devices = await HID.devicesAsync()`
+
+- Return array listing all connected HID devices
+
+### `devices = await HID.devicesAsync(vid,pid)`
+
+- Return array listing all connected HID devices with specific VendorId and ProductId
+
+### `device = await HID.HIDAsync.open(path)`
+
+- Open a HID device at the specified platform-specific path
+
+### `device = await HID.HIDAsync.open(vid,pid)`
+
+- Open first HID device with specific VendorId and ProductId
+
+### `device.on('data', function(data) {} )`
+
+- `data` - Buffer - the data read from the device
+
+### `device.on('error, function(error) {} )`
+
+- `error` - The error Object emitted
+
+### `device.write(data)`
+
+- `data` - the data to be synchronously written to the device,
+first byte is Report Id or 0x00 if not using numbered reports.
+- Returns number of bytes actually written
+
+### `device.close()`
+
+- Closes the device. Subsequent reads will raise an error.
+
+### `device.pause()`
+
+- Pauses reading and the emission of `data` events.  
+This means the underlying device is _silenced_ until resumption --
+it is not like pausing a stream, where data continues to accumulate.
+
+### `device.resume()`
+
+- This method will cause the HID device to resume emmitting `data` events.
+If no listeners are registered for the `data` event, data will be lost.
+
+- When a `data` event is registered for this HID device, this method will
+be automatically called.
+
+### `device.read(time_out)`
+
+- (optional) `time_out` - timeout in milliseconds
+- Low-level function call to initiate an asynchronous read from the device.
+- Returns a Promise containing a Buffer or the Promise will reject upon error.
+- This can only be used when `device.on('data', () => {})` is not being used. It will fail if a data handler is registered
+
+### `device.sendFeatureReport(data)`
+
+- `data` - data of HID feature report, with 0th byte being report_id (`[report_id,...]`)
+- Returns number of bytes actually written
+
+### `device.getFeatureReport(report_id, report_length)`
+
+- `report_id` - HID feature report id to get
+- `report_length` - length of report
+
+### `device.setNonBlocking(no_block)`
+
+- `no_block` - boolean. Set to `true` to enable non-blocking reads
+- exactly mirrors `hid_set_nonblocking()` in [`hidapi`](https://github.com/libusb/hidapi)
+
+
+## Complete Sync API
 
 ### `devices = HID.devices()`
 
@@ -365,8 +549,7 @@ be automatically called.
 
 ### Thread safety, Worker threads, Context-aware modules
 In general `node-hid` is not thread-safe because the underlying C-library it wraps (`hidapi`) is not thread-safe.
-However, `node-hid` is now reporting as minimally Context Aware to allow use in Electron v9+.
-Until `node-hid` (or `hidapi`) is rewritten to be thread-safe, please constrain all accesses to it via a single thread.
+To mitigate this we are doing locking to ensure operations are performed safely. If you are using the sync api from multiple worker_threads, this will result in them waiting on each other at times.
 
 ### Devices `node-hid` cannot read
 The following devices are unavailable to `node-hid` because the OS owns them:
@@ -530,17 +713,6 @@ or
 
 
 ## Electron projects using `node-hid`
-In your electron project, add `electron-rebuild` to your `devDependencies`.
-Then in your package.json `scripts` add:
-
-```
-  "postinstall": "electron-rebuild"
-```
-This will cause `npm` to rebuild `node-hid` for the version of Node that is in Electron.
-If you get an error similar to `The module "HID.node" was compiled against a different version of Node.js`
-then `electron-rebuild` hasn't been run and Electron is trying to use `node-hid`
-compiled for Node.js and not for Electron.
-
 
 If using `node-hid` with `webpack` or similar bundler, you may need to exclude
 `node-hid` and other libraries with native code.  In webpack, you say which

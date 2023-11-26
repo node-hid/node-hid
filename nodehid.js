@@ -1,19 +1,17 @@
 
-var os = require('os')
+const EventEmitter = require("events").EventEmitter;
+const util = require("util");
 
-var EventEmitter = require("events").EventEmitter,
-    util = require("util");
-
-var driverType = null;
+let driverType = null;
 function setDriverType(type) {
     driverType = type;
 }
 
 // lazy load the C++ binding
-var binding = null;
+let binding = null;
 function loadBinding() {
     if( !binding ) {
-        if( os.platform() === 'linux' ) {
+        if( process.platform === 'linux' ) {
             // Linux defaults to hidraw
             if( !driverType || driverType === 'hidraw' ) {
                 binding = require('bindings')('HID_hidraw.node');
@@ -45,9 +43,7 @@ function HID() {
     /* We also want to inherit from `binding.HID`, but unfortunately,
         it's not so easy for native Objects. For example, the
         following won't work since `new` keyword isn't used:
-
         `binding.HID.apply(this, arguments);`
-
         So... we do this craziness instead...
     */
     var thisPlusArgs = new Array(arguments.length + 1);
@@ -66,7 +62,6 @@ function HID() {
         this[i] = binding.HID.prototype[i].bind(this._raw);
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
-
         Now upon adding a new listener for "data" events, we start
         polling the HID device using `read(...)`
         See `resume()` for more details. */
@@ -130,12 +125,89 @@ HID.prototype.resume = function resume() {
     }
 };
 
+class HIDAsync extends EventEmitter {
+    constructor(raw) {
+        super()
+
+        if (!(raw instanceof binding.HIDAsync)) {
+            throw new Error(`HIDAsync cannot be constructed directly. Use HIDAsync.open() instead`)
+        }
+
+        this._raw = raw
+
+        /* Now we have `this._raw` Object from which we need to
+            inherit.  So, one solution is to simply copy all
+            prototype methods over to `this` and binding them to
+            `this._raw`.
+            We explicitly wrap them in an async method, to ensure 
+            that any thrown errors are promise rejections
+        */
+        for (let i in this._raw) {
+            this[i] = async (...args) => this._raw[i](...args);
+        }
+
+        /* Now upon adding a new listener for "data" events, we start
+            the read thread executing. See `resume()` for more details.
+        */
+        this.on("newListener", (eventName, listener) =>{
+            if(eventName == "data")
+                process.nextTick(this.resume.bind(this) );
+        });
+        this.on("removeListener", (eventName, listener) => {
+            if(eventName == "data" && this.listenerCount("data") == 0)
+                process.nextTick(this.pause.bind(this) );
+        })
+    }
+
+    static async open(...args) {
+        loadBinding();
+        const native = await binding.openAsyncHIDDevice(...args);
+        return new HIDAsync(native)
+    }
+
+    async close() {
+        this._closing = true;
+        this.removeAllListeners();
+        await this._raw.close();
+        this._closed = true;
+    }
+    
+    //Pauses the reader, which stops "data" events from being emitted
+    pause() {
+        this._raw.readStop();
+    }
+
+    resume() {
+        if(this.listenerCount("data") > 0)
+        {
+            //Start polling & reading loop
+            this._raw.readStart((err, data) => {
+                if (err) {
+                    if(!this._closing)
+                        this.emit("error", err);
+                    //else ignore any errors if I'm closing the device
+                } else {
+                    this.emit("data", data);
+                }
+            })
+        }
+    }
+}
+
 function showdevices() {
     loadBinding();
     return binding.devices.apply(HID,arguments);
 }
 
+function showdevicesAsync(...args) {
+    loadBinding();
+    return binding.devicesAsync(...args);
+}
+
+
 //Expose API
 exports.HID = HID;
+exports.HIDAsync = HIDAsync;
 exports.devices = showdevices;
+exports.devicesAsync = showdevicesAsync;
 exports.setDriverType = setDriverType;
