@@ -33,7 +33,7 @@ export class HID extends EventEmitter {
     resume(): void
     write(values: number[] | Buffer): number
     setNonBlocking(no_block: boolean): void
-    generateDeviceInfo(): Device
+    getDeviceInfo(): Device
 }
 export function devices(vid: number, pid: number): Device[]
 export function devices(): Device[]
