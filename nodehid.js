@@ -32,28 +32,33 @@ function HID() {
     //Inherit from EventEmitter
     EventEmitter.call(this);
 
+    // Check if an instance already exists in the cache
+    if (HID.cachedInstance) {
+        return HID.cachedInstance;
+    }
+
     loadBinding();
 
-    /* We also want to inherit from `binding.HID`, but unfortunately,
-        it's not so easy for native Objects. For example, the
-        following won't work since `new` keyword isn't used:
-        `binding.HID.apply(this, arguments);`
-        So... we do this craziness instead...
-    */
     var thisPlusArgs = new Array(arguments.length + 1);
     thisPlusArgs[0] = null;
     for(var i = 0; i < arguments.length; i++)
         thisPlusArgs[i + 1] = arguments[i];
-    this._raw = new (Function.prototype.bind.apply(binding.HID,
-        thisPlusArgs) )();
+
+    this._raw = new (Function.prototype.bind.apply(binding.HID, thisPlusArgs))();
+
+    // USB devices can potentially only be opened once.
+    // If we try to open an already opened device, we get an error.
+    // This guard protects against programs that try to open the same device multiple times.
+    // Cache this instance for future calls
+    HID.cachedInstance = this;
 
     /* Now we have `this._raw` Object from which we need to
         inherit.  So, one solution is to simply copy all
         prototype methods over to `this` and binding them to
         `this._raw`
     */
-    for(var i in binding.HID.prototype)
-        this[i] = binding.HID.prototype[i].bind(this._raw);
+    for(var key in binding.HID.prototype)
+        this[key] = binding.HID.prototype[key].bind(this._raw);
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
         Now upon adding a new listener for "data" events, we start
@@ -63,7 +68,7 @@ function HID() {
     var self = this;
     self.on("newListener", function(eventName, listener) {
         if(eventName == "data")
-            process.nextTick(self.resume.bind(self) );
+            process.nextTick(self.resume.bind(self));
     });
 }
 //Inherit prototype methods
@@ -198,6 +203,9 @@ function showdevicesAsync(...args) {
     return binding.devicesAsync(...args);
 }
 
+
+// Static property for caching the HID instance
+HID.cachedInstance = null;
 
 //Expose API
 exports.HID = HID;
