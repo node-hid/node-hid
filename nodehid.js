@@ -29,10 +29,15 @@ function loadBinding() {
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
+
+    // see issue #150 (enhancement, solves issue #149)
+    // throw an error for those who forget to instantiate, i.e. by "*new* HID.HID()"
+    // and who would otherwise be left trying to figure out why "self.on is not a function"
     if (!new.target) {
         throw new Error('HID() must be called with \'new\' operator');
     }
 
+    //Inherit from EventEmitter
     EventEmitter.call(this);
 
     // Check if an instance already exists in the cache
@@ -52,8 +57,18 @@ function HID() {
     // Cache this instance for future calls
     HID.cachedInstance = this;
 
+    /* Now we have `this._raw` Object from which we need to
+    inherit.  So, one solution is to simply copy all
+    prototype methods over to `this` and binding them to
+    `this._raw`
+    */
     for(var key in binding.HID.prototype)
         this[key] = binding.HID.prototype[key].bind(this._raw);
+
+    /* We are now done inheriting from `binding.HID` and EventEmitter.
+    Now upon adding a new listener for "data" events, we start
+    polling the HID device using `read(...)`
+    See `resume()` for more details. */
 
     this._paused = true;
     var self = this;
