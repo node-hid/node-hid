@@ -29,54 +29,40 @@ function loadBinding() {
 
 //This class is a wrapper for `binding.HID` class
 function HID() {
-
-    // see issue #150 (enhancement, solves issue #149)
-    // throw an error for those who forget to instantiate, i.e. by "*new* HID.HID()"
-    // and who would otherwise be left trying to figure out why "self.on is not a function"
     if (!new.target) {
         throw new Error('HID() must be called with \'new\' operator');
     }
 
-    //Inherit from EventEmitter
     EventEmitter.call(this);
+
+    // Check if an instance already exists in the cache
+    if (HID.cachedInstance) {
+        return HID.cachedInstance;
+    }
 
     loadBinding();
 
-    /* We also want to inherit from `binding.HID`, but unfortunately,
-        it's not so easy for native Objects. For example, the
-        following won't work since `new` keyword isn't used:
-
-        `binding.HID.apply(this, arguments);`
-
-        So... we do this craziness instead...
-    */
     var thisPlusArgs = new Array(arguments.length + 1);
     thisPlusArgs[0] = null;
     for(var i = 0; i < arguments.length; i++)
         thisPlusArgs[i + 1] = arguments[i];
-    this._raw = new (Function.prototype.bind.apply(binding.HID,
-        thisPlusArgs) )();
 
-    /* Now we have `this._raw` Object from which we need to
-        inherit.  So, one solution is to simply copy all
-        prototype methods over to `this` and binding them to
-        `this._raw`
-    */
-    for(var i in binding.HID.prototype)
-        this[i] = binding.HID.prototype[i].bind(this._raw);
+    this._raw = new (Function.prototype.bind.apply(binding.HID, thisPlusArgs))();
 
-    /* We are now done inheriting from `binding.HID` and EventEmitter.
+    // Cache this instance for future calls
+    HID.cachedInstance = this;
 
-        Now upon adding a new listener for "data" events, we start
-        polling the HID device using `read(...)`
-        See `resume()` for more details. */
+    for(var key in binding.HID.prototype)
+        this[key] = binding.HID.prototype[key].bind(this._raw);
+
     this._paused = true;
     var self = this;
     self.on("newListener", function(eventName, listener) {
         if(eventName == "data")
-            process.nextTick(self.resume.bind(self) );
+            process.nextTick(self.resume.bind(self));
     });
 }
+
 //Inherit prototype methods
 util.inherits(HID, EventEmitter);
 //Don't inherit from `binding.HID`; that's done above already!
@@ -134,6 +120,9 @@ function showdevices() {
     loadBinding();
     return binding.devices.apply(HID,arguments);
 }
+
+// Static property for caching the instance
+HID.cachedInstance = null;
 
 //Expose API
 exports.HID = HID;
