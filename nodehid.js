@@ -58,17 +58,17 @@ function HID() {
     HID.cachedInstance = this;
 
     /* Now we have `this._raw` Object from which we need to
-    inherit.  So, one solution is to simply copy all
-    prototype methods over to `this` and binding them to
-    `this._raw`
+        inherit.  So, one solution is to simply copy all
+        prototype methods over to `this` and binding them to
+        `this._raw`
     */
     for(var key in binding.HID.prototype)
         this[key] = binding.HID.prototype[key].bind(this._raw);
 
     /* We are now done inheriting from `binding.HID` and EventEmitter.
-    Now upon adding a new listener for "data" events, we start
-    polling the HID device using `read(...)`
-    See `resume()` for more details. */
+        Now upon adding a new listener for "data" events, we start
+        polling the HID device using `read(...)`
+        See `resume()` for more details. */
 
     this._paused = true;
     var self = this;
