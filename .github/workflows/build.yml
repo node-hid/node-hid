@@ -68,7 +68,7 @@ jobs:
 
       - name: Macos Use Python 3.11
         if: runner.os == 'macOS'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11    # ${{ matrix.python }}
         env:
@@ -135,7 +135,7 @@ jobs:
             npx pkg-prebuilds-copy --baseDir build/Release  --source $BINDING_NAME_HIDRAW.node --name=$BINDING_NAME_HIDRAW --strip --napi_version=$NAPI_VERSION --arch=${{ matrix.arch }} --libc=${{ matrix.libc }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.libc }}-prebuilds
           path: prebuilds
@@ -146,7 +146,7 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: tmp
 
@@ -156,7 +156,7 @@ jobs:
           mv tmp/*/* prebuilds/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: all-prebuilds
           path: prebuilds
