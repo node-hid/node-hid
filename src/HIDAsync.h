@@ -13,7 +13,7 @@ public:
 
 private:
     std::shared_ptr<DeviceContext> _hidHandle;
-    std::unique_ptr<ReadHelper> helper;
+    std::shared_ptr<ReadThreadState> read_state;
 
     void closeHandle();
 
