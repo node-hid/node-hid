@@ -5,22 +5,24 @@
 
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
-class ReadHelper
+struct ReadThreadState
 {
-public:
-    ReadHelper(std::shared_ptr<DeviceContext> hidHandle);
-    ~ReadHelper();
+    std::atomic<bool> abort = {false};
 
-    void start(Napi::Env env, Napi::Function callback);
-    void stop_and_join();
+    bool is_running();
+    void wait();
 
-    std::atomic<bool> run_read = {false};
+    void release();
 
 private:
-    std::shared_ptr<DeviceContext> _hidHandle;
-    std::thread read_thread;
-    Napi::ThreadSafeFunction read_callback;
+    std::mutex lock;
+    bool running = true;
+    std::condition_variable wait_for_end;
 };
+
+std::shared_ptr<ReadThreadState>
+start_read_helper(Napi::Env env, std::shared_ptr<DeviceContext> hidHandle, Napi::Function callback);
 
 #endif // NODEHID_READ_H__

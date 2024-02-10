@@ -49,24 +49,28 @@ HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
 
   auto ptr = info[0].As<Napi::External<hid_device>>().Data();
   _hidHandle = std::make_shared<DeviceContext>(appCtx, ptr);
-  helper = std::make_unique<ReadHelper>(_hidHandle);
+  read_state = nullptr;
 }
 
 class CloseWorker : public PromiseAsyncWorker<std::shared_ptr<DeviceContext>>
 {
 public:
   CloseWorker(
-      Napi::Env &env, std::shared_ptr<DeviceContext> hid, std::unique_ptr<ReadHelper> helper)
+      Napi::Env &env, std::shared_ptr<DeviceContext> hid, std::shared_ptr<ReadThreadState> read_state)
       : PromiseAsyncWorker(env, hid),
-        helper(std::move(helper)) {}
+        read_state(std::move(read_state)) {}
 
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    if (helper)
+    if (read_state)
     {
-      helper->stop_and_join();
-      helper = nullptr;
+      read_state->abort = true;
+
+      // Wait for the thread to terminate
+      read_state->wait();
+
+      read_state = nullptr;
     }
 
     if (context->hid)
@@ -82,15 +86,15 @@ public:
   }
 
 private:
-  std::unique_ptr<ReadHelper> helper;
+  std::shared_ptr<ReadThreadState> read_state;
 };
 
 void HIDAsync::closeHandle()
 {
-  if (helper)
+  if (read_state)
   {
-    helper->stop_and_join();
-    helper = nullptr;
+    read_state->abort = true;
+    read_state = nullptr;
   }
 
   // hid_close is called by the destructor
@@ -256,14 +260,20 @@ Napi::Value HIDAsync::readStart(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!helper || _hidHandle->is_closed)
+  if (_hidHandle->is_closed)
   {
     Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
 
+  if (read_state && read_state->is_running())
+  {
+    Napi::TypeError::New(env, "read is already running").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   auto callback = info[0].As<Napi::Function>();
-  helper->start(env, callback);
+  read_state = start_read_helper(env, _hidHandle, callback);
 
   return env.Null();
 }
@@ -274,9 +284,9 @@ public:
   ReadStopWorker(
       Napi::Env &env,
       std::shared_ptr<DeviceContext> hid,
-      std::unique_ptr<ReadHelper> helper)
+      std::shared_ptr<ReadThreadState> read_state)
       : PromiseAsyncWorker(env, hid),
-        helper(std::move(helper))
+        read_state(std::move(read_state))
   {
   }
   ~ReadStopWorker()
@@ -286,8 +296,12 @@ public:
   // This code will be executed on the worker thread. Note: Napi types cannot be used
   void Execute() override
   {
-    helper->stop_and_join();
-    helper = nullptr;
+    read_state->abort = true;
+
+    // Wait for the thread to terminate
+    read_state->wait();
+
+    read_state = nullptr;
   }
 
   Napi::Value GetPromiseResult(const Napi::Env &env) override
@@ -296,23 +310,23 @@ public:
   }
 
 private:
-  std::unique_ptr<ReadHelper> helper;
+  std::shared_ptr<ReadThreadState> read_state;
 };
 
 Napi::Value HIDAsync::readStop(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (!helper)
+  if (!read_state || !read_state->is_running())
   {
     // Napi::TypeError::New(env, "device has been closed").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  auto result = (new ReadStopWorker(env, std::move(_hidHandle), std::move(helper)))->QueueAndRun();
+  auto result = (new ReadStopWorker(env, std::move(_hidHandle), std::move(read_state)))->QueueAndRun();
 
-  // Ownership is transferred to CloseWorker
-  helper = nullptr;
+  // Ownership is transferred to ReadStopWorker
+  read_state = nullptr;
 
   return result;
 };
@@ -386,7 +400,7 @@ Napi::Value HIDAsync::read(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
-  if (helper != nullptr && helper->run_read)
+  if (read_state != nullptr && read_state->is_running())
   {
     Napi::TypeError::New(env, "Cannot use read while async read is running").ThrowAsJavaScriptException();
     return env.Null();
@@ -566,11 +580,11 @@ Napi::Value HIDAsync::close(const Napi::CallbackInfo &info)
   // Mark it as closed, to stop new jobs being pushed to the queue
   _hidHandle->is_closed = true;
 
-  auto result = (new CloseWorker(env, std::move(_hidHandle), std::move(helper)))->QueueAndRun();
+  auto result = (new CloseWorker(env, std::move(_hidHandle), std::move(read_state)))->QueueAndRun();
 
   // Ownership is transferred to CloseWorker
   _hidHandle = nullptr;
-  helper = nullptr;
+  read_state = nullptr;
 
   return result;
 }
