@@ -55,7 +55,7 @@ export class HIDAsync extends EventEmitter {
     resume(): void
     write(values: number[] | Buffer): Promise<number>
     setNonBlocking(no_block: boolean): Promise<void>
-    generateDeviceInfo(): Promise<Device>
+    getDeviceInfo(): Promise<Device>
 }
 
 export function setDriverType(type: 'hidraw' | 'libusb'): void
