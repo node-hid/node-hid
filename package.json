@@ -40,10 +40,10 @@
   "license": "(MIT OR X11)",
   "dependencies": {
     "node-addon-api": "^3.2.1",
-    "pkg-prebuilds": "^0.2.1"
+    "pkg-prebuilds": "^1.0.0"
   },
   "devDependencies": {
-    "rimraf": "^2.6.2"
+    "rimraf": "^5.0.7"
   },
   "gypfile": true,
   "files": [
