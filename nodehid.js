@@ -96,24 +96,31 @@ HID.prototype.resume = function resume() {
         //Start polling & reading loop
         self._paused = false;
         self.read(function readFunc(err, data) {
-            if(err)
-            {
-                //Emit error and pause reading
-                self._paused = true;
-                if(!self._closing)
-                    self.emit("error", err);
-                //else ignore any errors if I'm closing the device
-            }
-            else
-            {
-                //If there are no "data" listeners, we pause
-                if(self.listeners("data").length <= 0)
+            try {
+                if(err)
+                {
+                    //Emit error and pause reading
                     self._paused = true;
-                //Keep reading if we aren't paused
-                if(!self._paused)
-                    self.read(readFunc);
-                //Now emit the event
-                self.emit("data", data);
+                    if(!self._closing)
+                        self.emit("error", err);
+                    //else ignore any errors if I'm closing the device
+                }
+                else
+                {
+                    //If there are no "data" listeners, we pause
+                    if(self.listeners("data").length <= 0)
+                        self._paused = true;
+                    //Keep reading if we aren't paused
+                    if(!self._paused)
+                        self.read(readFunc);
+                    //Now emit the event
+                    self.emit("data", data);
+                }
+            } catch (e) {
+                // Emit an error on the device instead of propagating to a c++ exception
+                setImmediate(() => {
+                    this.emit("error", e);
+                });
             }
         });
     }
@@ -176,12 +183,19 @@ class HIDAsync extends EventEmitter {
         {
             //Start polling & reading loop
             this._raw.readStart((err, data) => {
-                if (err) {
-                    if(!this._closing)
-                        this.emit("error", err);
-                    //else ignore any errors if I'm closing the device
-                } else {
-                    this.emit("data", data);
+                try {
+                    if (err) {
+                        if(!this._closing)
+                            this.emit("error", err);
+                        //else ignore any errors if I'm closing the device
+                    } else {
+                        this.emit("data", data);
+                    }
+                } catch (e) {
+                    // Emit an error on the device instead of propagating to a c++ exception
+                    setImmediate(() => {
+                        this.emit("error", e);
+                    });
                 }
             })
         }
