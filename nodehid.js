@@ -119,7 +119,7 @@ HID.prototype.resume = function resume() {
             } catch (e) {
                 // Emit an error on the device instead of propagating to a c++ exception
                 setImmediate(() => {
-                    this.emit("error", e);
+                    self.emit("error", e);
                 });
             }
         });
