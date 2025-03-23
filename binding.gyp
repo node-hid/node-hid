@@ -12,7 +12,8 @@
                 'src/HIDAsync.cc',
                 'src/devices.cc',
                 'src/read.cc',
-                'src/util.cc'
+                'src/util.cc',
+                'src/hidapi_darwin.cc'
             ],
             'dependencies': ['hidapi'],
             'defines': [

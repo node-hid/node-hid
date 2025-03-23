@@ -35,6 +35,9 @@ export class HID extends EventEmitter {
     setNonBlocking(no_block: boolean): void
     getDeviceInfo(): Device
 }
+
+export function setDarwinOpenExclusive(): void
+
 export function devices(vid: number, pid: number): Device[]
 export function devices(): Device[]
 
