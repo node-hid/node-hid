@@ -202,11 +202,6 @@ class HIDAsync extends EventEmitter {
     }
 }
 
-function setDarwinOpenExclusive() {
-    loadBinding();
-    return binding.setDarwinOpenExclusive();
-}
-
 function showdevices() {
     loadBinding();
     return binding.devices.apply(HID,arguments);
@@ -221,7 +216,6 @@ function showdevicesAsync(...args) {
 //Expose API
 exports.HID = HID;
 exports.HIDAsync = HIDAsync;
-exports.setDarwinOpenExclusive = setDarwinOpenExclusive;
 exports.devices = showdevices;
 exports.devicesAsync = showdevicesAsync;
 exports.setDriverType = setDriverType;

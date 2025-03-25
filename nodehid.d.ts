@@ -21,8 +21,8 @@ export interface Device {
 }
 
 export class HID extends EventEmitter {
-    constructor(path: string)
-    constructor(vid: number, pid: number)
+    constructor(path: string, { nonExclusive }: { nonExclusive?: boolean })
+    constructor(vid: number, pid: number, { nonExclusive }: { nonExclusive?: boolean })
     close(): void
     pause(): void
     read(callback: (err: any, data: number[]) => void): void
@@ -36,8 +36,6 @@ export class HID extends EventEmitter {
     getDeviceInfo(): Device
 }
 
-export function setDarwinOpenExclusive(): void
-
 export function devices(vid: number, pid: number): Device[]
 export function devices(): Device[]
 
@@ -47,8 +45,8 @@ export function devicesAsync(): Promise<Device[]>
 export class HIDAsync extends EventEmitter {
     private constructor()
 
-    static open(path: string): Promise<HIDAsync>
-    static open(vid: number, pid: number): Promise<HIDAsync>
+    static open(path: string, { nonExclusive }: { nonExclusive?: boolean }): Promise<HIDAsync>
+    static open(vid: number, pid: number, { nonExclusive }: { nonExclusive?: boolean }): Promise<HIDAsync>
 
     close(): Promise<void>
     pause(): void

@@ -5,7 +5,6 @@
 #include "HID.h"
 #include "HIDAsync.h"
 #include "devices.h"
-#include "hidapi_darwin.h"
 
 static void
 deinitialize(void *ptr)
@@ -32,8 +31,6 @@ Init(Napi::Env env, Napi::Object exports)
 
     exports.Set("HID", HID::Initialize(env));
     exports.Set("HIDAsync", ctor);
-
-    exports.Set("setDarwinOpenExclusive", Napi::Function::New(env, &setOpenExclusive));
 
     exports.Set("openAsyncHIDDevice", Napi::Function::New(env, &HIDAsync::Create, nullptr, context)); // TODO: verify context will be alive long enough
 

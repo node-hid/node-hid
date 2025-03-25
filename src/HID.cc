@@ -27,6 +27,10 @@
 #include "util.h"
 #include "HID.h"
 
+#if defined(__APPLE__)
+#include "../hidapi/mac/hidapi_darwin.h"
+#endif
+
 HID::HID(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<HID>(info)
 {
@@ -45,13 +49,38 @@ HID::HID(const Napi::CallbackInfo &info)
     return;
   }
 
-  if (info.Length() < 1)
+  auto argsLength = info.Length();
+
+  if (argsLength < 1)
   {
     Napi::TypeError::New(env, "HID constructor requires at least one argument").ThrowAsJavaScriptException();
     return;
   }
 
-  if (info.Length() == 1)
+#if defined(__APPLE__)
+  if (argsLength > 1)
+  {
+    // We check if we have an optional param
+    if (info[argsLength - 1].IsObject())
+    {
+      argsLength -= 1;
+      Napi::Object options = info[argsLength].As<Napi::Object>();
+
+      Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
+      if (!isNonExclusiveMode.IsBoolean())
+      {
+        Napi::TypeError::New(env, "nonExclusive flag should be a boolean").ThrowAsJavaScriptException();
+        return;
+      }
+      if (isNonExclusiveMode.As<Napi::Boolean>().Value())
+      {
+        hid_darwin_set_open_exclusive(0);
+      }
+    }
+  }
+#endif
+
+  if (argsLength == 1)
   {
     // open by path
     if (!info[0].IsString())
@@ -80,7 +109,7 @@ HID::HID(const Napi::CallbackInfo &info)
     int32_t productId = info[1].As<Napi::Number>().Int32Value();
     std::wstring wserialstr;
     const wchar_t *wserialptr = nullptr;
-    if (info.Length() > 2)
+    if (argsLength > 2)
     {
       std::string serialstr = info[2].As<Napi::String>().Utf8Value();
       wserialstr = utf8_decode(serialstr);
