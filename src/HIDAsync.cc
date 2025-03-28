@@ -223,6 +223,7 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
   ContextState *context = (ContextState *)data;
 
 #if defined(__APPLE__)
+  bool isNonExclusiveBool = false;
   if (argsLength > 1)
   {
     // We check if we have an optional param
@@ -230,16 +231,16 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
     {
       argsLength -= 1;
       Napi::Object options = info[argsLength].As<Napi::Object>();
-
       Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
-      if (!isNonExclusiveMode.IsNumber())
+      if (!isNonExclusiveMode.IsBoolean())
       {
         Napi::TypeError::New(env, "nonExclusive flag should be a boolean").ThrowAsJavaScriptException();
         return env.Null();
       }
-      hid_darwin_set_open_exclusive(isNonExclusiveMode.As<Napi::Number>().Int32Value());
+      isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
     }
   }
+  hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
 #endif
 
   if (argsLength == 1)

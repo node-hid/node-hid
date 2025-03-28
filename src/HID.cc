@@ -58,6 +58,7 @@ HID::HID(const Napi::CallbackInfo &info)
   }
 
 #if defined(__APPLE__)
+  bool isNonExclusiveBool = false;
   if (argsLength > 1)
   {
     // We check if we have an optional param
@@ -65,19 +66,16 @@ HID::HID(const Napi::CallbackInfo &info)
     {
       argsLength -= 1;
       Napi::Object options = info[argsLength].As<Napi::Object>();
-
       Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
       if (!isNonExclusiveMode.IsBoolean())
       {
         Napi::TypeError::New(env, "nonExclusive flag should be a boolean").ThrowAsJavaScriptException();
         return;
       }
-      if (isNonExclusiveMode.As<Napi::Boolean>().Value())
-      {
-        hid_darwin_set_open_exclusive(0);
-      }
+      isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
     }
   }
+  hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
 #endif
 
   if (argsLength == 1)

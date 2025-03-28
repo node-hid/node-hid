@@ -21,8 +21,8 @@ export interface Device {
 }
 
 export class HID extends EventEmitter {
-    constructor(path: string, { nonExclusive }: { nonExclusive?: boolean })
-    constructor(vid: number, pid: number, { nonExclusive }: { nonExclusive?: boolean })
+    constructor(path: string, options?: { nonExclusive?: boolean })
+    constructor(vid: number, pid: number, options?: { nonExclusive?: boolean })
     close(): void
     pause(): void
     read(callback: (err: any, data: number[]) => void): void
@@ -45,8 +45,8 @@ export function devicesAsync(): Promise<Device[]>
 export class HIDAsync extends EventEmitter {
     private constructor()
 
-    static open(path: string, { nonExclusive }: { nonExclusive?: boolean }): Promise<HIDAsync>
-    static open(vid: number, pid: number, { nonExclusive }: { nonExclusive?: boolean }): Promise<HIDAsync>
+    static open(path: string, options?: { nonExclusive?: boolean }): Promise<HIDAsync>
+    static open(vid: number, pid: number, options?: { nonExclusive?: boolean }): Promise<HIDAsync>
 
     close(): Promise<void>
     pause(): void
