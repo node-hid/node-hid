@@ -127,8 +127,14 @@ public:
   // This code will be executed on the worker thread
   void Execute() override
   {
+    if (_hid->_readRunning.exchange(true))
+    {
+      SetError("read is already running");
+      return;
+    }
+
     int mswait = 50;
-    while (len == 0 && _hid->_hidHandle)
+    while (len == 0 && !_hid->_readInterrupt)
     {
       len = hid_read_timeout(_hid->_hidHandle, buf, READ_BUFF_MAXSIZE, mswait);
     }
@@ -136,6 +142,8 @@ public:
     {
       SetError("could not read from HID device");
     }
+
+    _hid->_readRunning = false;
   }
 
   void OnOK() override
@@ -160,9 +168,20 @@ Napi::Value HID::read(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
+  this->_readInterrupt = false;
+
   auto callback = info[0].As<Napi::Function>();
   auto job = new ReadWorker(this, callback);
   job->Queue();
+
+  return env.Null();
+}
+
+Napi::Value HID::readInterrupt(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  this->_readInterrupt = true;
 
   return env.Null();
 }
@@ -288,6 +307,12 @@ Napi::Value HID::close(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
+  if (this->_readRunning)
+  {
+    Napi::TypeError::New(env, "read is still running").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   this->closeHandle();
   return env.Null();
 }
@@ -367,6 +392,7 @@ Napi::Value HID::Initialize(Napi::Env &env)
   Napi::Function ctor = DefineClass(env, "HID", {
                                                     InstanceMethod("close", &HID::close),
                                                     InstanceMethod("read", &HID::read),
+                                                    InstanceMethod("readInterrupt", &HID::readInterrupt),
                                                     InstanceMethod("write", &HID::write, napi_enumerable),
                                                     InstanceMethod("getFeatureReport", &HID::getFeatureReport, napi_enumerable),
                                                     InstanceMethod("sendFeatureReport", &HID::sendFeatureReport, napi_enumerable),
