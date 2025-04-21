@@ -29,6 +29,10 @@
 #include "HIDAsync.h"
 #include "read.h"
 
+#if defined(__APPLE__)
+#include "../hidapi/mac/hidapi_darwin.h"
+#endif
+
 HIDAsync::HIDAsync(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<HIDAsync>(info)
 {
@@ -202,7 +206,9 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  if (info.Length() < 1)
+  auto argsLength = info.Length();
+
+  if (argsLength < 1)
   {
     Napi::TypeError::New(env, "HIDAsync::Create requires at least one arguments").ThrowAsJavaScriptException();
     return env.Null();
@@ -216,7 +222,28 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
   }
   ContextState *context = (ContextState *)data;
 
-  if (info.Length() == 1)
+#if defined(__APPLE__)
+  bool isNonExclusiveBool = false;
+  if (argsLength > 1)
+  {
+    // We check if we have an optional param
+    if (info[argsLength - 1].IsObject())
+    {
+      argsLength -= 1;
+      Napi::Object options = info[argsLength].As<Napi::Object>();
+      Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
+      if (!isNonExclusiveMode.IsBoolean())
+      {
+        Napi::TypeError::New(env, "nonExclusive flag should be a boolean").ThrowAsJavaScriptException();
+        return env.Null();
+      }
+      isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
+    }
+  }
+  hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
+#endif
+
+  if (argsLength == 1)
   {
     // open by path
     if (!info[0].IsString())
@@ -238,7 +265,7 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
     }
 
     std::string serial;
-    if (info.Length() > 2)
+    if (argsLength > 2)
     {
       if (!info[2].IsString())
       {
