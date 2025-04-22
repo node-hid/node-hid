@@ -1,5 +1,7 @@
 #include "util.h"
 
+#include <atomic>
+
 class HID : public Napi::ObjectWrap<HID>
 {
 public:
@@ -12,11 +14,15 @@ public:
 
     hid_device *_hidHandle;
 
+    std::atomic<bool> _readRunning = false;
+    std::atomic<bool> _readInterrupt = false;
+
 private:
     static Napi::Value devices(const Napi::CallbackInfo &info);
 
     Napi::Value close(const Napi::CallbackInfo &info);
     Napi::Value read(const Napi::CallbackInfo &info);
+    Napi::Value readInterrupt(const Napi::CallbackInfo &info);
     Napi::Value write(const Napi::CallbackInfo &info);
     Napi::Value setNonBlocking(const Napi::CallbackInfo &info);
     Napi::Value getFeatureReport(const Napi::CallbackInfo &info);

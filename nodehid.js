@@ -73,12 +73,19 @@ util.inherits(HID, EventEmitter);
 HID.prototype.close = function close() {
     this._closing = true;
     this.removeAllListeners();
-    this._raw.close();
-    this._closed = true;
+    if (this._paused) {
+        // Don't exit if a read is currently running
+        this._raw.close();
+        this._closed = true;
+    } else {
+        // Make sure the read is stopped ASAP
+        this._raw.readInterrupt();
+    }
 };
 //Pauses the reader, which stops "data" events from being emitted
 HID.prototype.pause = function pause() {
     this._paused = true;
+    this._raw.readInterrupt();
 };
 
 HID.prototype.read = function read(callback) {
@@ -97,6 +104,16 @@ HID.prototype.resume = function resume() {
         self._paused = false;
         self.read(function readFunc(err, data) {
             try {
+                if (self._closing) {
+                    // Discard any data if we're closing
+
+                    self._paused = true;
+                    self._raw.close();
+                    self._closed = true;
+
+                    return
+                }
+
                 if(err)
                 {
                     //Emit error and pause reading
@@ -119,7 +136,8 @@ HID.prototype.resume = function resume() {
             } catch (e) {
                 // Emit an error on the device instead of propagating to a c++ exception
                 setImmediate(() => {
-                    self.emit("error", e);
+                    if (!self._closing)
+                        self.emit("error", e);
                 });
             }
         });
@@ -194,7 +212,8 @@ class HIDAsync extends EventEmitter {
                 } catch (e) {
                     // Emit an error on the device instead of propagating to a c++ exception
                     setImmediate(() => {
-                        this.emit("error", e);
+                        if (!this._closing)
+                            this.emit("error", e);
                     });
                 }
             })
