@@ -178,6 +178,17 @@ or open the first device matching a VID/PID pair:
 var device = await HID.HIDAsync.open(vid,pid);
 ```
 
+If set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode.
+If the flag is not set the behaviour will default to that of the specific os.
+
+```js
+// With path
+var device = await HID.HIDAsync.open(path, { nonExclusive: true });
+
+// With vid, pid
+var device = await HID.HIDAsync.open(vid,pid, { nonExclusive: true });
+```
+
 The `device` variable will contain a handle to the device.
 If an error occurs opening the device, an exception will be thrown.
 
@@ -298,6 +309,17 @@ or open the first device matching a VID/PID pair:
 var device = new HID.HID(vid,pid);
 ```
 
+If set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode
+If the flag is not set the behaviour will default to that of the specific os.
+
+```js
+// With path
+var device = await HID.HID(path, { nonExclusive: true });
+
+// With vid, pid
+var device = await HID.HID(vid,pid, { nonExclusive: true });
+```
+
 The `device` variable will contain a handle to the device.
 If an error occurs opening the device, an exception will be thrown.
 
@@ -395,11 +417,11 @@ number of bytes written + 1.
 
 - Return array listing all connected HID devices with specific VendorId and ProductId
 
-### `device = await HID.HIDAsync.open(path)`
+### `device = await HID.HIDAsync.open(path,options?:{nonExclusive?:boolean})`
 
 - Open a HID device at the specified platform-specific path
 
-### `device = await HID.HIDAsync.open(vid,pid)`
+### `device = await HID.HIDAsync.open(vid,pid,options?:{nonExclusive?:boolean})`
 
 - Open first HID device with specific VendorId and ProductId
 
@@ -473,11 +495,11 @@ be automatically called.
   - Sets underlying HID driver type
   - `type` can be `"hidraw"` or `"libusb"`, defaults to `"hidraw"`
 
-### `device = new HID.HID(path)`
+### `device = new HID.HID(path,options?:{nonExclusive?:boolean})`
 
 - Open a HID device at the specified platform-specific path
 
-### `device = new HID.HID(vid,pid)`
+### `device = new HID.HID(vid,pid,options?:{nonExclusive?:boolean})`
 
 - Open first HID device with specific VendorId and ProductId
 
@@ -568,7 +590,9 @@ Some keyboard-pretending devices like barcode or RFID readers can be configured 
 if in "Serial / UART" mode, you should use `node-serialport` instead.
 
 ## Mac notes
-See General notes above Keyboards
+See General notes above Keyboards with the exception if you open a device in nonExclusive mode.
+In that case the os will request permission from the user to read the device.
+If permission is given `node-hid` will be able to read data coming from the device normally.
 
 ## Windows notes
 See General notes above about Keyboards
