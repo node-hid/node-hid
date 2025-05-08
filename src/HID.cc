@@ -74,10 +74,13 @@ HID::HID(const Napi::CallbackInfo &info)
         return;
       }
       isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
-      hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
 #endif
     }
   }
+
+#if defined(__APPLE__)
+  hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
+#endif
 
   if (argsLength == 1)
   {
