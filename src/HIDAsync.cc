@@ -222,7 +222,6 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
   }
   ContextState *context = (ContextState *)data;
 
-#if defined(__APPLE__)
   bool isNonExclusiveBool = false;
   if (argsLength > 1)
   {
@@ -230,6 +229,8 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
     if (info[argsLength - 1].IsObject())
     {
       argsLength -= 1;
+
+#if defined(__APPLE__)
       Napi::Object options = info[argsLength].As<Napi::Object>();
       Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
       if (!isNonExclusiveMode.IsBoolean())
@@ -238,10 +239,10 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
         return env.Null();
       }
       isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
+      hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
+#endif
     }
   }
-  hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
-#endif
 
   if (argsLength == 1)
   {

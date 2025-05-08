@@ -178,7 +178,8 @@ or open the first device matching a VID/PID pair:
 var device = await HID.HIDAsync.open(vid,pid);
 ```
 
-If set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode.
+**On MacOs** if set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode.
+For the other plaforms the flag has no impact.
 If the flag is not set the behaviour will default to that of the specific os.
 
 ```js
@@ -309,7 +310,8 @@ or open the first device matching a VID/PID pair:
 var device = new HID.HID(vid,pid);
 ```
 
-If set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode
+**On MacOs** if set to true the `nonExclusive` property allows the device to be opened in non-exclusive mode.
+For the other plaforms the flag has no impact.
 If the flag is not set the behaviour will default to that of the specific os.
 
 ```js
