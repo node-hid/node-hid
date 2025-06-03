@@ -14,8 +14,8 @@ public:
 
     hid_device *_hidHandle;
 
-    std::atomic<bool> _readRunning = false;
-    std::atomic<bool> _readInterrupt = false;
+    std::atomic<bool> _readRunning = {false};
+    std::atomic<bool> _readInterrupt = {false};
 
 private:
     static Napi::Value devices(const Napi::CallbackInfo &info);

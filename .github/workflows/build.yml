@@ -9,10 +9,11 @@ env:
   NAPI_VERSION: 3
   BINDING_NAME: HID
   BINDING_NAME_HIDRAW: HID_hidraw
+  MACOSX_DEPLOYMENT_TARGET: "10.15"
 
 jobs:
   build-and-test:
-    name: Build ${{ matrix.arch }} on ${{ matrix.os }} ${{ matrix.libc }}
+    name: Build ${{ matrix.docker-arch || matrix.arch }} on ${{ matrix.docker-image || matrix.os }} ${{ matrix.libc }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -20,35 +21,35 @@ jobs:
       matrix:
         include:
           # windows
-          - os: windows-2022
+          - os: windows-latest
             arch: x64
             is-native: true
-          - os: windows-2022
+          - os: windows-latest
             arch: ia32
             is-native: false
-          - os: windows-2022
+          - os: windows-latest
             arch: arm64
             is-native: false
             node-version: 20.x # 16.x is missing the arm64 node.lib
           # macos
-          - os: macos-12
+          - os: macos-latest
             arch: arm64
-            is-native: false
-          - os: macos-12
-            arch: x64
             is-native: true
+          - os: macos-latest
+            arch: x64
+            is-native: false
           # linux
           - os: ubuntu-latest
             arch: x64
             is-native: true
             docker-arch: linux/amd64
             docker-image: node:14-buster
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             arch: arm64
-            is-native: false
+            is-native: true
             docker-arch: linux/arm64
             docker-image: node:14-buster
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             arch: arm
             is-native: false
             docker-arch: linux/arm/v7
@@ -56,7 +57,7 @@ jobs:
           # linux musl/alpine
           - os: ubuntu-latest
             arch: x64
-            is-native: false
+            is-native: true
             docker-arch: linux/amd64
             docker-image: node:14-alpine
             libc: musl
