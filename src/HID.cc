@@ -57,7 +57,6 @@ HID::HID(const Napi::CallbackInfo &info)
     return;
   }
 
-#if defined(__APPLE__)
   bool isNonExclusiveBool = false;
   if (argsLength > 1)
   {
@@ -65,6 +64,8 @@ HID::HID(const Napi::CallbackInfo &info)
     if (info[argsLength - 1].IsObject())
     {
       argsLength -= 1;
+
+#if defined(__APPLE__)
       Napi::Object options = info[argsLength].As<Napi::Object>();
       Napi::Value isNonExclusiveMode = options.Get("nonExclusive");
       if (!isNonExclusiveMode.IsBoolean())
@@ -73,8 +74,11 @@ HID::HID(const Napi::CallbackInfo &info)
         return;
       }
       isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
+#endif
     }
   }
+
+#if defined(__APPLE__)
   hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
 #endif
 
