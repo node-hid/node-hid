@@ -165,7 +165,7 @@ public:
     }
 
     int mswait = 50;
-    while (len == 0 && !_hid->_readInterrupt)
+    while (len == 0 && !_hid->_readInterrupt && _hid->_hidHandle != nullptr)
     {
       len = hid_read_timeout(_hid->_hidHandle, buf, READ_BUFF_MAXSIZE, mswait);
     }
@@ -227,6 +227,12 @@ Napi::Value HID::readSync(const Napi::CallbackInfo &info)
     return env.Null();
   }
 
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   unsigned char buff_read[READ_BUFF_MAXSIZE];
   int returnedLength = hid_read(_hidHandle, buff_read, sizeof buff_read);
   if (returnedLength == -1)
@@ -250,6 +256,12 @@ Napi::Value HID::readTimeout(const Napi::CallbackInfo &info)
   if (info.Length() != 1 || !info[0].IsNumber())
   {
     Napi::TypeError::New(env, "readTimeout needs time out parameter").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -277,6 +289,12 @@ Napi::Value HID::getFeatureReport(const Napi::CallbackInfo &info)
   if (info.Length() != 2 || !info[0].IsNumber() || !info[1].IsNumber())
   {
     Napi::TypeError::New(env, "need report ID and length parameters in getFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -313,6 +331,12 @@ Napi::Value HID::sendFeatureReport(const Napi::CallbackInfo &info)
   if (info.Length() != 1)
   {
     Napi::TypeError::New(env, "need report (including id in first byte) only in sendFeatureReport").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -355,6 +379,12 @@ Napi::Value HID::setNonBlocking(const Napi::CallbackInfo &info)
   if (info.Length() != 1)
   {
     Napi::TypeError::New(env, "Expecting a 1 to enable, 0 to disable as the first argument.").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
     return env.Null();
   }
 
@@ -406,6 +436,12 @@ Napi::Value HID::write(const Napi::CallbackInfo &info)
 Napi::Value HID::getDeviceInfo(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
+
+  if (!_hidHandle)
+  {
+    Napi::TypeError::New(env, "Cannot access closed device").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   hid_device_info *dev = hid_get_device_info(_hidHandle);
   if (!dev)
