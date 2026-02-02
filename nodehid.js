@@ -186,8 +186,8 @@ class HIDAsync extends EventEmitter {
 
     async close() {
         this._closing = true;
-        this.removeAllListeners();
         await this._raw.close();
+        this.removeAllListeners();
         this._closed = true;
     }
     
