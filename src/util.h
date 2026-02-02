@@ -102,7 +102,9 @@ public:
         const Napi::Env &env, T context)
         : Napi::AsyncWorker(env),
           context(context),
-          deferred(Napi::Promise::Deferred::New(env))
+          deferred(Napi::Promise::Deferred::New(env)),
+          // Create an error now, to store the stack trace
+          errorResult(Napi::Error::New(env, "Unknown error"))
     {
     }
 
@@ -124,8 +126,11 @@ public:
     }
     void OnError(Napi::Error const &error) override
     {
+        // Inject the the error message with the actual error
+        errorResult.Value().Set("message", error.Message());
+
         context->JobFinished(Env());
-        deferred.Reject(error.Value());
+        deferred.Reject(errorResult.Value());
     }
 
     Napi::Promise QueueAndRun()
@@ -142,6 +147,7 @@ protected:
 
 private:
     Napi::Promise::Deferred deferred;
+    Napi::Error errorResult;
 };
 
 #endif // NODEHID_UTIL_H__
