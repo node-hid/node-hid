@@ -24,12 +24,14 @@ jobs:
           - os: windows-latest
             arch: x64
             is-native: true
+            node-version: 20.x # python compatibility
           - os: windows-latest
             arch: ia32
             is-native: false
-          - os: windows-latest
+            node-version: 20.x # python compatibility
+          - os: windows-11-arm
             arch: arm64
-            is-native: false
+            is-native: true
             node-version: 20.x # 16.x is missing the arm64 node.lib
           # macos
           - os: macos-latest
@@ -132,6 +134,10 @@ jobs:
           # shell: bash
           options: --platform=${{ matrix.docker-arch }} -v ${{ github.workspace }}:/work -e CI=1 -e npm_config_build_from_source=1 -e NAPI_VERSION -e BINDING_NAME -e BINDING_NAME_HIDRAW
           run: |
+            # rewrite buster sources to archive mirrors
+            sed -i -E 's#https?://(deb|deb.debian).debian.org/debian#http://archive.debian.org/debian#g' /etc/apt/sources.list || true
+            sed -i -E 's#https?://security.debian.org#http://archive.debian.org/debian-security#g' /etc/apt/sources.list || true
+
             if command -v apt-get &> /dev/null
             then
               apt-get update
