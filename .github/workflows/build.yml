@@ -11,6 +11,9 @@ env:
   BINDING_NAME_HIDRAW: HID_hidraw
   MACOSX_DEPLOYMENT_TARGET: "10.15"
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     name: Build ${{ matrix.docker-arch || matrix.arch }} on ${{ matrix.docker-image || matrix.os }} ${{ matrix.libc }}
@@ -183,3 +186,59 @@ jobs:
           name: all-prebuilds
           path: prebuilds
           retention-days: 7
+
+  publish:
+    name: Publish to npm
+    needs: bundle
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    # only run for tags
+    if: contains(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - name: Check release is desired
+        id: do-publish
+        run: |
+          PUBLISHED_VERSION=$(npm info --json . | jq -c '.version' -r)
+          THIS_VERSION=$(node -p "require('./package.json').version")
+          # Simple bash helper to comapre version numbers
+          verlte() {
+            [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+          }
+          verlt() {
+            [ "$1" = "$2" ] && return 1 || verlte $1 $2
+          }
+          if verlt $PUBLISHED_VERSION $THIS_VERSION
+          then
+            echo "Publishing latest"
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "Publishing hotfix"
+            echo "tag=hotfix" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: all-prebuilds
+          path: prebuilds
+      - name: Publish to NPM
+        if: ${{ steps.do-publish.outputs.tag }}
+        run: |
+          npm publish --access=public --tag ${{ steps.do-publish.outputs.tag }} --provenance
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "**Published:** $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
+        env:
+          CI: true
