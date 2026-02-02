@@ -231,6 +231,10 @@ function showdevicesAsync(...args) {
     return binding.devicesAsync(...args);
 }
 
+function getHidapiVersion() {
+    loadBinding();
+    return binding.hidapiVersion;
+}
 
 //Expose API
 exports.HID = HID;
@@ -238,3 +242,4 @@ exports.HIDAsync = HIDAsync;
 exports.devices = showdevices;
 exports.devicesAsync = showdevicesAsync;
 exports.setDriverType = setDriverType;
+exports.getHidapiVersion = getHidapiVersion;

@@ -37,6 +37,8 @@ Init(Napi::Env env, Napi::Object exports)
     exports.Set("devices", Napi::Function::New(env, &devices));
     exports.Set("devicesAsync", Napi::Function::New(env, &devicesAsync, nullptr, context)); // TODO: verify context will be alive long enough
 
+    exports.Set("hidapiVersion", Napi::String::New(env, HID_API_VERSION_STR));
+
     return exports;
 }
 

@@ -61,3 +61,4 @@ export class HIDAsync extends EventEmitter {
 
 export function setDriverType(type: 'hidraw' | 'libusb'): void
 
+export function getHidapiVersion(): string
