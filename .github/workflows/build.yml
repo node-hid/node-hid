@@ -68,7 +68,7 @@ jobs:
             libc: musl
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Checkout submodules
         shell: bash
         run: |
