@@ -78,7 +78,7 @@ jobs:
 
       - name: Macos Use Python 3.11
         if: runner.os == 'macOS'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11 # ${{ matrix.python }}
         env:
