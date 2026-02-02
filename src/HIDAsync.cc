@@ -240,6 +240,9 @@ Napi::Value HIDAsync::Create(const Napi::CallbackInfo &info)
       }
       isNonExclusiveBool = isNonExclusiveMode.As<Napi::Boolean>().Value();
       hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
+#else
+      // silence unused variable warning
+      (void)isNonExclusiveBool;
 #endif
     }
   }

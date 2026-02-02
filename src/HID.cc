@@ -80,6 +80,9 @@ HID::HID(const Napi::CallbackInfo &info)
 
 #if defined(__APPLE__)
   hid_darwin_set_open_exclusive(isNonExclusiveBool ? 0 : 1);
+#else
+  // silence unused variable warning
+  (void)isNonExclusiveBool;
 #endif
 
   if (argsLength == 1)
