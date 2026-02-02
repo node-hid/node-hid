@@ -1,4 +1,4 @@
 module.exports = {
     name: 'HID',
-    napi_versions: [3],
+    napi_versions: [4],
 }
