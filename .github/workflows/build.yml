@@ -168,7 +168,7 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: tmp
 
@@ -227,7 +227,7 @@ jobs:
             echo "tag=hotfix" >> $GITHUB_OUTPUT
           fi
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: all-prebuilds
           path: prebuilds
