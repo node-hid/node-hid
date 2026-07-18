@@ -44,7 +44,15 @@ jobs:
         run: npm run test:unit
 
       - name: Ensure uhid is available
-        run: sudo modprobe uhid || test -e /dev/uhid
+        # The runners' azure kernel flavour ships uhid in the extras package
+        run: |
+          if [ ! -e /dev/uhid ]; then
+            sudo modprobe uhid || {
+              sudo apt-get install -y "linux-modules-extra-$(uname -r)"
+              sudo modprobe uhid
+            }
+          fi
+          test -e /dev/uhid
 
       - name: Run device tests against the fake blink(1)
         # sudo: /dev/uhid and the created hidraw nodes are root-only.
