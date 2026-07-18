@@ -15,6 +15,44 @@ permissions:
   contents: read
 
 jobs:
+  test-uhid:
+    name: Test against uhid fake blink(1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev libusb-1.0-0-dev
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          # single version; we assume identical behaviour on older node
+          node-version: 20.x
+
+      - name: Install and build from source
+        run: npm i
+        env:
+          npm_config_build_from_source: true
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Ensure uhid is available
+        run: sudo modprobe uhid || test -e /dev/uhid
+
+      - name: Run device tests against the fake blink(1)
+        # sudo: /dev/uhid and the created hidraw nodes are root-only.
+        # CI=true makes an environment-based skip a hard failure.
+        run: sudo --preserve-env=CI env "PATH=$PATH" npm run test:device
+        env:
+          CI: "true"
+
   build-and-test:
     name: Build ${{ matrix.docker-arch || matrix.arch }} on ${{ matrix.docker-image || matrix.os }} ${{ matrix.libc }}
     runs-on: ${{ matrix.os }}

@@ -748,6 +748,41 @@ npm run gypconfigure  # "node-gyp configure" configure makefiles
 npm run gypbuild      # "node-gyp build" build native code
 ```
 
+### Running the tests
+
+There are two automated test suites (both use the built-in `node:test` runner, node 18+):
+
+```
+npm run test:unit     # no device or special permissions needed, any OS
+npm run test:device   # runs against a fake blink(1) created via Linux /dev/uhid
+```
+
+The device suite creates a virtual HID device through the kernel's `uhid`
+interface. By default `/dev/uhid` and the created `/dev/hidrawN` nodes are
+root-only; install the provided udev rules once to run the tests as yourself:
+
+```
+sudo cp test/60-node-hid-test.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+sudo udevadm trigger --name-match=uhid
+
+npm run build         # make sure the native code is current
+npm run test:device
+```
+
+(Alternatively run the suite as root: `sudo env "PATH=$PATH" npm run test:device`.)
+
+Without access the device suite skips with an explanation (in CI, `CI=true`
+turns that skip into a failure so coverage cannot silently disappear).
+
+The fake device emulates the blink(1) protocol, so the core behaviour tests can
+also be run against a real blink(1) on any OS (including macOS/Windows, where
+`/dev/uhid` does not exist):
+
+```
+NODE_HID_TEST_REAL_BLINK1=1 npm run test:device
+```
+
 ### Building `node-hid` for cross-compiling
 
 When cross-compiling you need to override `node-hid`'s normal behavior

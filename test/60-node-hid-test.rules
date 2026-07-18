@@ -1,0 +1,17 @@
+# udev rules granting a desktop user access to the node-hid test devices, so the
+# device test suite can run without root:
+#
+#   sudo cp test/60-node-hid-test.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger --name-match=uhid
+#
+# TAG+="uaccess" makes systemd-logind grant an ACL to the active seat user. On a
+# headless machine there is no seat; uncomment the GROUP/MODE variants instead
+# and put yourself in the chosen group.
+
+# /dev/uhid - allows creating virtual HID devices (the fake blink(1))
+KERNEL=="uhid", SUBSYSTEM=="misc", TAG+="uaccess"
+
+# hidraw nodes of blink(1)-vid/pid HID devices, real or fake. The HID parent's
+# kernel name encodes bus:vid:pid, 0003 = USB (which is what the fake reports)
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", KERNELS=="0003:27B8:01ED.*", TAG+="uaccess"
