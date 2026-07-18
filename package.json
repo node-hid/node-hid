@@ -16,6 +16,8 @@
   },
   "scripts": {
     "test": "node src/test-ci.js",
+    "test:unit": "node --expose-gc --test test/unit/*.test.js",
+    "test:device": "node --expose-gc --test --test-concurrency=1 test/device/*.test.js",
     "showdevices": "node src/show-devices.js",
     "prepublishOnly": "git submodule update --init",
     "install": "pkg-prebuilds-verify ./binding-options.js || node-gyp rebuild",
