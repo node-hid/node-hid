@@ -66,6 +66,9 @@ describe("device lifecycle", { skip: env.fakeOnlySkipReason }, () => {
 
             const err = await errorSeen;
             assert.ok(err, "expected an error event after unplug");
+            // The reason must be the fresh hid_read_error detail, not a stale
+            // hid_error from an unrelated earlier call
+            assert.match(String(err), /could not read from HID device: .*disconnected/);
             await dev.close();
         });
 
@@ -75,6 +78,15 @@ describe("device lifecycle", { skip: env.fakeOnlySkipReason }, () => {
             await fake.destroy();
 
             await assert.rejects(dev.getFeatureReport(blink1.REPORT_ID, 9), /could not get feature report/);
+            await dev.close();
+        });
+
+        it("read against an unplugged device rejects with the read error detail", async () => {
+            await setup();
+            const dev = await HID.HIDAsync.open(fake.hidrawPath);
+            await fake.destroy();
+
+            await assert.rejects(dev.read(50), /could not read data from device: .*disconnected/);
             await dev.close();
         });
     });
@@ -124,6 +136,7 @@ describe("device lifecycle", { skip: env.fakeOnlySkipReason }, () => {
 
             const { err } = await readResult;
             assert.ok(err, "expected the pending read to fail after unplug");
+            assert.match(String(err), /could not read from HID device: .*disconnected/);
             dev.close();
         });
 

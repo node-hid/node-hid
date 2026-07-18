@@ -102,6 +102,28 @@ describe("read paths", { skip: env.fakeOnlySkipReason }, () => {
             dev.close();
         });
 
+        it("setNonBlocking accepts booleans and truthy numbers, rejects other types", async () => {
+            await setup();
+            dev = new HID.HID(fake.hidrawPath);
+
+            dev.setNonBlocking(true);
+            assert.deepStrictEqual(dev.readSync(), []);
+
+            // Back to blocking: a queued report must be returned again
+            dev.setNonBlocking(false);
+            await fake.sendInput(PAYLOAD_B);
+            assert.deepStrictEqual(dev.readSync(), [blink1.REPORT_ID, ...PAYLOAD_B]);
+
+            // Any truthy number enables it, matching the boolean behaviour
+            dev.setNonBlocking(2);
+            assert.deepStrictEqual(dev.readSync(), []);
+            dev.setNonBlocking(0);
+
+            assert.throws(() => dev.setNonBlocking("1"), /Expecting a 1 to enable/);
+            assert.throws(() => dev.setNonBlocking(null), /Expecting a 1 to enable/);
+            dev.close();
+        });
+
         it("close() while streaming 'data' events shuts down cleanly", async () => {
             await setup();
             dev = new HID.HID(fake.hidrawPath);
@@ -210,6 +232,20 @@ describe("read paths", { skip: env.fakeOnlySkipReason }, () => {
             // Still alive and usable
             const info = await dev.getDeviceInfo();
             assert.strictEqual(info.serialNumber, fake.serial);
+        });
+
+        it("setNonBlocking accepts booleans, rejects other types", async () => {
+            await setup();
+            dev = await HID.HIDAsync.open(fake.hidrawPath);
+
+            await dev.setNonBlocking(true);
+            // In non-blocking mode even an untimed read() returns immediately
+            const empty = await dev.read();
+            assert.strictEqual(empty.length, 0);
+
+            await dev.setNonBlocking(false);
+            await assert.rejects(dev.setNonBlocking("1"), /Expecting a 1 to enable/);
+            await assert.rejects(dev.setNonBlocking(undefined), /Expecting a 1 to enable/);
         });
 
         it("read() is refused while the read thread runs, works again after listeners are removed", async () => {
