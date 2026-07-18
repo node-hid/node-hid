@@ -148,6 +148,18 @@ describe("blink(1) core behaviour", { skip: env.skipReason }, () => {
             assert.strictEqual(response[1], "U".charCodeAt(0));
         });
 
+        it("getFeatureReport returns the device's reply length, not the requested length", (t) => {
+            if (!device.fake) {
+                t.skip("reply sizes are only predictable on the fake device");
+                return;
+            }
+
+            dev.sendFeatureReport(blink1.command("v"));
+            // Ask for far more than the 9-byte reply; the result must be 9 bytes
+            const response = dev.getFeatureReport(blink1.REPORT_ID, blink1.REPORT2_LENGTH + 1);
+            assert.strictEqual(response.length, blink1.REPORT_LENGTH + 1);
+        });
+
         it("getFeatureReport with an unknown report id throws", () => {
             assert.throws(() => dev.getFeatureReport(0x42, 9), /could not get feature report/);
         });

@@ -7,6 +7,15 @@
  */
 const fs = require("fs");
 
+// hidapi's linux hidraw backend needs a UTF-8 LC_CTYPE to convert non-ascii
+// device strings; the default "C" locale turns them into empty strings. The
+// addon honours this env var as a TEST-ONLY opt-in (see ApplicationContext::get).
+// It must be set before the native binding is first used, which is guaranteed
+// here because the binding is lazy-loaded on first API call
+if (process.platform === "linux" && !process.env.NODE_HID_TEST_SET_LOCALE) {
+    process.env.NODE_HID_TEST_SET_LOCALE = "C.UTF-8";
+}
+
 function resolveMode() {
     if (process.env.NODE_HID_TEST_REAL_BLINK1 === "1") {
         return { mode: "real", skipReason: false };

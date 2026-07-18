@@ -1,6 +1,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cwchar>
+#include <clocale>
+#include <cstdlib>
 
 #include "util.h"
 
@@ -34,6 +36,18 @@ std::shared_ptr<ApplicationContext> ApplicationContext::get()
     auto ref = weakApplicationContext.lock();
     if (!ref)
     {
+        // TEST-ONLY escape hatch, not supported for production use: hidapi's linux
+        // hidraw backend converts device strings with mbstowcs, which needs a UTF-8
+        // LC_CTYPE to handle non-ascii text (the default "C" locale converts them to
+        // empty strings). Calling setlocale from a library is not safe in general
+        // (process-global, and racy against other threads using locale-dependent
+        // libc functions), so the test suite must opt in explicitly
+        const char *testLocale = getenv("NODE_HID_TEST_SET_LOCALE");
+        if (testLocale && *testLocale)
+        {
+            setlocale(LC_CTYPE, testLocale);
+        }
+
         // Not initialised, so lets do that
         if (hid_init())
         {

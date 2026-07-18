@@ -102,6 +102,34 @@ describe("read paths", { skip: env.fakeOnlySkipReason }, () => {
             dev.close();
         });
 
+        it("close() while streaming 'data' events shuts down cleanly", async () => {
+            await setup();
+            dev = new HID.HID(fake.hidrawPath);
+
+            const errors = [];
+            const received = [];
+            dev.on("error", (e) => errors.push(e));
+            dev.on("data", (d) => received.push([...d]));
+
+            await new Promise((r) => setTimeout(r, 50));
+            await fake.sendInput(PAYLOAD_A);
+            await waitFor(() => received.length >= 1);
+
+            // Not paused: close() must interrupt the in-flight read and finish
+            // closing from the read callback
+            dev.close();
+            await waitFor(() => {
+                try {
+                    dev.read(() => {});
+                    return false;
+                } catch (e) {
+                    return /closed/.test(e.message);
+                }
+            });
+            assert.deepStrictEqual(errors, []);
+            dev = null;
+        });
+
         it("'data' events flow via the polling read loop, pause() stops them", async () => {
             await setup();
             dev = new HID.HID(fake.hidrawPath);
@@ -182,6 +210,25 @@ describe("read paths", { skip: env.fakeOnlySkipReason }, () => {
             // Still alive and usable
             const info = await dev.getDeviceInfo();
             assert.strictEqual(info.serialNumber, fake.serial);
+        });
+
+        it("read() is refused while the read thread runs, works again after listeners are removed", async () => {
+            await setup();
+            dev = await HID.HIDAsync.open(fake.hidrawPath);
+
+            const listener = () => {};
+            dev.on("data", listener);
+            await new Promise((r) => setTimeout(r, 50)); // readStart running
+
+            await assert.rejects(dev.read(50), /Cannot use read while async read is running/);
+
+            // Removing the last 'data' listener auto-pauses (readStop); once the
+            // read thread has wound down, one-shot read() must work again
+            dev.removeListener("data", listener);
+            await new Promise((r) => setTimeout(r, 200));
+
+            const empty = await dev.read(50);
+            assert.strictEqual(empty.length, 0);
         });
 
         it("close() after pause() works", async () => {
